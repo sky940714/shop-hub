@@ -1,0 +1,276 @@
+/* src/pages/ProductDetailPage.css */
+.product-detail-page {
+  min-height: 100vh;
+  background-color: #f5f5f5;
+  padding: 20px;
+}
+
+.back-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: white;
+  border: 1px solid #e5e5e5;
+  border-radius: 8px;
+  cursor: pointer;
+  margin-bottom: 20px;
+  font-size: 14px;
+  transition: all 0.3s;
+}
+
+.back-button:hover {
+  background: #f5f5f5;
+}
+
+.product-detail-container {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 40px;
+  background: white;
+  padding: 30px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+/* 左側圖片 */
+.product-image-section {
+  display: flex;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.main-product-image {
+  width: 100%;
+  max-width: 500px;
+  height: auto;
+  border-radius: 12px;
+  object-fit: cover;
+}
+
+/* 右側資訊 */
+.product-info-section {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.product-title {
+  font-size: 24px;
+  font-weight: 600;
+  color: #333;
+  line-height: 1.4;
+}
+
+/* 評分區域 */
+.rating-section {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding-bottom: 20px;
+  border-bottom: 1px solid #e5e5e5;
+}
+
+.stars {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.rating-text {
+  color: #fbbf24;
+  font-weight: 600;
+}
+
+.divider {
+  color: #d1d5db;
+}
+
+.sales-text {
+  color: #6b7280;
+  font-size: 14px;
+}
+
+/* 價格區域 */
+.price-section {
+  background: #fef3f2;
+  padding: 20px;
+  border-radius: 8px;
+  display: flex;
+  align-items: baseline;
+  gap: 4px;
+}
+
+.price-label {
+  font-size: 20px;
+  color: #ef4444;
+  font-weight: 500;
+}
+
+.price-value {
+  font-size: 32px;
+  color: #ef4444;
+  font-weight: 700;
+}
+
+/* 商品描述 */
+.description-section {
+  padding: 20px 0;
+  border-top: 1px solid #e5e5e5;
+  border-bottom: 1px solid #e5e5e5;
+}
+
+.section-title {
+  font-size: 16px;
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: #333;
+}
+
+.description-text {
+  color: #6b7280;
+  line-height: 1.6;
+}
+
+/* 庫存 */
+.stock-section {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.stock-label {
+  color: #6b7280;
+  font-size: 14px;
+}
+
+.stock-value {
+  color: #333;
+  font-weight: 600;
+}
+
+/* 數量選擇 */
+.quantity-section {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.quantity-label {
+  color: #333;
+  font-weight: 500;
+}
+
+.quantity-controls {
+  display: flex;
+  align-items: center;
+  border: 1px solid #e5e5e5;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.quantity-button {
+  width: 40px;
+  height: 40px;
+  border: none;
+  background: white;
+  cursor: pointer;
+  font-size: 18px;
+  transition: background 0.2s;
+}
+
+.quantity-button:hover:not(:disabled) {
+  background: #f5f5f5;
+}
+
+.quantity-button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.quantity-input {
+  width: 60px;
+  height: 40px;
+  text-align: center;
+  border: none;
+  border-left: 1px solid #e5e5e5;
+  border-right: 1px solid #e5e5e5;
+  font-size: 16px;
+  font-weight: 600;
+}
+
+/* 操作按鈕 */
+.action-buttons {
+  display: flex;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.add-to-cart-btn,
+.buy-now-btn {
+  flex: 1;
+  padding: 14px 24px;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.3s;
+}
+
+.add-to-cart-btn {
+  background: white;
+  color: #3b82f6;
+  border: 2px solid #3b82f6;
+}
+
+.add-to-cart-btn:hover {
+  background: #eff6ff;
+}
+
+.buy-now-btn {
+  background: #3b82f6;
+  color: white;
+}
+
+.buy-now-btn:hover {
+  background: #2563eb;
+}
+
+/* 載入和錯誤狀態 */
+.loading,
+.error {
+  min-height: 400px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 18px;
+  color: #6b7280;
+}
+
+/* 響應式設計 */
+@media (max-width: 768px) {
+  .product-detail-container {
+    grid-template-columns: 1fr;
+    gap: 20px;
+    padding: 20px;
+  }
+
+  .product-title {
+    font-size: 20px;
+  }
+
+  .price-value {
+    font-size: 28px;
+  }
+
+  .action-buttons {
+    flex-direction: column;
+  }
+}

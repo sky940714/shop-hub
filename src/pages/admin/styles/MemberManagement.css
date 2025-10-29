@@ -1,0 +1,28 @@
+/* pages/admin/styles/MemberManagement.css */
+
+.member-management {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.member-id {
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.member-spent {
+  font-weight: 600;
+  color: #059669;
+}
+
+@media (max-width: 768px) {
+  .data-table {
+    font-size: 0.875rem;
+  }
+
+  .data-table th,
+  .data-table td {
+    padding: 0.5rem;
+  }
+}
