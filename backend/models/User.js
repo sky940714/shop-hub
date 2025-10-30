@@ -31,7 +31,7 @@ class User {
    */
   static async findById(id) {
     const [rows] = await promisePool.execute(
-      'SELECT id, name, email, phone FROM members WHERE id = ?',
+      'SELECT id, name, email, phone, role FROM members WHERE id = ?',
       [id]
     );
     return rows[0];
