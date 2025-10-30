@@ -1,7 +1,7 @@
 // backend/routes/uploadRoutes.js
 const express = require('express');
 const router = express.Router();
-const upload = require('../config/upload');
+const { upload, getImageUrl } = require('../config/upload');  // ← 改這裡，加入 getImageUrl
 const { protect } = require('../middleware/auth');
 
 /**
@@ -18,8 +18,8 @@ router.post('/image', protect, upload.single('image'), (req, res) => {
       });
     }
 
-    // 回傳圖片 URL
-    const imageUrl = `/uploads/${req.file.filename}`;
+    // ⭐ 使用 getImageUrl 生成完整 URL
+    const imageUrl = getImageUrl(req.file.filename);
 
     res.json({
       success: true,
@@ -51,8 +51,8 @@ router.post('/images', protect, upload.array('images', 5), (req, res) => {
       });
     }
 
-    // 回傳所有圖片 URL
-    const imageUrls = req.files.map(file => `/uploads/${file.filename}`);
+    // ⭐ 使用 getImageUrl 生成完整 URL
+    const imageUrls = req.files.map(file => getImageUrl(file.filename));
 
     res.json({
       success: true,

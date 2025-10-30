@@ -45,4 +45,16 @@ const upload = multer({
   fileFilter: fileFilter
 });
 
-module.exports = upload;
+// ⭐ 新增：生成圖片 URL 的函式
+const getImageUrl = (filename) => {
+  // 從環境變數讀取基礎 URL
+  const baseUrl = process.env.API_BASE_URL || process.env.CLIENT_URL || 'http://localhost:5001';
+  return `${baseUrl}/uploads/${filename}`;
+};
+
+// ⭐ 重要：匯出 upload 和 getImageUrl
+module.exports = {
+  upload,
+  getImageUrl,
+  uploadDir
+};
