@@ -18,12 +18,6 @@ const LoginPage: React.FC = () => {
     confirmPassword: ''
   });
 
-  // 內建管理員帳密
-  const ADMIN_CREDENTIALS = {
-    email: 'admin@anxin.com',
-    password: 'admin123'
-  };
-
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     setFormData({
       ...formData,
@@ -36,19 +30,43 @@ const LoginPage: React.FC = () => {
 
     if (isAdminMode) {
       // 管理員登入
-      if (
-        formData.email === ADMIN_CREDENTIALS.email &&
-        formData.password === ADMIN_CREDENTIALS.password
-      ) {
-        // 儲存登入狀態
-        localStorage.setItem('isAdmin', 'true');
-        localStorage.setItem('userEmail', formData.email);
-        alert('管理員登入成功！');
-        navigate('/admin');
+      try {
+      const response = await fetch('http://45.32.24.240/api/auth/login', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          email: formData.email,
+          password: formData.password
+        })
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        // 檢查是否為管理員
+        if (data.user.role === 'admin') {
+          // 儲存登入狀態
+          localStorage.setItem('token', data.token);
+          localStorage.setItem('isAdmin', 'true');
+          localStorage.setItem('userEmail', data.user.email);
+          localStorage.setItem('userName', data.user.name);
+          localStorage.setItem('userId', data.user.id);
+          
+          alert('管理員登入成功！');
+          navigate('/admin');
+        } else {
+          alert('此帳號不是管理員帳號！');
+        }
       } else {
-        alert('管理員帳號或密碼錯誤！');
+        alert(data.message || '帳號或密碼錯誤！');
       }
-    } else {
+    } catch (error) {
+      console.error('登入錯誤：', error);
+      alert('登入失敗，請檢查網路連線或稍後再試');
+    }
+  } else {
       // 一般會員登入 - 呼叫後端 API
       try {
         const response = await fetch('http://45.32.24.240/api/auth/login', {
@@ -240,7 +258,7 @@ const LoginPage: React.FC = () => {
                   value={formData.email}
                   onChange={handleInputChange}
                   className="form-input"
-                  placeholder={isAdminMode ? "admin@anxin.com" : "請輸入您的 Email"}
+                  placeholder={isAdminMode ? "admin@shophub.com" : "請輸入您的 Email"}
                   required
                 />
               </div>
@@ -355,7 +373,7 @@ const LoginPage: React.FC = () => {
               {isAdminMode && (
                 <div className="admin-hint">
                   <p className="hint-text">
-                    <strong>測試帳號：</strong>admin@anxin.com<br />
+                    <strong>測試帳號：</strong>admin@shophub.com<br />
                     <strong>測試密碼：</strong>admin123
                   </p>
                 </div>
