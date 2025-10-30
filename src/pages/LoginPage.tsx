@@ -51,7 +51,7 @@ const LoginPage: React.FC = () => {
     } else {
       // 一般會員登入 - 呼叫後端 API
       try {
-        const response = await fetch('http://localhost:5001/api/auth/login', {
+        const response = await fetch('http://45.32.24.240:5001/api/auth/login', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
@@ -101,7 +101,7 @@ const LoginPage: React.FC = () => {
 
     // 呼叫後端註冊 API
     try {
-      const response = await fetch('http://localhost:5001/api/auth/register', {
+      const response = await fetch('http://45.32.24.240:5001/api/auth/register', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

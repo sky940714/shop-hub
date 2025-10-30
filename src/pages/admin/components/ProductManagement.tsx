@@ -27,7 +27,7 @@ const ProductManagement: React.FC = () => {
 
   const fetchProducts = async () => {
   try {
-    const response = await fetch('http://localhost:5001/api/products');
+    const response = await fetch('http://45.32.24.240:5001/api/products');
     const data = await response.json();
 
     if (data.success) {
@@ -79,7 +79,7 @@ const getCategoryName = (categoryId: number): string => {
   try {
     const token = localStorage.getItem('token');
 
-    const response = await fetch(`http://localhost:5001/api/products/${id}`, {
+    const response = await fetch(`http://45.32.24.240:5001/api/products/${id}`, {
       method: 'DELETE',
       headers: {
         'Authorization': `Bearer ${token}`

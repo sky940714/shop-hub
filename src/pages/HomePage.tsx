@@ -36,7 +36,7 @@ useEffect(() => {
 
 const fetchProducts = async () => {
   try {
-    const response = await fetch('http://localhost:5001/api/products/published');
+    const response = await fetch('http://45.32.24.240:5001/api/products/published');
     const data = await response.json();
 
     if (data.success) {
