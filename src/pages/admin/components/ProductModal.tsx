@@ -69,7 +69,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ product, onClose, onSave })
         const formData = new FormData();
         formData.append('image', files[i]);
 
-        const response = await fetch('http://45.32.24.240:5001/api/upload/image', {
+        const response = await fetch('http://45.32.24.240/api/upload/image', {
           method: 'POST',
           headers: {
             'Authorization': `Bearer ${token}`
@@ -80,7 +80,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ product, onClose, onSave })
         const data = await response.json();
 
         if (data.success) {
-          newImageUrls.push(`http://45.32.24.240:5001${data.imageUrl}`);
+          newImageUrls.push(`http://45.32.24.240${data.imageUrl}`);
         } else {
           alert(`圖片 ${files[i].name} 上傳失敗：${data.message}`);
         }
@@ -145,7 +145,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ product, onClose, onSave })
 
       if (product) {
         // 更新商品
-        response = await fetch(`http://45.32.24.240:5001/api/products/${product.id}`, {
+        response = await fetch(`http://45.32.24.240/api/products/${product.id}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -155,7 +155,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ product, onClose, onSave })
         });
       } else {
         // 新增商品
-        response = await fetch('http://45.32.24.240:5001/api/products', {
+        response = await fetch('http://45.32.24.240/api/products', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

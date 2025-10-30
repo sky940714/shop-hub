@@ -34,7 +34,7 @@ const ProductDetailPage: React.FC = () => {
   useEffect(() => {
     const loadProduct = async () => {
       try {
-        const response = await fetch(`http://45.32.24.240:5001/api/products/${id}`);
+        const response = await fetch(`http://45.32.24.240/api/products/${id}`);
         const data = await response.json();
 
         if (data.success) {
