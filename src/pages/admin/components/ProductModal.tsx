@@ -80,7 +80,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ product, onClose, onSave })
         const data = await response.json();
 
         if (data.success) {
-          newImageUrls.push(`http://45.32.24.240${data.imageUrl}`);
+          newImageUrls.push(data.imageUrl);
         } else {
           alert(`圖片 ${files[i].name} 上傳失敗：${data.message}`);
         }
