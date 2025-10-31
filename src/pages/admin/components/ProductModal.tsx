@@ -1,6 +1,9 @@
 // pages/admin/components/ProductModal.tsx 商品上傳頁面
 import React, { useState, useEffect } from 'react';
-import { X, Upload, Trash2 } from 'lucide-react';
+import { X, Upload, Trash2, GripVertical } from 'lucide-react';
+import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
+import { SortableContext, useSortable, horizontalListSortingStrategy, arrayMove } from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import '../styles/ProductModal.css';
 
 interface Product {
@@ -13,6 +16,55 @@ interface Product {
   description: string;
   status: 'active' | 'inactive';
 }
+
+// ✅ 可排序的圖片組件
+interface SortableImageProps {
+  url: string;
+  index: number;
+  onRemove: (index: number) => void;
+}
+
+const SortableImage: React.FC<SortableImageProps> = ({ url, index, onRemove }) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: url });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`image-preview-item ${isDragging ? 'dragging' : ''}`}
+    >
+      {/* 拖曳手把 */}
+      <div {...attributes} {...listeners} className="drag-handle">
+        <GripVertical size={20} />
+      </div>
+      
+      <img src={url} alt={`預覽 ${index + 1}`} />
+      
+      <button
+        type="button"
+        className="remove-image-btn"
+        onClick={() => onRemove(index)}
+      >
+        <Trash2 size={16} />
+      </button>
+      
+      {index === 0 && <span className="main-badge">主圖</span>}
+    </div>
+  );
+};
 
 interface ProductModalProps {
   product: Product | null;
@@ -34,6 +86,15 @@ const ProductModal: React.FC<ProductModalProps> = ({ product, onClose, onSave })
     description: '',
     status: 'active'
   });
+
+  // ✅ 拖曳感應器設定
+const sensors = useSensors(
+  useSensor(PointerSensor, {
+    activationConstraint: {
+      distance: 8,
+    },
+  })
+);
 
   const [loading, setLoading] = useState(false);
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
@@ -118,6 +179,20 @@ const ProductModal: React.FC<ProductModalProps> = ({ product, onClose, onSave })
       e.target.value = ''; // ← 加這行
     }
   };
+
+  // ✅ 處理拖曳排序
+const handleDragEnd = (event: any) => {
+  const { active, over } = event;
+
+  if (over && active.id !== over.id) {
+    setUploadedImages((items) => {
+      const oldIndex = items.indexOf(active.id);
+      const newIndex = items.indexOf(over.id);
+      
+      return arrayMove(items, oldIndex, newIndex);
+    });
+  }
+};
 
   // 刪除圖片（呼叫後端 API）
 const handleRemoveImage = async (index: number) => {
@@ -383,24 +458,34 @@ const handleRemoveImage = async (index: number) => {
                 </p>
               </div>
 
-              {/* 已上傳的圖片預覽 */}
-              {uploadedImages.length > 0 && (
-                <div className="uploaded-images">
-                  {uploadedImages.map((url, index) => (
-                    <div key={index} className="image-preview-item">
-                      <img src={url} alt={`預覽 ${index + 1}`} />
-                      <button
-                        type="button"
-                        className="remove-image-btn"
-                        onClick={() => handleRemoveImage(index)}
+              {/* ✅ 已上傳的圖片預覽（支援拖曳排序） */}
+                {uploadedImages.length > 0 && (
+                  <div className="uploaded-images-container">
+                    <p className="drag-hint">💡 拖曳圖片可調整順序，第一張為主圖</p>
+                    
+                    <DndContext 
+                      sensors={sensors}
+                      collisionDetection={closestCenter}
+                      onDragEnd={handleDragEnd}
+                    >
+                      <SortableContext 
+                        items={uploadedImages}
+                        strategy={horizontalListSortingStrategy}
                       >
-                        <Trash2 size={16} />
-                      </button>
-                      {index === 0 && <span className="main-badge">主圖</span>}
-                    </div>
-                  ))}
-                </div>
-              )}
+                        <div className="uploaded-images">
+                          {uploadedImages.map((url, index) => (
+                            <SortableImage
+                              key={url}
+                              url={url}
+                              index={index}
+                              onRemove={handleRemoveImage}
+                            />
+                          ))}
+                        </div>
+                      </SortableContext>
+                    </DndContext>
+                  </div>
+                )}
             </div>
 
             <div className="form-group">
