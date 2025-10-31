@@ -2,6 +2,12 @@
 import React, { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ShoppingCart, ArrowLeft, Star } from 'lucide-react';
+import { Swiper, SwiperSlide } from 'swiper/react';
+import { Navigation, Pagination, Thumbs } from 'swiper/modules';
+import 'swiper/css';
+import 'swiper/css/navigation';
+import 'swiper/css/pagination';
+import 'swiper/css/thumbs';
 import './ProductDetailPage.css';
 
 interface Product {
@@ -30,6 +36,7 @@ const ProductDetailPage: React.FC = () => {
   const [product, setProduct] = useState<Product | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [loading, setLoading] = useState(true);
+  const [thumbsSwiper, setThumbsSwiper] = useState<any>(null);
 
   useEffect(() => {
     const loadProduct = async () => {
@@ -112,15 +119,56 @@ const ProductDetailPage: React.FC = () => {
 
       <div className="product-detail-container">
         <div className="product-image-section">
-          <img 
-  src={
-    product.images && product.images.length > 0 
-      ? product.images[0].image_url 
-      : 'https://via.placeholder.com/500'
-  } 
-  alt={product.name}
-  className="main-product-image"
-/>
+          {/* 主圖輪播 */}
+          <Swiper
+            modules={[Navigation, Pagination, Thumbs]}
+            navigation
+            pagination={{ clickable: true }}
+            thumbs={{ swiper: thumbsSwiper && !thumbsSwiper.destroyed ? thumbsSwiper : null }}
+            className="main-swiper"
+          >
+            {product.images && product.images.length > 0 ? (
+              product.images.map((img, index) => (
+                <SwiperSlide key={img.id || index}>
+                  <img 
+                    src={img.image_url} 
+                    alt={`${product.name} - 圖片 ${index + 1}`}
+                    className="main-product-image"
+                  />
+                </SwiperSlide>
+              ))
+            ) : (
+              <SwiperSlide>
+                <img 
+                  src="https://via.placeholder.com/500" 
+                  alt={product.name}
+                  className="main-product-image"
+                />
+              </SwiperSlide>
+            )}
+          </Swiper>
+
+          {/* 縮圖輪播 */}
+          {product.images && product.images.length > 1 && (
+            <Swiper
+              onSwiper={setThumbsSwiper}
+              modules={[Thumbs]}
+              spaceBetween={10}
+              slidesPerView={4}
+              watchSlidesProgress
+              className="thumbs-swiper"
+            >
+              {product.images.map((img, index) => (
+                <SwiperSlide key={img.id || index}>
+                  <img 
+                    src={img.image_url} 
+                    alt={`縮圖 ${index + 1}`}
+                    className="thumb-image"
+                  />
+                </SwiperSlide>
+              ))}
+            </Swiper>
+          )}
         </div>
 
         <div className="product-info-section">
