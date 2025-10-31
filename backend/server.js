@@ -21,8 +21,8 @@ app.use(cors({
     : ['http://localhost:3000'],
   credentials: true
 }));
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
 // 設定靜態檔案路徑
 app.use('/uploads', express.static('public/uploads'));

@@ -22,6 +22,8 @@ interface ProductModalProps {
 
 const ProductModal: React.FC<ProductModalProps> = ({ product, onClose, onSave }) => {
   const categories = ['服飾', '電子產品', '食品', '配件', '居家用品'];
+  const MAX_IMAGES = 8; // ← 加這行
+  const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB ← 加這行
 
   const [formData, setFormData] = useState<Partial<Product>>({
     name: '',
@@ -57,6 +59,24 @@ const ProductModal: React.FC<ProductModalProps> = ({ product, onClose, onSave })
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = e.target.files;
     if (!files || files.length === 0) return;
+
+    if (uploadedImages.length + files.length > MAX_IMAGES) {
+    alert(`最多只能上傳 ${MAX_IMAGES} 張圖片！目前已有 ${uploadedImages.length} 張`);
+    e.target.value = '';
+    return;
+  }
+  for (let i = 0; i < files.length; i++) {
+    if (files[i].size > MAX_FILE_SIZE) {
+      alert(
+        `圖片 ${files[i].name} 太大！\n\n` +
+        `檔案大小：${(files[i].size / 1024 / 1024).toFixed(2)} MB\n` +
+        `最大限制：5 MB\n\n` +
+        `請壓縮後再上傳。`
+      );
+      e.target.value = '';
+      return;
+    }
+  }
 
     setUploading(true);
 
@@ -95,6 +115,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ product, onClose, onSave })
       alert('圖片上傳失敗，請稍後再試');
     } finally {
       setUploading(false);
+      e.target.value = ''; // ← 加這行
     }
   };
 
@@ -332,22 +353,34 @@ const handleRemoveImage = async (index: number) => {
               </label>
               
               <div className="image-upload-area">
-                <input
-                  type="file"
-                  id="image-upload"
-                  accept="image/*"
-                  multiple
-                  onChange={handleImageUpload}
-                  style={{ display: 'none' }}
-                  disabled={uploading || loading}
-                />
-                
-                <label htmlFor="image-upload" className="upload-button">
-                  <Upload className="upload-icon" />
-                  {uploading ? '上傳中...' : '點擊上傳圖片'}
-                </label>
-                
-                <p className="upload-hint">支援 JPG, PNG 格式，最多 5 張</p>
+            <input
+              type="file"
+              id="image-upload"
+              accept="image/*"
+              multiple
+              onChange={handleImageUpload}
+              style={{ display: 'none' }}
+              disabled={uploading || loading || uploadedImages.length >= MAX_IMAGES}
+            />
+  
+              <label 
+                htmlFor="image-upload" 
+                className="upload-button"
+                style={{
+                  cursor: uploadedImages.length >= MAX_IMAGES ? 'not-allowed' : 'pointer',
+                  opacity: uploadedImages.length >= MAX_IMAGES ? 0.5 : 1
+                }}
+                          >
+                <Upload className="upload-icon" />
+                {uploading ? '上傳中...' : 
+                uploadedImages.length >= MAX_IMAGES ? '已達上限' :
+                '點擊上傳圖片（可多選）'}
+              </label>
+  
+                <p className="upload-hint">
+                  支援 JPG, PNG 格式，最多 8 張，每張限制 5MB
+                  {uploadedImages.length > 0 && ` (已上傳 ${uploadedImages.length}/8)`}
+                </p>
               </div>
 
               {/* 已上傳的圖片預覽 */}
