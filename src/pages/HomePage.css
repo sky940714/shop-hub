@@ -365,6 +365,13 @@
   font-size: 0.875rem;
   color: #4b5563;
   margin-bottom: 0.5rem;
+  display: -webkit-box;
+  -webkit-lineclamp: 2;  /* ✅ 正確 */
+  -webkit-boxorient: vertical;  /* ✅ 正確 */
+  overflow: hidden;
+  text-overflow: ellipsis;
+  line-height: 1.5;
+  max-height: 2.625rem;  /* 2行的高度 (0.875rem * 1.5行高 * 2行) */
 }
 
 .product-rating {

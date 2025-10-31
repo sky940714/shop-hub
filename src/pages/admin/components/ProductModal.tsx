@@ -1,4 +1,4 @@
-// pages/admin/components/ProductModal.tsx
+// pages/admin/components/ProductModal.tsx 商品上傳頁面
 import React, { useState, useEffect } from 'react';
 import { X, Upload, Trash2 } from 'lucide-react';
 import '../styles/ProductModal.css';
@@ -98,10 +98,55 @@ const ProductModal: React.FC<ProductModalProps> = ({ product, onClose, onSave })
     }
   };
 
-  // 刪除圖片
-  const handleRemoveImage = (index: number) => {
-    setUploadedImages(prev => prev.filter((_, i) => i !== index));
-  };
+  // 刪除圖片（呼叫後端 API）
+const handleRemoveImage = async (index: number) => {
+  const imageUrl = uploadedImages[index];
+  
+  console.log('🗑️ 準備刪除圖片：', imageUrl);
+  
+  try {
+    const token = localStorage.getItem('token');
+
+    if (!token) {
+      alert('請先登入');
+      return;
+    }
+
+    // 呼叫後端刪除 API
+    const response = await fetch('http://45.32.24.240/api/upload/image', {
+      method: 'DELETE',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify({ imageUrl })
+    });
+
+    const data = await response.json();
+    console.log('📥 後端回應：', data);
+
+    if (data.success) {
+      console.log('✅ 伺服器檔案已刪除');
+      
+      // 從前端狀態移除
+      setUploadedImages(prev => prev.filter((_, i) => i !== index));
+      
+      // 清空 file input
+      const fileInput = document.getElementById('image-upload') as HTMLInputElement;
+      if (fileInput) {
+        fileInput.value = '';
+      }
+      
+    } else {
+      console.log('❌ 刪除失敗：', data.message);
+      alert('刪除失敗：' + data.message);
+    }
+
+  } catch (error) {
+    console.error('❌ 刪除圖片時發生錯誤：', error);
+    alert('刪除失敗，請檢查網路連線');
+  }
+};
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
