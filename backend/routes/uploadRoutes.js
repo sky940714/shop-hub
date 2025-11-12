@@ -8,7 +8,7 @@ const path = require('path');  // ← 新增：用於處理路徑
 
 /**
  * @desc    上傳單張圖片
- * @route   POST /api/upload/image
+ * @route   POST /api/upload/images
  * @access  Private（需要登入）
  */
 router.post('/image', protect, upload.single('image'), (req, res) => {

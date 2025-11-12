@@ -117,15 +117,16 @@ const sensors = useSensors(
   };
 
   // 處理圖片上傳
-  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const files = e.target.files;
-    if (!files || files.length === 0) return;
+const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+  const files = e.target.files;
+  if (!files || files.length === 0) return;
 
-    if (uploadedImages.length + files.length > MAX_IMAGES) {
+  if (uploadedImages.length + files.length > MAX_IMAGES) {
     alert(`最多只能上傳 ${MAX_IMAGES} 張圖片！目前已有 ${uploadedImages.length} 張`);
     e.target.value = '';
     return;
   }
+
   for (let i = 0; i < files.length; i++) {
     if (files[i].size > MAX_FILE_SIZE) {
       alert(
@@ -139,46 +140,44 @@ const sensors = useSensors(
     }
   }
 
-    setUploading(true);
+  setUploading(true);
 
-    try {
-      const token = localStorage.getItem('token');
-      const newImageUrls: string[] = [];
+  try {
+    const token = localStorage.getItem('token');
+    
+    // ⭐ 改成一次上傳所有圖片
+    const formData = new FormData();
+    Array.from(files).forEach(file => {
+      formData.append('images', file);  // 用 'images' 複數
+    });
 
-      // 逐一上傳每張圖片
-      for (let i = 0; i < files.length; i++) {
-        const formData = new FormData();
-        formData.append('images', files[i]);
+    // ⭐ 使用 /images 端點（複數）
+    const response = await fetch('http://45.32.24.240/api/upload/images', {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      },
+      body: formData
+    });
 
-        const response = await fetch('http://45.32.24.240/api/upload/image', {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`
-          },
-          body: formData
-        });
+    const data = await response.json();
 
-        const data = await response.json();
-
-        if (data.success) {
-          newImageUrls.push(data.imageUrl);
-        } else {
-          alert(`圖片 ${files[i].name} 上傳失敗：${data.message}`);
-        }
-      }
-
-      // 更新已上傳的圖片列表
-      setUploadedImages(prev => [...prev, ...newImageUrls]);
+    if (data.success) {
+      // ⭐ 後端回傳的是 imageUrls（陣列）
+      setUploadedImages(prev => [...prev, ...data.imageUrls]);
       alert('圖片上傳成功！');
-
-    } catch (error) {
-      console.error('上傳失敗：', error);
-      alert('圖片上傳失敗，請稍後再試');
-    } finally {
-      setUploading(false);
-      e.target.value = ''; // ← 加這行
+    } else {
+      alert(`上傳失敗：${data.message}`);
     }
-  };
+
+  } catch (error) {
+    console.error('上傳失敗：', error);
+    alert('圖片上傳失敗，請稍後再試');
+  } finally {
+    setUploading(false);
+    e.target.value = '';
+  }
+};
 
   // ✅ 處理拖曳排序
 const handleDragEnd = (event: any) => {
