@@ -43,7 +43,7 @@ router.post('/image', protect, upload.single('image'), (req, res) => {
  * @route   POST /api/upload/images
  * @access  Private（需要登入）
  */
-router.post('/images', protect, upload.array('images', 5), (req, res) => {
+router.post('/images', protect, upload.array('images', 8), (req, res) => {
   try {
     if (!req.files || req.files.length === 0) {
       return res.status(400).json({

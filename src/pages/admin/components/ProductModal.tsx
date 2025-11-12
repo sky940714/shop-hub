@@ -148,7 +148,7 @@ const sensors = useSensors(
       // 逐一上傳每張圖片
       for (let i = 0; i < files.length; i++) {
         const formData = new FormData();
-        formData.append('image', files[i]);
+        formData.append('images', files[i]);
 
         const response = await fetch('http://45.32.24.240/api/upload/image', {
           method: 'POST',

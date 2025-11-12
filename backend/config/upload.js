@@ -40,7 +40,9 @@ const fileFilter = (req, file, cb) => {
 const upload = multer({
   storage: storage,
   limits: {
-    fileSize: 5 * 1024 * 1024 // 限制 5MB
+    fileSize: 5 * 1024 * 1024, // 單檔限制 5MB
+    files: 8,                   // ← 新增：最多 8 個檔案
+    fieldSize: 50 * 1024 * 1024 // ← 新增：總大小限制 50MB
   },
   fileFilter: fileFilter
 });
