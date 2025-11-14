@@ -100,11 +100,44 @@ const sensors = useSensors(
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
 
-  useEffect(() => {
-    if (product) {
-      setFormData(product);
+  // ⭐ 新增：取得商品圖片的函式
+const fetchProductImages = async (productId: string) => {
+  try {
+    const token = localStorage.getItem('token');
+    
+    const response = await fetch(`http://45.32.24.240/api/products/${productId}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    
+    const data = await response.json();
+    
+    if (data.success && data.product.images && data.product.images.length > 0) {
+      // 按 sort_order 排序，然後提取 image_url
+      const imageUrls = data.product.images
+        .sort((a: any, b: any) => a.sort_order - b.sort_order)
+        .map((img: any) => img.image_url);
+      
+      setUploadedImages(imageUrls);
+      console.log('✅ 已載入', imageUrls.length, '張商品圖片');
     }
-  }, [product]);
+  } catch (error) {
+    console.error('❌ 載入商品圖片失敗：', error);
+  }
+};
+
+useEffect(() => {
+  if (product) {
+    setFormData(product);
+    
+    // ⭐ 載入商品的圖片
+    fetchProductImages(product.id);
+  } else {
+    // 如果是新增模式，清空圖片
+    setUploadedImages([]);
+  }
+}, [product]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
