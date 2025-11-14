@@ -1,5 +1,16 @@
 /* src/pages/ProductDetailPage.css */
 
+/* 防止所有元素超出容器 */
+* {
+  box-sizing: border-box;
+  max-width: 100%;
+}
+
+html, body {
+  overflow-x: hidden;
+  width: 100%;
+}
+
 /* 基礎重置 */
 * {
   box-sizing: border-box;
@@ -42,6 +53,7 @@
   padding: 30px;
   border-radius: 12px;
   box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  box-sizing: border-box; 
 }
 
 /* ===================================
@@ -396,21 +408,32 @@
   }
 
   .product-detail-container {
-    grid-template-columns: 1fr;  /* ← 改成單欄 */
+    grid-template-columns: 1fr;
     gap: 20px;
     padding: 16px;
+    max-width: 100%;  /* ← 確保不超出 */
   }
 
   /* 圖片區域 */
+  .product-image-section {
+    max-width: 100%;  /* ← 加這行 */
+  }
+
   .main-swiper {
     height: 300px;
+    max-width: 100%;  /* ← 加這行 */
   }
 
   .thumbs-swiper {
     height: 70px;
+    max-width: 100%;  /* ← 加這行 */
   }
 
   /* 商品資訊 */
+  .product-info-section {
+    max-width: 100%;  /* ← 加這行 */
+  }
+
   .product-title {
     font-size: 20px;
   }
