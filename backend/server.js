@@ -8,6 +8,7 @@ const authRoutes = require('./routes/authRoutes');
 const errorHandler = require('./middleware/errorHandler');
 const productRoutes = require('./routes/productRoutes');
 const uploadRoutes = require('./routes/uploadRoutes');
+const cartRoutes = require('./routes/cartRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 5001;
@@ -23,6 +24,7 @@ app.use(cors({
 }));
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
+
 
 // 設定靜態檔案路徑
 app.use('/uploads', express.static('public/uploads'));
@@ -53,6 +55,7 @@ app.get('/api/health', (req, res) => {
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
 app.use('/api/upload', uploadRoutes);  // ← 加這行！
+app.use('/api/cart', cartRoutes); 
 
 // ==========================================
 // 404 處理（必須放在所有路由之後）
