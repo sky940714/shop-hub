@@ -9,6 +9,7 @@ import LoginPage from './pages/LoginPage';
 import AdminLayout from './pages/admin/AdminLayout';
 import ProtectedRoute from './components/ProtectedRoute';
 import ProductDetailPage from './pages/ProductDetailPage';
+import { CartProvider } from './context/CartContext'; 
 
 function App() {
   return (

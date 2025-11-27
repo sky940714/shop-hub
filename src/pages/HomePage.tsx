@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ShoppingCart, Search, Menu, X, Home, Heart, User } from 'lucide-react';
+import { useCart } from '../context/CartContext';
 import './HomePage.css';
 
 interface Product {
@@ -15,14 +16,10 @@ interface Product {
   description: string;
 }
 
-interface CartItem extends Product {
-  quantity: number;
-}
-
 const HomePage: React.FC = () => {
-const navigate = useNavigate(); 
+  const navigate = useNavigate();
   // 狀態管理
-  const [cart, setCart] = useState<CartItem[]>([]);
+  const { cartCount, cartItems, addToCart, removeFromCart, updateQuantity } = useCart();  // ← 加這行
   const [wishlist, setWishlist] = useState<number[]>([]);
   const [currentCategory, setCurrentCategory] = useState<string>('all');
   const [searchTerm, setSearchTerm] = useState<string>('');
@@ -30,45 +27,45 @@ const navigate = useNavigate();
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
   const [products, setProducts] = useState<Product[]>([]);
 
-useEffect(() => {
-  fetchProducts();
-}, []);
+  useEffect(() => {
+    fetchProducts();
+  }, []);
 
-const fetchProducts = async () => {
-  try {
-    const response = await fetch('http://45.32.24.240/api/products/published');
-    const data = await response.json();
+  const fetchProducts = async () => {
+    try {
+      const response = await fetch('http://45.32.24.240/api/products/published');
+      const data = await response.json();
 
-    if (data.success) {
-      const formattedProducts = data.products.map((product: any) => ({
-        id: product.id,
-        name: product.name,
-        price: parseFloat(product.price),
-        originalPrice: null,
-        image: product.main_image || 'https://via.placeholder.com/400',  // ← 改這裡！
-        category: getCategoryId(product.category_id),
-        rating: 4.5,
-        reviews: 0,
-        description: product.description || '暫無描述'
-      }));
+      if (data.success) {
+        const formattedProducts = data.products.map((product: any) => ({
+          id: product.id,
+          name: product.name,
+          price: parseFloat(product.price),
+          originalPrice: null,
+          image: product.main_image || 'https://via.placeholder.com/400',  // ← 改這裡！
+          category: getCategoryId(product.category_id),
+          rating: 4.5,
+          reviews: 0,
+          description: product.description || '暫無描述'
+        }));
 
-      setProducts(formattedProducts);
+        setProducts(formattedProducts);
+      }
+    } catch (error) {
+      console.error('讀取商品失敗：', error);
     }
-  } catch (error) {
-    console.error('讀取商品失敗：', error);
-  }
-};
-
-const getCategoryId = (categoryId: number): string => {
-  const categoryMap: { [key: number]: string } = {
-    1: 'clothing',
-    2: 'electronics',
-    3: 'food',
-    4: 'accessories',
-    5: 'home'
   };
-  return categoryMap[categoryId] || 'clothing';
-};
+
+  const getCategoryId = (categoryId: number): string => {
+    const categoryMap: { [key: number]: string } = {
+      1: 'clothing',
+      2: 'electronics',
+      3: 'food',
+      4: 'accessories',
+      5: 'home'
+    };
+    return categoryMap[categoryId] || 'clothing';
+  };
 
   const categories = [
     { id: 'all', name: '全部商品' },
@@ -86,43 +83,14 @@ const getCategoryId = (categoryId: number): string => {
     return matchesCategory && matchesSearch;
   });
 
-  // 購物車功能
-  const addToCart = (product: Product) => {
-    setCart(prevCart => {
-      const existing = prevCart.find(item => item.id === product.id);
-      if (existing) {
-        return prevCart.map(item =>
-          item.id === product.id ? { ...item, quantity: item.quantity + 1 } : item
-        );
-      }
-      return [...prevCart, { ...product, quantity: 1 }];
-    });
-  };
-
-  const removeFromCart = (productId: number) => {
-    setCart(prevCart => prevCart.filter(item => item.id !== productId));
-  };
-
-  const updateQuantity = (productId: number, newQuantity: number) => {
-    if (newQuantity === 0) {
-      removeFromCart(productId);
-      return;
-    }
-    setCart(prevCart =>
-      prevCart.map(item =>
-        item.id === productId ? { ...item, quantity: newQuantity } : item
-      )
-    );
-  };
-
   const toggleWishlist = (productId: number) => {
     setWishlist(prev =>
       prev.includes(productId) ? prev.filter(id => id !== productId) : [...prev, productId]
     );
   };
 
-  const totalItems = cart.reduce((sum, item) => sum + item.quantity, 0);
-  const totalPrice = cart.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const totalItems = cartCount;  // ← 直接用 Context 的 cartCount
+  const totalPrice = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);  // ← 改用 cartItems
 
   return (
     <div className="home-page">
@@ -222,11 +190,11 @@ const getCategoryId = (categoryId: number): string => {
           ) : (
             filteredProducts.map(product => (
               <div key={product.id} className="product-card">
-                <div 
+                <div
                   className="product-image-container"
                   onClick={() => navigate(`/product/${product.id}`)}
                   style={{ cursor: 'pointer' }}
-              >
+                >
                   <img src={product.image} alt={product.name} className="product-image" />
                   <button
                     onClick={() => toggleWishlist(product.id)}
@@ -238,8 +206,8 @@ const getCategoryId = (categoryId: number): string => {
                 </div>
 
                 <div className="product-info">
-                  <h3 
-                    className="product-name" 
+                  <h3
+                    className="product-name"
                     onClick={() => navigate(`/product/${product.id}`)}
                     style={{ cursor: 'pointer' }}
                   >
@@ -260,7 +228,7 @@ const getCategoryId = (categoryId: number): string => {
                         </span>
                       )}
                     </div>
-                    <button onClick={() => addToCart(product)} className="add-to-cart-button">
+                    <button onClick={() => addToCart(product.id, 1)} className="add-to-cart-button">
                       加入購物車
                     </button>
                   </div>
@@ -283,33 +251,33 @@ const getCategoryId = (categoryId: number): string => {
             </div>
 
             <div className="cart-items">
-              {cart.length === 0 ? (
+              {cartItems.length === 0 ? (
                 <p className="empty-cart">購物車是空的</p>
               ) : (
                 <div className="cart-items-list">
-                  {cart.map(item => (
-                    <div key={item.id} className="cart-item">
-                      <img src={item.image} alt={item.name} className="cart-item-image" />
+                  {cartItems.map(item => (
+                    <div key={item.cart_item_id} className="cart-item">
+                      <img src={item.image_url} alt={item.name} className="cart-item-image" />
                       <div className="cart-item-info">
                         <h4 className="cart-item-name">{item.name}</h4>
                         <p className="cart-item-price">NT$ {item.price.toLocaleString()}</p>
                         <div className="quantity-controls">
                           <button
-                            onClick={() => updateQuantity(item.id, item.quantity - 1)}
+                            onClick={() => updateQuantity(item.cart_item_id, item.quantity - 1)}
                             className="quantity-button"
                           >
                             -
                           </button>
                           <span className="quantity">{item.quantity}</span>
                           <button
-                            onClick={() => updateQuantity(item.id, item.quantity + 1)}
+                            onClick={() => updateQuantity(item.cart_item_id, item.quantity + 1)}
                             className="quantity-button"
                           >
                             +
                           </button>
                         </div>
                       </div>
-                      <button onClick={() => removeFromCart(item.id)} className="remove-button">
+                      <button onClick={() => removeFromCart(item.cart_item_id)} className="remove-button">
                         <X size={20} />
                       </button>
                     </div>
@@ -318,7 +286,7 @@ const getCategoryId = (categoryId: number): string => {
               )}
             </div>
 
-            {cart.length > 0 && (
+            {cartItems.length > 0 && (
               <div className="cart-footer">
                 <div className="cart-total">
                   <span className="total-label">總計:</span>
@@ -371,33 +339,8 @@ const getCategoryId = (categoryId: number): string => {
           </div>
         </div>
       </footer>
-
-      {/* 底部導航 */}
-      <nav className="bottom-nav-bar">
-        <Link to="/" className="nav-item-link active">
-          <Home size={24} />
-          <span>首頁</span>
-        </Link>
-        <Link to="/wishlist" className="nav-item-link">
-          <Heart size={24} />
-          <span>最愛</span>
-        </Link>
-        <button onClick={() => setIsCartOpen(true)} className="nav-item-link">
-          <ShoppingCart size={24} />
-          {totalItems > 0 && <span className="cart-count-badge">{totalItems}</span>}
-          <span>購物車</span>
-        </button>
-        <Link to="/search" className="nav-item-link">
-          <Search size={24} />
-          <span>搜尋</span>
-        </Link>
-        <Link to="/member" className="nav-item-link">
-          <User size={24} />
-          <span>會員</span>
-        </Link>
-      </nav>
-    </div>
+      </div>
   );
-};
+}
 
-export default HomePage;
+      export default HomePage;
