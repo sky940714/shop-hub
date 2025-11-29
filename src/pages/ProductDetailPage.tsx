@@ -121,12 +121,13 @@ const ProductDetailPage: React.FC = () => {
         <div className="product-image-section">
           {/* 主圖輪播 */}
           <Swiper
-            modules={[Navigation, Pagination, Thumbs]}
-            navigation
-            pagination={{ clickable: true }}
-            thumbs={{ swiper: thumbsSwiper && !thumbsSwiper.destroyed ? thumbsSwiper : null }}
-            className="main-swiper"
-          >
+              modules={[Navigation, Pagination, Thumbs]}
+              navigation
+              pagination={{ clickable: true }}
+              thumbs={{ swiper: thumbsSwiper && !thumbsSwiper.destroyed ? thumbsSwiper : null }}
+              className="main-swiper"
+              style={{ maxWidth: '100%', width: '100%' }}
+            >
             {product.images && product.images.length > 0 ? (
               product.images.map((img, index) => (
                 <SwiperSlide key={img.id || index}>
@@ -151,13 +152,14 @@ const ProductDetailPage: React.FC = () => {
           {/* 縮圖輪播 */}
           {product.images && product.images.length > 1 && (
             <Swiper
-              onSwiper={setThumbsSwiper}
-              modules={[Thumbs]}
-              spaceBetween={10}
-              slidesPerView={4}
-              watchSlidesProgress
-              className="thumbs-swiper"
-            >
+                onSwiper={setThumbsSwiper}
+                modules={[Thumbs]}
+                spaceBetween={10}
+                slidesPerView={4}
+                watchSlidesProgress
+                className="thumbs-swiper"
+                style={{ maxWidth: '100%', width: '100%' }}
+              >
               {product.images.map((img, index) => (
                 <SwiperSlide key={img.id || index}>
                   <img 
