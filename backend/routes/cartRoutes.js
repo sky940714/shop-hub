@@ -5,12 +5,12 @@ const db = require('../config/database');
 const { protect } = require('../middleware/auth');
 
 // ========================================
-// 輔助函式：獲取或建立使用者的購物車
+// 輔助函式:獲取或建立使用者的購物車
 // ========================================
 async function getOrCreateCart(userId) {
   try {
     // 檢查使用者是否已有購物車
-    const [carts] = await db.query(
+    const carts = await db.query(
       'SELECT id FROM carts WHERE user_id = ?',
       [userId]
     );
@@ -19,8 +19,8 @@ async function getOrCreateCart(userId) {
       return carts[0].id;
     }
 
-    // 如果沒有，建立新購物車
-    const [result] = await db.query(
+    // 如果沒有,建立新購物車
+    const result = await db.query(
       'INSERT INTO carts (user_id) VALUES (?)',
       [userId]
     );
@@ -28,7 +28,7 @@ async function getOrCreateCart(userId) {
     return result.insertId;
 
   } catch (error) {
-    console.error('獲取或建立購物車失敗：', error);
+    console.error('獲取或建立購物車失敗:', error);
     throw error;
   }
 }
@@ -44,7 +44,7 @@ router.get('/', protect, async (req, res) => {
     // 獲取或建立購物車
     const cartId = await getOrCreateCart(userId);
 
-    // 查詢購物車商品（JOIN 三個表）
+    // 查詢購物車商品(JOIN 三個表)
     const query = `
       SELECT 
         ci.id as cart_item_id,
@@ -65,7 +65,7 @@ router.get('/', protect, async (req, res) => {
       ORDER BY ci.id DESC
     `;
 
-    const [items] = await db.query(query, [cartId]);
+    const items = await db.query(query, [cartId]);
 
     // 計算總價
     const total = items.reduce((sum, item) => {
@@ -89,7 +89,7 @@ router.get('/', protect, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('獲取購物車失敗：', error);
+    console.error('獲取購物車失敗:', error);
     res.status(500).json({ 
       success: false, 
       message: '獲取購物車失敗' 
@@ -107,7 +107,7 @@ router.post('/add', protect, async (req, res) => {
     const userId = req.user.id;
     const { product_id, quantity = 1 } = req.body;
 
-    console.log('📦 加入購物車請求：', { userId, product_id, quantity });
+    console.log('📦 加入購物車請求:', { userId, product_id, quantity });
 
     // 驗證輸入
     if (!product_id) {
@@ -125,7 +125,7 @@ router.post('/add', protect, async (req, res) => {
     }
 
     // 檢查商品是否存在
-    const [products] = await db.query(
+    const products = await db.query(
       'SELECT id, name, price, stock, status FROM products WHERE id = ?',
       [product_id]
     );
@@ -138,7 +138,7 @@ router.post('/add', protect, async (req, res) => {
     }
 
     const product = products[0];
-    console.log('📦 商品資訊：', product);
+    console.log('📦 商品資訊:', product);
 
     // 檢查商品狀態
     if (product.status !== '上架') {
@@ -152,16 +152,16 @@ router.post('/add', protect, async (req, res) => {
     if (product.stock < quantity) {
       return res.status(400).json({ 
         success: false, 
-        message: `庫存不足，目前庫存：${product.stock}` 
+        message: `庫存不足,目前庫存:${product.stock}` 
       });
     }
 
     // 獲取或建立購物車
     const cartId = await getOrCreateCart(userId);
-    console.log('🛒 購物車 ID：', cartId);
+    console.log('🛒 購物車 ID:', cartId);
 
     // 檢查購物車是否已有此商品
-    const [existingItems] = await db.query(
+    const existingItems = await db.query(
       'SELECT id, quantity FROM cart_items WHERE cart_id = ? AND product_id = ?',
       [cartId, product_id]
     );
@@ -173,7 +173,7 @@ router.post('/add', protect, async (req, res) => {
       if (newQuantity > product.stock) {
         return res.status(400).json({ 
           success: false, 
-          message: `超過庫存數量，目前庫存：${product.stock}` 
+          message: `超過庫存數量,目前庫存:${product.stock}` 
         });
       }
 
@@ -182,11 +182,11 @@ router.post('/add', protect, async (req, res) => {
         [newQuantity, existingItems[0].id]
       );
 
-      console.log('✅ 更新購物車數量：', newQuantity);
+      console.log('✅ 更新購物車數量:', newQuantity);
 
       res.json({ 
         success: true, 
-        message: `已更新購物車，目前數量：${newQuantity}`,
+        message: `已更新購物車,目前數量:${newQuantity}`,
         action: 'updated',
         quantity: newQuantity
       });
@@ -209,10 +209,10 @@ router.post('/add', protect, async (req, res) => {
     }
 
   } catch (error) {
-    console.error('❌ 加入購物車失敗：', error);
+    console.error('❌ 加入購物車失敗:', error);
     res.status(500).json({ 
       success: false, 
-      message: '加入購物車失敗，請稍後再試' 
+      message: '加入購物車失敗,請稍後再試' 
     });
   }
 });
@@ -228,7 +228,7 @@ router.put('/update/:id', protect, async (req, res) => {
     const cartItemId = req.params.id;
     const { quantity } = req.body;
 
-    console.log('🔄 更新購物車請求：', { userId, cartItemId, quantity });
+    console.log('🔄 更新購物車請求:', { userId, cartItemId, quantity });
 
     if (!quantity || quantity < 1) {
       return res.status(400).json({ 
@@ -241,7 +241,7 @@ router.put('/update/:id', protect, async (req, res) => {
     const cartId = await getOrCreateCart(userId);
 
     // 檢查是否為該使用者的購物車項目
-    const [cartItems] = await db.query(
+    const cartItems = await db.query(
       `SELECT ci.*, p.stock, p.status, p.name
        FROM cart_items ci 
        JOIN products p ON ci.product_id = p.id 
@@ -257,7 +257,7 @@ router.put('/update/:id', protect, async (req, res) => {
     }
 
     const item = cartItems[0];
-    console.log('📦 商品資訊：', item);
+    console.log('📦 商品資訊:', item);
 
     // 檢查商品狀態
     if (item.status !== '上架') {
@@ -271,7 +271,7 @@ router.put('/update/:id', protect, async (req, res) => {
     if (quantity > item.stock) {
       return res.status(400).json({ 
         success: false, 
-        message: `超過庫存數量，目前庫存：${item.stock}` 
+        message: `超過庫存數量,目前庫存:${item.stock}` 
       });
     }
 
@@ -281,7 +281,7 @@ router.put('/update/:id', protect, async (req, res) => {
       [quantity, cartItemId]
     );
 
-    console.log('✅ 數量已更新：', quantity);
+    console.log('✅ 數量已更新:', quantity);
 
     res.json({ 
       success: true, 
@@ -289,7 +289,7 @@ router.put('/update/:id', protect, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('❌ 更新數量失敗：', error);
+    console.error('❌ 更新數量失敗:', error);
     res.status(500).json({ 
       success: false, 
       message: '更新數量失敗' 
@@ -306,13 +306,13 @@ router.delete('/remove/:id', protect, async (req, res) => {
     const userId = req.user.id;
     const cartItemId = req.params.id;
 
-    console.log('🗑️ 刪除購物車項目：', { userId, cartItemId });
+    console.log('🗑️ 刪除購物車項目:', { userId, cartItemId });
 
     // 獲取使用者的購物車 ID
     const cartId = await getOrCreateCart(userId);
 
     // 檢查是否為該使用者的購物車項目
-    const [cartItems] = await db.query(
+    const cartItems = await db.query(
       'SELECT * FROM cart_items WHERE id = ? AND cart_id = ?',
       [cartItemId, cartId]
     );
@@ -335,7 +335,7 @@ router.delete('/remove/:id', protect, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('❌ 刪除失敗：', error);
+    console.error('❌ 刪除失敗:', error);
     res.status(500).json({ 
       success: false, 
       message: '刪除失敗' 
@@ -351,7 +351,7 @@ router.delete('/clear', protect, async (req, res) => {
   try {
     const userId = req.user.id;
 
-    console.log('🧹 清空購物車：', { userId });
+    console.log('🧹 清空購物車:', { userId });
 
     // 獲取使用者的購物車 ID
     const cartId = await getOrCreateCart(userId);
@@ -367,7 +367,7 @@ router.delete('/clear', protect, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('❌ 清空購物車失敗：', error);
+    console.error('❌ 清空購物車失敗:', error);
     res.status(500).json({ 
       success: false, 
       message: '清空購物車失敗' 
@@ -376,7 +376,7 @@ router.delete('/clear', protect, async (req, res) => {
 });
 
 // ========================================
-// 6. 獲取購物車商品數量（用於導航欄顯示）
+// 6. 獲取購物車商品數量(用於導航欄顯示)
 // GET /api/cart/count
 // ========================================
 router.get('/count', protect, async (req, res) => {
@@ -386,8 +386,8 @@ router.get('/count', protect, async (req, res) => {
     // 獲取或建立購物車
     const cartId = await getOrCreateCart(userId);
 
-    // 計算總數量（所有商品的 quantity 總和）
-    const [result] = await db.query(
+    // 計算總數量(所有商品的 quantity 總和)
+    const result = await db.query(
       'SELECT COALESCE(SUM(quantity), 0) as count FROM cart_items WHERE cart_id = ?',
       [cartId]
     );
@@ -400,7 +400,7 @@ router.get('/count', protect, async (req, res) => {
     });
 
   } catch (error) {
-    console.error('❌ 獲取購物車數量失敗：', error);
+    console.error('❌ 獲取購物車數量失敗:', error);
     res.status(500).json({ 
       success: false, 
       message: '獲取購物車數量失敗',
