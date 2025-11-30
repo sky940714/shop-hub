@@ -456,7 +456,7 @@ html, body {
     box-sizing: border-box !important;
   }
 
-  /* 主圖輪播 - 縮小高度 */
+  /* 主圖輪播容器 */
   .product-detail-page .main-swiper {
     height: 280px !important;
     max-height: 280px !important;
@@ -466,9 +466,24 @@ html, body {
     border-radius: 8px !important;
   }
 
+  /* 強制覆蓋 Swiper 內部元素 */
+  .product-detail-page .main-swiper .swiper-wrapper {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
   .product-detail-page .main-swiper .swiper-slide {
+    width: 100% !important;
+    max-width: 100% !important;
     padding: 8px !important;
     box-sizing: border-box !important;
+    flex-shrink: 0 !important;
+  }
+
+  .product-detail-page .main-swiper .swiper-slide-active {
+    width: 100% !important;
+    max-width: 100% !important;
   }
 
   .product-detail-page .main-product-image {
@@ -479,7 +494,7 @@ html, body {
     object-fit: contain !important;
   }
 
-  /* 縮圖輪播 - 縮小高度 */
+  /* 縮圖輪播容器 */
   .product-detail-page .thumbs-swiper {
     height: 60px !important;
     width: 100% !important;
@@ -488,9 +503,19 @@ html, body {
     margin-top: 8px !important;
   }
 
+  /* 強制覆蓋縮圖 Swiper 內部元素 */
+  .product-detail-page .thumbs-swiper .swiper-wrapper {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+  }
+
   .product-detail-page .thumbs-swiper .swiper-slide {
+    width: auto !important;
+    max-width: 25% !important;
     border-radius: 6px !important;
     border-width: 1.5px !important;
+    box-sizing: border-box !important;
   }
 
   .product-detail-page .thumb-image {
@@ -567,9 +592,30 @@ html, body {
     max-height: 240px !important;
   }
 
+  /* 強制覆蓋 Swiper 內部元素 */
+  .product-detail-page .main-swiper .swiper-wrapper {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  .product-detail-page .main-swiper .swiper-slide {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+  .product-detail-page .main-swiper .swiper-slide-active {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
   /* 縮圖輪播 - 更小 */
   .product-detail-page .thumbs-swiper {
     height: 50px !important;
+  }
+
+  .product-detail-page .thumbs-swiper .swiper-wrapper {
+    width: 100% !important;
+    max-width: 100% !important;
   }
 
   .product-title {
