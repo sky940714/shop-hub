@@ -130,7 +130,7 @@ html, body {
 /* 縮圖輪播 - 固定高度 */
 .thumbs-swiper {
   width: 100%;
-  height: 90px;
+  height: 100px;
   padding: 0;
 }
 
@@ -141,6 +141,7 @@ html, body {
   overflow: hidden;
   border: 2px solid transparent;
   transition: all 0.3s;
+  background: #fafafa;
 }
 
 .thumbs-swiper .swiper-slide:hover {
@@ -156,7 +157,8 @@ html, body {
 .thumb-image {
   width: 100%;
   height: 100%;
-  object-fit: cover;
+  object-fit: contain;
+  padding: 4px;
 }
 
 /* ===================================
@@ -447,45 +449,53 @@ html, body {
     overflow-x: hidden;
   }
 
-  /* 圖片區域 - 完全響應式 - 只影響商品詳情頁 */
+  /* 圖片區域 - 手機版優化 */
   .product-detail-page .product-image-section {
     width: 100% !important;
     max-width: 100% !important;
     box-sizing: border-box !important;
   }
 
+  /* 主圖輪播 - 縮小高度 */
   .product-detail-page .main-swiper {
-    height: auto !important;
-    aspect-ratio: 1 / 1 !important;
+    height: 280px !important;
+    max-height: 280px !important;
     width: 100% !important;
     max-width: 100% !important;
     box-sizing: border-box !important;
+    border-radius: 8px !important;
   }
 
   .product-detail-page .main-swiper .swiper-slide {
-    padding: 10px !important;
+    padding: 8px !important;
     box-sizing: border-box !important;
-    width: 100% !important;
-    height: auto !important;
   }
 
   .product-detail-page .main-product-image {
     max-width: 100% !important;
     max-height: 100% !important;
-    width: 100% !important;
+    width: auto !important;
     height: auto !important;
     object-fit: contain !important;
   }
 
+  /* 縮圖輪播 - 縮小高度 */
   .product-detail-page .thumbs-swiper {
-    height: 70px !important;
+    height: 60px !important;
     width: 100% !important;
     max-width: 100% !important;
     box-sizing: border-box !important;
+    margin-top: 8px !important;
   }
 
   .product-detail-page .thumbs-swiper .swiper-slide {
-    width: auto !important;
+    border-radius: 6px !important;
+    border-width: 1.5px !important;
+  }
+
+  .product-detail-page .thumb-image {
+    object-fit: contain !important;
+    padding: 2px !important;
   }
 
   /* 商品資訊 */
@@ -516,19 +526,30 @@ html, body {
     width: 100%;
   }
 
+  /* 輪播按鈕 - 縮小 */
   .product-detail-page .main-swiper .swiper-button-prev,
   .product-detail-page .main-swiper .swiper-button-next {
-    width: 32px;
-    height: 32px;
+    width: 28px !important;
+    height: 28px !important;
   }
 
   .product-detail-page .main-swiper .swiper-button-prev:after,
   .product-detail-page .main-swiper .swiper-button-next:after {
-    font-size: 14px;
+    font-size: 12px !important;
+  }
+
+  /* 分頁指示器 - 縮小 */
+  .product-detail-page .main-swiper .swiper-pagination-bullet {
+    width: 6px !important;
+    height: 6px !important;
+  }
+
+  .product-detail-page .main-swiper .swiper-pagination-bullet-active {
+    width: 18px !important;
   }
 }
 
-/* 小手機 */
+/* 小手機 (< 480px) */
 @media (max-width: 480px) {
   .product-detail-page {
     padding: 5px;
@@ -540,8 +561,15 @@ html, body {
     gap: 16px;
   }
 
+  /* 主圖輪播 - 更小 */
+  .product-detail-page .main-swiper {
+    height: 240px !important;
+    max-height: 240px !important;
+  }
+
+  /* 縮圖輪播 - 更小 */
   .product-detail-page .thumbs-swiper {
-    height: 60px !important;
+    height: 50px !important;
   }
 
   .product-title {
@@ -560,5 +588,17 @@ html, body {
     flex-direction: column;
     align-items: flex-start;
     gap: 10px;
+  }
+
+  /* 輪播按鈕 - 更小 */
+  .product-detail-page .main-swiper .swiper-button-prev,
+  .product-detail-page .main-swiper .swiper-button-next {
+    width: 24px !important;
+    height: 24px !important;
+  }
+
+  .product-detail-page .main-swiper .swiper-button-prev:after,
+  .product-detail-page .main-swiper .swiper-button-next:after {
+    font-size: 10px !important;
   }
 }
