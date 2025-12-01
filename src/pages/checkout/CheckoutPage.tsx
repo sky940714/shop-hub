@@ -6,7 +6,7 @@ import { ArrowLeft } from 'lucide-react';
 import StepIndicator from './components/StepIndicator';
 import ShippingForm from './components/ShippingForm';
 import OrderSummary from './components/OrderSummary';
-import '../../styles/CheckoutPage.css';
+import './styles/CheckoutPage.css';
 
 interface ShippingInfo {
   name: string;

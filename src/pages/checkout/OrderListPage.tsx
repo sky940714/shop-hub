@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Package, ChevronRight, ArrowLeft } from 'lucide-react';
-import '../../styles/OrderListPage.css';
+import './styles/OrderListPage.css';
 
 interface Order {
   id: number;

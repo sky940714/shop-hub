@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { CheckCircle, Package, Home } from 'lucide-react';
-import '../../styles/OrderSuccessPage.css';
+import './styles/OrderSuccessPage.css';
 
 interface OrderDetail {
   orderNo: string;

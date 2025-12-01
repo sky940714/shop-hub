@@ -1,7 +1,7 @@
 // src/pages/checkout/components/ShippingForm.tsx
 import React from 'react';
 import { Store, Truck, CreditCard, MapPin } from 'lucide-react';
-import '../styles/ShippingForm.css';
+import './styles/ShippingForm.css';
 
 interface ShippingInfo {
   name: string;

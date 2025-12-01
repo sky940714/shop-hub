@@ -1,6 +1,6 @@
 // src/pages/checkout/components/StepIndicator.tsx
 import React from 'react';
-import '../styles/StepIndicator.css';
+import './styles/StepIndicator.css';
 
 interface StepIndicatorProps {
   currentStep: number;

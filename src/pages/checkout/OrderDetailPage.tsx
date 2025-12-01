@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Package, MapPin, CreditCard, FileText } from 'lucide-react';
-import '../../styles/OrderDetailPage.css';
+import './styles/OrderDetailPage.css';
 
 interface OrderItem {
   id: number;

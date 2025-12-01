@@ -1,6 +1,6 @@
 // src/pages/checkout/components/OrderSummary.tsx
 import React from 'react';
-import '../styles/OrderSummary.css';
+import './styles/OrderSummary.css';
 
 interface CartItem {
   cart_item_id: number;
