@@ -1,0 +1,113 @@
+/* src/pages/checkout/styles/OrderSummary.css */
+
+.order-summary {
+  background: white;
+  padding: 24px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  height: fit-content;
+  position: sticky;
+  top: 20px;
+}
+
+.summary-title {
+  font-size: 20px;
+  font-weight: 600;
+  margin-bottom: 20px;
+  color: #333;
+}
+
+.summary-items {
+  max-height: 400px;
+  overflow-y: auto;
+  margin-bottom: 20px;
+}
+
+.summary-item {
+  display: flex;
+  gap: 12px;
+  padding: 12px 0;
+  border-bottom: 1px solid #f3f4f6;
+}
+
+.summary-item:last-child {
+  border-bottom: none;
+}
+
+.item-image {
+  width: 60px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 8px;
+  flex-shrink: 0;
+}
+
+.item-info {
+  flex: 1;
+  min-width: 0;
+}
+
+.item-name {
+  font-size: 14px;
+  font-weight: 500;
+  color: #333;
+  margin-bottom: 4px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.item-quantity {
+  font-size: 13px;
+  color: #6b7280;
+}
+
+.item-price {
+  font-weight: 600;
+  color: #333;
+  white-space: nowrap;
+}
+
+.summary-details {
+  padding-top: 20px;
+  border-top: 2px solid #e5e7eb;
+}
+
+.detail-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px 0;
+  font-size: 15px;
+  color: #666;
+}
+
+.detail-row.total {
+  margin-top: 10px;
+  padding-top: 20px;
+  border-top: 2px solid #e5e7eb;
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+}
+
+.total-amount {
+  color: #ef4444;
+  font-size: 20px;
+}
+
+/* 響應式 */
+@media (max-width: 1024px) {
+  .order-summary {
+    position: static;
+  }
+}
+
+@media (max-width: 768px) {
+  .order-summary {
+    padding: 20px;
+  }
+  
+  .summary-items {
+    max-height: 300px;
+  }
+}

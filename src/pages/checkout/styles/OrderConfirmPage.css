@@ -1,0 +1,127 @@
+/* src/styles/OrderConfirmPage.css */
+
+.order-confirm-page {
+  min-height: 100vh;
+  background-color: #f5f5f5;
+  padding: 20px;
+}
+
+.back-button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: white;
+  border: 1px solid #e5e5e5;
+  border-radius: 8px;
+  cursor: pointer;
+  margin-bottom: 20px;
+  font-size: 14px;
+  transition: all 0.3s;
+  width: fit-content;
+}
+
+.back-button:hover {
+  background: #f5f5f5;
+}
+
+.confirm-container {
+  max-width: 800px;
+  margin: 0 auto;
+  background: white;
+  padding: 40px;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.confirm-title {
+  font-size: 28px;
+  font-weight: 700;
+  color: #333;
+  margin-bottom: 12px;
+  text-align: center;
+}
+
+.confirm-subtitle {
+  font-size: 16px;
+  color: #6b7280;
+  margin-bottom: 32px;
+  text-align: center;
+}
+
+.confirm-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 32px;
+}
+
+.btn-cancel,
+.btn-confirm {
+  flex: 1;
+  padding: 14px 24px;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.btn-cancel {
+  background: white;
+  color: #666;
+  border: 2px solid #e5e7eb;
+}
+
+.btn-cancel:hover {
+  background: #f9fafb;
+}
+
+.btn-confirm {
+  background: #10b981;
+  color: white;
+}
+
+.btn-confirm:hover {
+  background: #059669;
+}
+
+.error-message {
+  text-align: center;
+  padding: 60px 20px;
+}
+
+.error-message p {
+  font-size: 18px;
+  color: #666;
+  margin-bottom: 20px;
+}
+
+.error-message .back-btn {
+  padding: 12px 24px;
+  background: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.error-message .back-btn:hover {
+  background: #2563eb;
+}
+
+/* 響應式 */
+@media (max-width: 768px) {
+  .confirm-container {
+    padding: 24px;
+  }
+  
+  .confirm-title {
+    font-size: 24px;
+  }
+  
+  .confirm-actions {
+    flex-direction: column;
+  }
+}

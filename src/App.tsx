@@ -11,6 +11,12 @@ import AdminLayout from './pages/admin/AdminLayout';
 import ProtectedRoute from './components/ProtectedRoute';
 import ProductDetailPage from './pages/ProductDetailPage';
 
+// 結帳相關頁面 - 新增
+import CheckoutPage from './pages/checkout/CheckoutPage';
+import OrderSuccessPage from './pages/checkout/OrderSuccessPage';
+import OrderListPage from './pages/checkout/OrderListPage';
+import OrderDetailPage from './pages/checkout/OrderDetailPage';
+
 function App() {
   return (
     <CartProvider>
@@ -19,6 +25,7 @@ function App() {
           {/* 首頁 - 公開訪問 */}
           <Route path="/" element={<HomePage />} />
 
+          {/* 商品詳情頁 - 公開訪問 */}
           <Route path="/product/:id" element={<ProductDetailPage />} />
 
           {/* 登入頁面 */}
@@ -46,6 +53,40 @@ function App() {
             element={
               <ProtectedRoute>
                 <SearchPage />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* 結帳相關路由 - 需要登入 - 新增區塊 */}
+          <Route
+            path="/checkout"
+            element={
+              <ProtectedRoute>
+                <CheckoutPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/checkout/order-success/:orderNo"
+            element={
+              <ProtectedRoute>
+                <OrderSuccessPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/checkout/orders"
+            element={
+              <ProtectedRoute>
+                <OrderListPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/checkout/orders/:orderNo"
+            element={
+              <ProtectedRoute>
+                <OrderDetailPage />
               </ProtectedRoute>
             }
           />

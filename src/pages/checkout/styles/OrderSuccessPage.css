@@ -1,0 +1,225 @@
+/* src/styles/OrderSuccessPage.css */
+
+.order-success-page {
+  min-height: 100vh;
+  background-color: #f5f5f5;
+  padding: 40px 20px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.success-container {
+  max-width: 600px;
+  width: 100%;
+  background: white;
+  padding: 48px;
+  border-radius: 16px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  text-align: center;
+}
+
+.success-icon {
+  margin-bottom: 24px;
+  animation: scaleIn 0.5s ease-out;
+}
+
+@keyframes scaleIn {
+  from {
+    transform: scale(0);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+.success-title {
+  font-size: 28px;
+  font-weight: 700;
+  color: #10b981;
+  margin-bottom: 12px;
+}
+
+.success-message {
+  font-size: 16px;
+  color: #6b7280;
+  margin-bottom: 32px;
+  line-height: 1.6;
+}
+
+.order-info-card {
+  background: #f9fafb;
+  padding: 24px;
+  border-radius: 12px;
+  margin-bottom: 32px;
+  text-align: left;
+}
+
+.info-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.info-row:last-child {
+  border-bottom: none;
+}
+
+.info-label {
+  font-size: 14px;
+  color: #6b7280;
+  font-weight: 500;
+}
+
+.info-value {
+  font-size: 15px;
+  color: #333;
+  font-weight: 600;
+}
+
+.info-value.order-no {
+  color: #3b82f6;
+  font-family: monospace;
+}
+
+.info-value.total {
+  color: #ef4444;
+  font-size: 18px;
+}
+
+.next-steps {
+  text-align: left;
+  padding: 24px;
+  background: #eff6ff;
+  border-radius: 12px;
+  margin-bottom: 32px;
+}
+
+.steps-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #333;
+  margin-bottom: 16px;
+}
+
+.steps-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.steps-list li {
+  padding: 8px 0 8px 28px;
+  color: #4b5563;
+  font-size: 15px;
+  line-height: 1.6;
+  position: relative;
+}
+
+.steps-list li::before {
+  content: '✓';
+  position: absolute;
+  left: 0;
+  color: #10b981;
+  font-weight: 700;
+  font-size: 18px;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 12px;
+}
+
+.btn-orders,
+.btn-home {
+  flex: 1;
+  padding: 14px 24px;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  transition: all 0.3s;
+}
+
+.btn-orders {
+  background: #3b82f6;
+  color: white;
+}
+
+.btn-orders:hover {
+  background: #2563eb;
+}
+
+.btn-home {
+  background: white;
+  color: #666;
+  border: 2px solid #e5e7eb;
+}
+
+.btn-home:hover {
+  background: #f9fafb;
+}
+
+.loading {
+  text-align: center;
+  padding: 60px 20px;
+  font-size: 18px;
+  color: #666;
+}
+
+/* 響應式 */
+@media (max-width: 768px) {
+  .success-container {
+    padding: 32px 24px;
+  }
+  
+  .success-title {
+    font-size: 24px;
+  }
+  
+  .success-icon {
+    margin-bottom: 20px;
+  }
+  
+  .action-buttons {
+    flex-direction: column;
+  }
+  
+  .btn-orders,
+  .btn-home {
+    width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .order-success-page {
+    padding: 20px 10px;
+  }
+  
+  .success-container {
+    padding: 24px 16px;
+  }
+  
+  .success-title {
+    font-size: 20px;
+  }
+  
+  .order-info-card {
+    padding: 16px;
+  }
+  
+  .info-row {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+}

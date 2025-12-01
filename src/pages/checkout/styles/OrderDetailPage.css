@@ -1,0 +1,190 @@
+/* 在 OrderDetailPage.css 最後加上這些 */
+
+/* 載入動畫 */
+.loading-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  gap: 16px;
+}
+
+.loading-spinner {
+  width: 48px;
+  height: 48px;
+  border: 4px solid #f3f4f6;
+  border-top-color: #3b82f6;
+  border-radius: 50%;
+  animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.loading-text {
+  font-size: 16px;
+  color: #6b7280;
+}
+
+/* 錯誤容器 */
+.error-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  min-height: 400px;
+  gap: 20px;
+  padding: 40px 20px;
+}
+
+.error-text {
+  font-size: 18px;
+  color: #dc2626;
+  text-align: center;
+}
+
+.back-to-list-btn {
+  padding: 12px 24px;
+  background: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.back-to-list-btn:hover {
+  background: #2563eb;
+}
+
+/* 狀態卡片更新 */
+.status-left {
+  flex: 1;
+}
+
+.status-right {
+  display: flex;
+  align-items: center;
+}
+
+/* 物流追蹤提示 */
+.tracking-tip {
+  margin-top: 8px;
+  padding: 12px;
+  background: #eff6ff;
+  border-radius: 8px;
+  font-size: 13px;
+  color: #1e40af;
+}
+
+/* 付款提示 */
+.payment-notice {
+  margin-top: 12px;
+  padding: 12px;
+  background: #fef3c7;
+  border-radius: 8px;
+  border-left: 4px solid #f59e0b;
+}
+
+.payment-notice p {
+  margin: 0;
+  font-size: 14px;
+  color: #92400e;
+}
+
+/* 商品項目更新 */
+.item-main {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  width: 100%;
+  gap: 16px;
+}
+
+.item-right {
+  display: flex;
+  align-items: center;
+  gap: 24px;
+}
+
+/* 摘要分隔線 */
+.summary-divider {
+  height: 2px;
+  background: #e5e7eb;
+  margin: 8px 0;
+}
+
+/* 操作按鈕 */
+.action-buttons {
+  display: flex;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.btn-cancel-order,
+.btn-pay-now {
+  flex: 1;
+  padding: 14px 24px;
+  border: none;
+  border-radius: 8px;
+  font-size: 16px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.btn-cancel-order {
+  background: white;
+  color: #dc2626;
+  border: 2px solid #dc2626;
+}
+
+.btn-cancel-order:hover {
+  background: #fef2f2;
+}
+
+.btn-pay-now {
+  background: #10b981;
+  color: white;
+}
+
+.btn-pay-now:hover {
+  background: #059669;
+}
+
+/* 已送達狀態 */
+.status-delivered {
+  background: #e0e7ff;
+  color: #4338ca;
+}
+
+/* 已退款狀態 */
+.payment-status-refunded {
+  color: #9ca3af;
+}
+
+/* 響應式更新 */
+@media (max-width: 768px) {
+  .item-main {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .item-right {
+    width: 100%;
+    justify-content: space-between;
+  }
+  
+  .action-buttons {
+    flex-direction: column;
+  }
+  
+  .btn-cancel-order,
+  .btn-pay-now {
+    width: 100%;
+  }
+}
