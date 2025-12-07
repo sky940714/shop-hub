@@ -1,6 +1,6 @@
 // src/pages/checkout/CheckoutPage.tsx
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useCart } from '../../context/CartContext';
 import { ArrowLeft } from 'lucide-react';
 import StepIndicator from './components/StepIndicator';
@@ -20,7 +20,15 @@ interface ShippingInfo {
 
 const CheckoutPage: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { cartItems, clearCart } = useCart();
+
+  // 檢查是否為立即購買模式
+  const directBuyState = location.state as { directBuy?: boolean; items?: any[] };
+  const isDirectBuy = directBuyState?.directBuy || false;
+  
+  // 決定使用哪個商品列表
+  const checkoutItems = isDirectBuy ? (directBuyState.items || []) : cartItems;
 
   // 步驟控制
   const [currentStep, setCurrentStep] = useState(1);
@@ -45,9 +53,9 @@ const CheckoutPage: React.FC = () => {
   const [taxId, setTaxId] = useState<string>('');
 
   // 計算金額
-  const subtotal = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
-  const shippingFee = getShippingFee();
-  const total = subtotal + shippingFee;
+const subtotal = checkoutItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
+const shippingFee = getShippingFee();
+const total = subtotal + shippingFee;
 
   // 取得運費
   function getShippingFee(): number {
@@ -74,19 +82,19 @@ const CheckoutPage: React.FC = () => {
     return () => window.removeEventListener('message', handleStoreCallback);
   }, []);
 
-  // 如果購物車是空的
-  if (cartItems.length === 0) {
-    return (
-      <div className="checkout-page">
-        <div className="empty-cart-message">
-          <p>購物車是空的</p>
-          <button onClick={() => navigate('/')} className="back-home-button">
-            返回首頁
-          </button>
-        </div>
+  // 如果沒有要結帳的商品
+if (checkoutItems.length === 0) {
+  return (
+    <div className="checkout-page">
+      <div className="empty-cart-message">
+        <p>沒有要結帳的商品</p>
+        <button onClick={() => navigate('/')} className="back-home-button">
+          返回首頁
+        </button>
       </div>
-    );
-  }
+    </div>
+  );
+}
 
   // 驗證步驟
   const validateStep = (step: number): boolean => {
@@ -170,7 +178,7 @@ const CheckoutPage: React.FC = () => {
         subtotal,
         shippingFee,
         total,
-        items: cartItems,
+        items: checkoutItems,
       };
 
       const response = await fetch('http://45.32.24.240/api/orders/create', {
@@ -185,16 +193,18 @@ const CheckoutPage: React.FC = () => {
       const data = await response.json();
 
       if (data.success) {
-        // 清空購物車
-        clearCart();
-        
-        // 如果是線上付款,導向綠界付款頁面
-        if (paymentMethod !== 'cod') {
-          window.location.href = data.paymentUrl;
-        } else {
-          // 取貨付款直接完成
-          navigate(`/checkout/order-success/${data.orderNo}`);
-        }
+  // 只有從購物車來的才清空購物車
+  if (!isDirectBuy) {
+    clearCart();
+  }
+  
+  // 如果是線上付款,導向綠界付款頁面
+  if (paymentMethod !== 'cod') {
+    window.location.href = data.paymentUrl;
+  } else {
+    // 取貨付款直接完成
+    navigate(`/checkout/order-success/${data.orderNo}`);
+  }
       } else {
         alert(data.message || '建立訂單失敗');
       }
@@ -242,10 +252,10 @@ const CheckoutPage: React.FC = () => {
 
         {/* 右側:訂單摘要 */}
         <OrderSummary
-          cartItems={cartItems}
-          subtotal={subtotal}
-          shippingFee={shippingFee}
-          total={total}
+        cartItems={checkoutItems}
+        subtotal={subtotal}
+        shippingFee={shippingFee}
+        total={total}
         />
       </div>
     </div>

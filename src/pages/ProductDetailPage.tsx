@@ -4,6 +4,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ShoppingCart, ArrowLeft, Star } from 'lucide-react';
 import { Swiper, SwiperSlide } from 'swiper/react';
 import { Navigation, Pagination, Thumbs } from 'swiper/modules';
+import { useCart } from '../context/CartContext';
 import 'swiper/css';
 import 'swiper/css/navigation';
 import 'swiper/css/pagination';
@@ -32,6 +33,7 @@ interface Product {
 const ProductDetailPage: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const { addToCart } = useCart();
   
   const [product, setProduct] = useState<Product | null>(null);
   const [quantity, setQuantity] = useState(1);
@@ -57,33 +59,43 @@ const ProductDetailPage: React.FC = () => {
     loadProduct();
   }, [id]);
 
-  const handleAddToCart = () => {
-    if (!product) return;
-    
-    const existingCart = JSON.parse(localStorage.getItem('cart') || '[]');
-    const existingItem = existingCart.find((item: any) => item.id === product.id);
-    
-    if (existingItem) {
-      existingItem.quantity += quantity;
-    } else {
-      existingCart.push({
-        id: product.id,
+  const handleAddToCart = async () => {
+  if (!product) return;
+  
+  try {
+    await addToCart(product.id, quantity);
+    alert('已加入購物車！');
+    setQuantity(1);
+  } catch (error) {
+    console.error('加入購物車失敗:', error);
+    alert('加入購物車失敗,請稍後再試');
+  }
+};
+
+const handleBuyNow = () => {
+  if (!product) return;
+  
+  // 帶著商品資訊跳轉到結帳頁面
+  navigate('/checkout', {
+    state: {
+      directBuy: true,
+      items: [{
+        cart_item_id: 0,  // 立即購買沒有 cart_item_id
+        product_id: product.id,
         name: product.name,
         price: product.price,
-        image: product.image_url,
-        quantity: quantity
-      });
+        quantity: quantity,
+        image_url: product.image_url,
+      }]
     }
-    
-    localStorage.setItem('cart', JSON.stringify(existingCart));
-    alert('已加入購物車！');
-  };
+  });
+};
 
-  const increaseQuantity = () => {
-    if (product && quantity < product.stock) {
-      setQuantity(quantity + 1);
-    }
-  };
+const increaseQuantity = () => {
+  if (product && quantity < product.stock) {
+    setQuantity(quantity + 1);
+  }
+};
 
   const decreaseQuantity = () => {
     if (quantity > 1) {
@@ -233,7 +245,7 @@ const ProductDetailPage: React.FC = () => {
               <ShoppingCart size={20} />
               加入購物車
             </button>
-            <button className="buy-now-btn">
+            <button className="buy-now-btn" onClick={handleBuyNow}>
               立即購買
             </button>
           </div>

@@ -292,7 +292,15 @@ const HomePage: React.FC = () => {
                   <span className="total-label">總計:</span>
                   <span className="total-price">NT$ {totalPrice.toLocaleString()}</span>
                 </div>
-                <button className="checkout-button">結帳</button>
+                <button 
+                  className="checkout-button"
+                  onClick={() => {
+                    setIsCartOpen(false);  // 關閉購物車側邊欄
+                    navigate('/checkout');  // 跳轉到結帳頁面
+                  }}
+                >
+                  結帳
+                </button>
               </div>
             )}
           </div>
