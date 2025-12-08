@@ -54,5 +54,6 @@ module.exports = {
   pool,              // 原始連線池
   promisePool,       // Promise 版本的連線池
   testConnection,    // 測試連線函數
-  query              // 執行查詢函數
+  query,              // 執行查詢函數
+  getConnection: () => promisePool.getConnection()  // ← 加這行
 };
