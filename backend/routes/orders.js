@@ -1,20 +1,20 @@
-// server/routes/orders.js
+// backend/routes/orders.js
 const express = require('express');
 const router = express.Router();
-const db = require('../config/database');
-const { authenticateToken } = require('../middleware/auth');
+const { promisePool, query } = require('../config/database');
+const { protect } = require('../middleware/auth');
 
 // ========================================
 // 1. 建立訂單 (前台)
 // POST /api/orders/create
 // ========================================
-router.post('/create', authenticateToken, async (req, res) => {
-  const connection = await db.getConnection();
+router.post('/create', protect, async (req, res) => {
+  const connection = await promisePool.getConnection();
   
   try {
     await connection.beginTransaction();
     
-    const userId = req.user.userId;
+    const userId = req.user.id;  // ← 改成 id
     const {
       shippingInfo,
       shippingMethod,
@@ -77,7 +77,7 @@ router.post('/create', authenticateToken, async (req, res) => {
     }
 
     // 如果是從購物車來的,清空購物車
-    if (items[0].cart_item_id) {
+    if (items[0] && items[0].cart_item_id) {
       await connection.query(`
         DELETE FROM cart_items WHERE user_id = ?
       `, [userId]);
@@ -115,13 +115,13 @@ router.post('/create', authenticateToken, async (req, res) => {
 // 2. 查詢單筆訂單 (前台)
 // GET /api/orders/:orderNo
 // ========================================
-router.get('/:orderNo', authenticateToken, async (req, res) => {
+router.get('/:orderNo', protect, async (req, res) => {
   try {
     const { orderNo } = req.params;
-    const userId = req.user.userId;
+    const userId = req.user.id;  // ← 改成 id
 
     // 查詢訂單基本資料
-    const [orders] = await db.query(`
+    const [orders] = await promisePool.query(`
       SELECT * FROM orders 
       WHERE order_no = ? AND user_id = ?
     `, [orderNo, userId]);
@@ -136,7 +136,7 @@ router.get('/:orderNo', authenticateToken, async (req, res) => {
     const order = orders[0];
 
     // 查詢訂單商品明細
-    const [items] = await db.query(`
+    const [items] = await promisePool.query(`
       SELECT * FROM order_items WHERE order_id = ?
     `, [order.id]);
 
@@ -161,12 +161,12 @@ router.get('/:orderNo', authenticateToken, async (req, res) => {
 // 3. 查詢會員的所有訂單 (前台)
 // GET /api/orders/user/:userId
 // ========================================
-router.get('/user/:userId', authenticateToken, async (req, res) => {
+router.get('/user/:userId', protect, async (req, res) => {
   try {
-    const userId = req.user.userId;
+    const userId = req.user.id;  // ← 改成 id
 
     // 查詢該會員的所有訂單
-    const [orders] = await db.query(`
+    const [orders] = await promisePool.query(`
       SELECT 
         id, order_no, total, status, payment_status,
         shipping_method, payment_method, created_at
@@ -193,12 +193,12 @@ router.get('/user/:userId', authenticateToken, async (req, res) => {
 // 4. 取得所有訂單 (後台)
 // GET /api/orders/admin/all
 // ========================================
-router.get('/admin/all', authenticateToken, async (req, res) => {
+router.get('/admin/all', protect, async (req, res) => {
   try {
     // TODO: 檢查是否為管理員
     // if (req.user.role !== 'admin') { return res.status(403)... }
 
-    const [orders] = await db.query(`
+    const [orders] = await promisePool.query(`
       SELECT 
         o.id, o.order_no, o.receiver_name, o.total, 
         o.status, o.payment_status, o.created_at
@@ -224,12 +224,12 @@ router.get('/admin/all', authenticateToken, async (req, res) => {
 // 5. 取得訂單詳情 (後台)
 // GET /api/orders/admin/:orderNo
 // ========================================
-router.get('/admin/:orderNo', authenticateToken, async (req, res) => {
+router.get('/admin/:orderNo', protect, async (req, res) => {
   try {
     const { orderNo } = req.params;
 
     // 查詢訂單基本資料
-    const [orders] = await db.query(`
+    const [orders] = await promisePool.query(`
       SELECT o.*, m.email as user_email, m.name as user_name
       FROM orders o
       LEFT JOIN members m ON o.user_id = m.id
@@ -246,7 +246,7 @@ router.get('/admin/:orderNo', authenticateToken, async (req, res) => {
     const order = orders[0];
 
     // 查詢訂單商品明細
-    const [items] = await db.query(`
+    const [items] = await promisePool.query(`
       SELECT * FROM order_items WHERE order_id = ?
     `, [order.id]);
 
@@ -271,7 +271,7 @@ router.get('/admin/:orderNo', authenticateToken, async (req, res) => {
 // 6. 更新訂單狀態 (後台)
 // PUT /api/orders/admin/:orderNo/status
 // ========================================
-router.put('/admin/:orderNo/status', authenticateToken, async (req, res) => {
+router.put('/admin/:orderNo/status', protect, async (req, res) => {
   try {
     const { orderNo } = req.params;
     const { status } = req.body;
@@ -286,7 +286,7 @@ router.put('/admin/:orderNo/status', authenticateToken, async (req, res) => {
     }
 
     // 更新訂單狀態
-    await db.query(`
+    await promisePool.query(`
       UPDATE orders SET status = ? WHERE order_no = ?
     `, [status, orderNo]);
 
@@ -306,27 +306,27 @@ router.put('/admin/:orderNo/status', authenticateToken, async (req, res) => {
 
 // ========================================
 // 7. 數據總覽統計 (後台)
-// GET /api/orders/admin/stats
+// GET /api/orders/admin/dashboard/stats
 // ========================================
-router.get('/admin/dashboard/stats', authenticateToken, async (req, res) => {
+router.get('/admin/dashboard/stats', protect, async (req, res) => {
   try {
     // 統計總商品數
-    const [productCount] = await db.query(`
+    const [productCount] = await promisePool.query(`
       SELECT COUNT(*) as total FROM products
     `);
 
     // 統計總訂單數
-    const [orderCount] = await db.query(`
+    const [orderCount] = await promisePool.query(`
       SELECT COUNT(*) as total FROM orders
     `);
 
     // 統計總會員數
-    const [memberCount] = await db.query(`
+    const [memberCount] = await promisePool.query(`
       SELECT COUNT(*) as total FROM members
     `);
 
     // 統計總營業額 (排除已取消的訂單)
-    const [revenue] = await db.query(`
+    const [revenue] = await promisePool.query(`
       SELECT SUM(total) as total FROM orders 
       WHERE status != 'cancelled'
     `);
