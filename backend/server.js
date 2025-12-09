@@ -10,6 +10,7 @@ const productRoutes = require('./routes/productRoutes');
 const uploadRoutes = require('./routes/uploadRoutes');
 const cartRoutes = require('./routes/cartRoutes');
 const orderRoutes = require('./routes/orders');
+const categoryRoutes = require('./routes/categoryRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 5001;
@@ -58,6 +59,7 @@ app.use('/api/products', productRoutes);
 app.use('/api/upload', uploadRoutes);  // ← 加這行！
 app.use('/api/cart', cartRoutes); 
 app.use('/api/orders', orderRoutes);
+app.use('/api/categories', categoryRoutes); 
 
 // ==========================================
 // 404 處理（必須放在所有路由之後）
