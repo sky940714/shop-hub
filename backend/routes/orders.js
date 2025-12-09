@@ -78,9 +78,18 @@ router.post('/create', protect, async (req, res) => {
 
     // 如果是從購物車來的,清空購物車
     if (items[0] && items[0].cart_item_id) {
-      await connection.query(`
-        DELETE FROM cart_items WHERE user_id = ?
-      `, [userId]);
+    // 先取得該會員的 cart_id
+    const [carts] = await connection.query(`
+        SELECT id FROM carts WHERE user_id = ?
+    `, [userId]);
+    
+    if (carts.length > 0) {
+        const cartId = carts[0].id;
+        // 刪除該購物車的所有商品
+        await connection.query(`
+        DELETE FROM cart_items WHERE cart_id = ?
+        `, [cartId]);
+    }
     }
 
     await connection.commit();
