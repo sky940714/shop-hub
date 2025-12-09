@@ -1,5 +1,5 @@
 // backend/models/ProductVariant.js
-const db = require('../config/db');
+const db = require('../config/database');
 
 class ProductVariant {
   /**
