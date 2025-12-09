@@ -10,26 +10,52 @@ interface Product {
   price: number;
   originalPrice: number | null;
   image: string;
-  category: string;
+  category_id: number;  // ← 改這裡
   rating: number;
   reviews: number;
   description: string;
 }
 
+// ← 新增這個介面
+interface Category {
+  id: number;
+  name: string;
+  parent_id: number | null;
+  level: number;
+  is_active: number;
+  productCount: number;
+}
+
 const HomePage: React.FC = () => {
   const navigate = useNavigate();
   // 狀態管理
-  const { cartCount, cartItems, addToCart, removeFromCart, updateQuantity } = useCart();  // ← 加這行
+  const { cartCount, cartItems, addToCart, removeFromCart, updateQuantity } = useCart();
   const [wishlist, setWishlist] = useState<number[]>([]);
-  const [currentCategory, setCurrentCategory] = useState<string>('all');
+  const [currentCategory, setCurrentCategory] = useState<number | 'all'>('all');  // ← 改這裡
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [isCartOpen, setIsCartOpen] = useState<boolean>(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
   const [products, setProducts] = useState<Product[]>([]);
+  const [categories, setCategories] = useState<Category[]>([]);  // ← 新增這行
 
   useEffect(() => {
+    fetchCategories();  // ← 新增這行
     fetchProducts();
   }, []);
+
+  // ← 新增這個函數
+  const fetchCategories = async () => {
+    try {
+      const response = await fetch('http://45.32.24.240/api/categories');
+      const data = await response.json();
+
+      if (data.success) {
+        setCategories(data.categories);
+      }
+    } catch (error) {
+      console.error('讀取分類失敗：', error);
+    }
+  };
 
   const fetchProducts = async () => {
     try {
@@ -42,8 +68,8 @@ const HomePage: React.FC = () => {
           name: product.name,
           price: parseFloat(product.price),
           originalPrice: null,
-          image: product.main_image || 'https://via.placeholder.com/400',  // ← 改這裡！
-          category: getCategoryId(product.category_id),
+          image: product.main_image || 'https://via.placeholder.com/400',
+          category_id: product.category_id,  // ← 改這裡
           rating: 4.5,
           reviews: 0,
           description: product.description || '暫無描述'
@@ -56,29 +82,13 @@ const HomePage: React.FC = () => {
     }
   };
 
-  const getCategoryId = (categoryId: number): string => {
-    const categoryMap: { [key: number]: string } = {
-      1: 'clothing',
-      2: 'electronics',
-      3: 'food',
-      4: 'accessories',
-      5: 'home'
-    };
-    return categoryMap[categoryId] || 'clothing';
-  };
+  // ← 刪除整個 getCategoryId 函數
 
-  const categories = [
-    { id: 'all', name: '全部商品' },
-    { id: 'clothing', name: '服飾' },
-    { id: 'electronics', name: '電子產品' },
-    { id: 'food', name: '食品' },
-    { id: 'accessories', name: '配件' },
-    { id: 'home', name: '居家用品' }
-  ];
+  // ← 刪除整個 categories 陣列
 
   // 過濾商品
   const filteredProducts = products.filter(product => {
-    const matchesCategory = currentCategory === 'all' || product.category === currentCategory;
+    const matchesCategory = currentCategory === 'all' || product.category_id === currentCategory;  // ← 改這裡
     const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase());
     return matchesCategory && matchesSearch;
   });
@@ -89,8 +99,8 @@ const HomePage: React.FC = () => {
     );
   };
 
-  const totalItems = cartCount;  // ← 直接用 Context 的 cartCount
-  const totalPrice = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);  // ← 改用 cartItems
+  const totalItems = cartCount;
+  const totalPrice = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
   return (
     <div className="home-page">
@@ -165,9 +175,18 @@ const HomePage: React.FC = () => {
         </div>
       </section>
 
-      {/* Category Filter */}
+      {/* Category Filter - 改這整段 */}
       <section className="category-section" id="products">
         <div className="category-container">
+          {/* 全部商品按鈕 */}
+          <button
+            onClick={() => setCurrentCategory('all')}
+            className={`category-button ${currentCategory === 'all' ? 'active' : ''}`}
+          >
+            全部商品
+          </button>
+          
+          {/* 動態分類按鈕 */}
           {categories.map(category => (
             <button
               key={category.id}
@@ -197,7 +216,10 @@ const HomePage: React.FC = () => {
                 >
                   <img src={product.image} alt={product.name} className="product-image" />
                   <button
-                    onClick={() => toggleWishlist(product.id)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      toggleWishlist(product.id);
+                    }}
                     className={`wishlist-button ${wishlist.includes(product.id) ? 'active' : ''}`}
                   >
                     ❤
@@ -295,8 +317,8 @@ const HomePage: React.FC = () => {
                 <button 
                   className="checkout-button"
                   onClick={() => {
-                    setIsCartOpen(false);  // 關閉購物車側邊欄
-                    navigate('/checkout');  // 跳轉到結帳頁面
+                    setIsCartOpen(false);
+                    navigate('/checkout');
                   }}
                 >
                   結帳
@@ -347,8 +369,8 @@ const HomePage: React.FC = () => {
           </div>
         </div>
       </footer>
-      </div>
+    </div>
   );
 }
 
-      export default HomePage;
+export default HomePage;
