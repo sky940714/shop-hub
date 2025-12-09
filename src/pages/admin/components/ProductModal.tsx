@@ -1,10 +1,27 @@
 // pages/admin/components/ProductModal.tsx 商品上傳頁面
 import React, { useState, useEffect } from 'react';
-import { X, Upload, Trash2, GripVertical } from 'lucide-react';
+import { X, Upload, Trash2, GripVertical, Plus } from 'lucide-react';
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from '@dnd-kit/core';
 import { SortableContext, useSortable, horizontalListSortingStrategy, arrayMove } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import '../styles/ProductModal.css';
+
+// ⭐ 新增：規格介面
+interface ProductVariant {
+  name: string;
+  price: number;
+  stock: number;
+}
+
+// ⭐ 新增：分類介面
+interface Category {
+  id: number;
+  name: string;
+  parent_id: number | null;
+  level: number;
+  is_active: number;
+  productCount: number;
+}
 
 interface Product {
   id: string;
@@ -46,7 +63,6 @@ const SortableImage: React.FC<SortableImageProps> = ({ url, index, onRemove }) =
       style={style}
       className={`image-preview-item ${isDragging ? 'dragging' : ''}`}
     >
-      {/* 拖曳手把 */}
       <div {...attributes} {...listeners} className="drag-handle">
         <GripVertical size={20} />
       </div>
@@ -73,71 +89,115 @@ interface ProductModalProps {
 }
 
 const ProductModal: React.FC<ProductModalProps> = ({ product, onClose, onSave }) => {
-  const categories = ['服飾', '電子產品', '食品', '配件', '居家用品'];
-  const MAX_IMAGES = 8; // ← 加這行
-  const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB ← 加這行
+  const MAX_IMAGES = 8;
+  const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
+  const MAX_VARIANTS = 10;
+  const MAX_CATEGORIES = 5;
 
-  const [formData, setFormData] = useState<Partial<Product>>({
+  const [formData, setFormData] = useState({
     name: '',
-    category: '服飾',
-    price: 0,
-    stock: 0,
-    image: '',
     description: '',
-    status: 'active'
+    status: 'active' as 'active' | 'inactive'
   });
 
-  // ✅ 拖曳感應器設定
-const sensors = useSensors(
-  useSensor(PointerSensor, {
-    activationConstraint: {
-      distance: 8,
-    },
-  })
-);
+  // ⭐ 新增：規格狀態
+  const [variants, setVariants] = useState<ProductVariant[]>([
+    { name: '', price: 0, stock: 0 }
+  ]);
+
+  // ⭐ 新增：分類相關狀態
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [selectedCategories, setSelectedCategories] = useState<number[]>([]);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, {
+      activationConstraint: {
+        distance: 8,
+      },
+    })
+  );
 
   const [loading, setLoading] = useState(false);
   const [uploadedImages, setUploadedImages] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
 
-  // ⭐ 新增：取得商品圖片的函式
-const fetchProductImages = async (productId: string) => {
-  try {
-    const token = localStorage.getItem('token');
-    
-    const response = await fetch(`http://45.32.24.240/api/products/${productId}`, {
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    });
-    
-    const data = await response.json();
-    
-    if (data.success && data.product.images && data.product.images.length > 0) {
-      // 按 sort_order 排序，然後提取 image_url
-      const imageUrls = data.product.images
-        .sort((a: any, b: any) => a.sort_order - b.sort_order)
-        .map((img: any) => img.image_url);
-      
-      setUploadedImages(imageUrls);
-      console.log('✅ 已載入', imageUrls.length, '張商品圖片');
-    }
-  } catch (error) {
-    console.error('❌ 載入商品圖片失敗：', error);
-  }
-};
+  // ⭐ 載入分類列表
+  const fetchCategories = async () => {
+    try {
+      const response = await fetch('http://45.32.24.240/api/categories');
+      const data = await response.json();
 
-useEffect(() => {
-  if (product) {
-    setFormData(product);
-    
-    // ⭐ 載入商品的圖片
-    fetchProductImages(product.id);
-  } else {
-    // 如果是新增模式，清空圖片
-    setUploadedImages([]);
-  }
-}, [product]);
+      if (data.success) {
+        setCategories(data.categories);
+      }
+    } catch (error) {
+      console.error('載入分類失敗：', error);
+    }
+  };
+
+  // ⭐ 載入商品資料（編輯模式）
+  const fetchProductData = async (productId: string) => {
+    try {
+      const token = localStorage.getItem('token');
+      
+      const response = await fetch(`http://45.32.24.240/api/products/${productId}`, {
+        headers: {
+          'Authorization': `Bearer ${token}`
+        }
+      });
+      
+      const data = await response.json();
+      
+      if (data.success) {
+        const productData = data.product;
+        
+        // 設定基本資訊
+        setFormData({
+          name: productData.name,
+          description: productData.description || '',
+          status: productData.status === '上架' ? 'active' : 'inactive'
+        });
+
+        // 設定規格
+        if (productData.variants && productData.variants.length > 0) {
+          setVariants(productData.variants.map((v: any) => ({
+            name: v.variant_name,
+            price: parseFloat(v.price),
+            stock: v.stock
+          })));
+        }
+
+        // 設定分類
+        if (productData.categories && productData.categories.length > 0) {
+          setSelectedCategories(productData.categories.map((c: any) => c.id));
+        }
+
+        // 設定圖片
+        if (productData.images && productData.images.length > 0) {
+          const imageUrls = productData.images
+            .sort((a: any, b: any) => a.sort_order - b.sort_order)
+            .map((img: any) => img.image_url);
+          setUploadedImages(imageUrls);
+        }
+      }
+    } catch (error) {
+      console.error('載入商品資料失敗：', error);
+    }
+  };
+
+  useEffect(() => {
+    fetchCategories();
+
+    if (product) {
+      fetchProductData(product.id);
+    } else {
+      // 新增模式：重置所有狀態
+      setFormData({ name: '', description: '', status: 'active' });
+      setVariants([{ name: '', price: 0, stock: 0 }]);
+      setSelectedCategories([]);
+      setUploadedImages([]);
+    }
+  }, [product]);
 
   const handleChange = (
     e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement | HTMLTextAreaElement>
@@ -145,145 +205,194 @@ useEffect(() => {
     const { name, value } = e.target;
     setFormData(prev => ({
       ...prev,
-      [name]: name === 'price' || name === 'stock' ? Number(value) : value
+      [name]: value
     }));
   };
 
+  // ⭐ 處理規格變更
+  const handleVariantChange = (index: number, field: keyof ProductVariant, value: string | number) => {
+    const newVariants = [...variants];
+    newVariants[index] = {
+      ...newVariants[index],
+      [field]: field === 'name' ? value : Number(value)
+    };
+    setVariants(newVariants);
+  };
+
+  // ⭐ 新增規格
+  const handleAddVariant = () => {
+    if (variants.length >= MAX_VARIANTS) {
+      alert(`最多只能新增 ${MAX_VARIANTS} 個規格`);
+      return;
+    }
+    setVariants([...variants, { name: '', price: 0, stock: 0 }]);
+  };
+
+  // ⭐ 刪除規格
+  const handleRemoveVariant = (index: number) => {
+    if (variants.length === 1) {
+      alert('至少需要保留一個規格');
+      return;
+    }
+    setVariants(variants.filter((_, i) => i !== index));
+  };
+
+  // ⭐ 處理分類選擇
+  const handleCategoryToggle = (categoryId: number) => {
+    if (selectedCategories.includes(categoryId)) {
+      setSelectedCategories(selectedCategories.filter(id => id !== categoryId));
+    } else {
+      if (selectedCategories.length >= MAX_CATEGORIES) {
+        alert(`最多只能選擇 ${MAX_CATEGORIES} 個分類`);
+        return;
+      }
+      setSelectedCategories([...selectedCategories, categoryId]);
+    }
+  };
+
   // 處理圖片上傳
-const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-  const files = e.target.files;
-  if (!files || files.length === 0) return;
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const files = e.target.files;
+    if (!files || files.length === 0) return;
 
-  if (uploadedImages.length + files.length > MAX_IMAGES) {
-    alert(`最多只能上傳 ${MAX_IMAGES} 張圖片！目前已有 ${uploadedImages.length} 張`);
-    e.target.value = '';
-    return;
-  }
-
-  for (let i = 0; i < files.length; i++) {
-    if (files[i].size > MAX_FILE_SIZE) {
-      alert(
-        `圖片 ${files[i].name} 太大！\n\n` +
-        `檔案大小：${(files[i].size / 1024 / 1024).toFixed(2)} MB\n` +
-        `最大限制：5 MB\n\n` +
-        `請壓縮後再上傳。`
-      );
+    if (uploadedImages.length + files.length > MAX_IMAGES) {
+      alert(`最多只能上傳 ${MAX_IMAGES} 張圖片！目前已有 ${uploadedImages.length} 張`);
       e.target.value = '';
       return;
     }
-  }
 
-  setUploading(true);
-
-  try {
-    const token = localStorage.getItem('token');
-    
-    // ⭐ 改成一次上傳所有圖片
-    const formData = new FormData();
-    Array.from(files).forEach(file => {
-      formData.append('images', file);  // 用 'images' 複數
-    });
-
-    // ⭐ 使用 /images 端點（複數）
-    const response = await fetch('http://45.32.24.240/api/upload/images', {
-      method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`
-      },
-      body: formData
-    });
-
-    const data = await response.json();
-
-    if (data.success) {
-      // ⭐ 後端回傳的是 imageUrls（陣列）
-      setUploadedImages(prev => [...prev, ...data.imageUrls]);
-      alert('圖片上傳成功！');
-    } else {
-      alert(`上傳失敗：${data.message}`);
-    }
-
-  } catch (error) {
-    console.error('上傳失敗：', error);
-    alert('圖片上傳失敗，請稍後再試');
-  } finally {
-    setUploading(false);
-    e.target.value = '';
-  }
-};
-
-  // ✅ 處理拖曳排序
-const handleDragEnd = (event: any) => {
-  const { active, over } = event;
-
-  if (over && active.id !== over.id) {
-    setUploadedImages((items) => {
-      const oldIndex = items.indexOf(active.id);
-      const newIndex = items.indexOf(over.id);
-      
-      return arrayMove(items, oldIndex, newIndex);
-    });
-  }
-};
-
-  // 刪除圖片（呼叫後端 API）
-const handleRemoveImage = async (index: number) => {
-  const imageUrl = uploadedImages[index];
-  
-  console.log('🗑️ 準備刪除圖片：', imageUrl);
-  
-  try {
-    const token = localStorage.getItem('token');
-
-    if (!token) {
-      alert('請先登入');
-      return;
-    }
-
-    // 呼叫後端刪除 API
-    const response = await fetch('http://45.32.24.240/api/upload/image', {
-      method: 'DELETE',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify({ imageUrl })
-    });
-
-    const data = await response.json();
-    console.log('📥 後端回應：', data);
-
-    if (data.success) {
-      console.log('✅ 伺服器檔案已刪除');
-      
-      // 從前端狀態移除
-      setUploadedImages(prev => prev.filter((_, i) => i !== index));
-      
-      // 清空 file input
-      const fileInput = document.getElementById('image-upload') as HTMLInputElement;
-      if (fileInput) {
-        fileInput.value = '';
+    for (let i = 0; i < files.length; i++) {
+      if (files[i].size > MAX_FILE_SIZE) {
+        alert(
+          `圖片 ${files[i].name} 太大！\n\n` +
+          `檔案大小：${(files[i].size / 1024 / 1024).toFixed(2)} MB\n` +
+          `最大限制：5 MB\n\n` +
+          `請壓縮後再上傳。`
+        );
+        e.target.value = '';
+        return;
       }
-      
-    } else {
-      console.log('❌ 刪除失敗：', data.message);
-      alert('刪除失敗：' + data.message);
     }
 
-  } catch (error) {
-    console.error('❌ 刪除圖片時發生錯誤：', error);
-    alert('刪除失敗，請檢查網路連線');
-  }
-};
+    setUploading(true);
+
+    try {
+      const token = localStorage.getItem('token');
+      
+      const formData = new FormData();
+      Array.from(files).forEach(file => {
+        formData.append('images', file);
+      });
+
+      const response = await fetch('http://45.32.24.240/api/upload/images', {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`
+        },
+        body: formData
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setUploadedImages(prev => [...prev, ...data.imageUrls]);
+        alert('圖片上傳成功！');
+      } else {
+        alert(`上傳失敗：${data.message}`);
+      }
+
+    } catch (error) {
+      console.error('上傳失敗：', error);
+      alert('圖片上傳失敗，請稍後再試');
+    } finally {
+      setUploading(false);
+      e.target.value = '';
+    }
+  };
+
+  // 處理拖曳排序
+  const handleDragEnd = (event: any) => {
+    const { active, over } = event;
+
+    if (over && active.id !== over.id) {
+      setUploadedImages((items) => {
+        const oldIndex = items.indexOf(active.id);
+        const newIndex = items.indexOf(over.id);
+        
+        return arrayMove(items, oldIndex, newIndex);
+      });
+    }
+  };
+
+  // 刪除圖片
+  const handleRemoveImage = async (index: number) => {
+    const imageUrl = uploadedImages[index];
+    
+    try {
+      const token = localStorage.getItem('token');
+
+      if (!token) {
+        alert('請先登入');
+        return;
+      }
+
+      const response = await fetch('http://45.32.24.240/api/upload/image', {
+        method: 'DELETE',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ imageUrl })
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        setUploadedImages(prev => prev.filter((_, i) => i !== index));
+        
+        const fileInput = document.getElementById('image-upload') as HTMLInputElement;
+        if (fileInput) {
+          fileInput.value = '';
+        }
+      } else {
+        alert('刪除失敗：' + data.message);
+      }
+
+    } catch (error) {
+      console.error('刪除圖片時發生錯誤：', error);
+      alert('刪除失敗，請檢查網路連線');
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!formData.name || !formData.price || formData.stock === undefined) {
-      alert('請填寫所有必填欄位');
+    // 驗證商品名稱
+    if (!formData.name) {
+      alert('請填寫商品名稱');
       return;
     }
 
+    // 驗證規格
+    for (let i = 0; i < variants.length; i++) {
+      const v = variants[i];
+      if (!v.name || v.price === undefined || v.stock === undefined) {
+        alert(`請填寫規格 ${i + 1} 的所有欄位`);
+        return;
+      }
+      if (v.price < 0 || v.stock < 0) {
+        alert(`規格 ${i + 1} 的價格和庫存不能為負數`);
+        return;
+      }
+    }
+
+    // 驗證分類
+    if (selectedCategories.length === 0) {
+      alert('請至少選擇一個分類');
+      return;
+    }
+
+    // 驗證圖片
     if (uploadedImages.length === 0) {
       alert('請至少上傳一張商品圖片');
       return;
@@ -300,18 +409,14 @@ const handleRemoveImage = async (index: number) => {
         return;
       }
 
-      // 轉換狀態：active -> 上架, inactive -> 下架
-      const status = formData.status === 'active' ? '上架' : '下架';
-
       // 準備要送到後端的資料
       const productData = {
         name: formData.name,
         description: formData.description || '',
-        price: formData.price,
-        stock: formData.stock,
-        category_id: getCategoryId(formData.category || '服飾'),
-        status: status,
-        imageUrls: uploadedImages  // ← 傳送圖片 URL 陣列
+        variants: variants,  // ⭐ 規格陣列
+        categoryIds: selectedCategories,  // ⭐ 分類ID陣列
+        status: formData.status === 'active' ? '上架' : '下架',
+        imageUrls: uploadedImages
       };
 
       let response;
@@ -342,7 +447,7 @@ const handleRemoveImage = async (index: number) => {
 
       if (data.success) {
         alert(product ? '商品更新成功！' : '商品新增成功！');
-        onSave(formData as Product);
+        onSave(formData as any);
         onClose();
         window.location.reload();
       } else {
@@ -355,18 +460,6 @@ const handleRemoveImage = async (index: number) => {
     } finally {
       setLoading(false);
     }
-  };
-
-  // 將分類名稱轉換為分類 ID
-  const getCategoryId = (categoryName: string): number => {
-    const categoryMap: { [key: string]: number } = {
-      '服飾': 1,
-      '電子產品': 2,
-      '食品': 3,
-      '配件': 4,
-      '居家用品': 5
-    };
-    return categoryMap[categoryName] || 1;
   };
 
   return (
@@ -383,6 +476,7 @@ const handleRemoveImage = async (index: number) => {
 
         <form onSubmit={handleSubmit} className="modal-form">
           <div className="form-body">
+            {/* 商品名稱 */}
             <div className="form-group">
               <label className="form-label">
                 商品名稱 <span className="required">*</span>
@@ -399,57 +493,101 @@ const handleRemoveImage = async (index: number) => {
               />
             </div>
 
+            {/* ⭐ 新增：商品規格 */}
             <div className="form-group">
               <label className="form-label">
-                分類 <span className="required">*</span>
+                商品規格 <span className="required">*</span>
+                <span style={{ fontSize: '0.875rem', color: '#6b7280', marginLeft: '0.5rem' }}>
+                  （最多 {MAX_VARIANTS} 個）
+                </span>
               </label>
-              <select
-                name="category"
-                value={formData.category}
-                onChange={handleChange}
-                className="form-select"
-                required
-                disabled={loading}
-              >
-                {categories.map(cat => (
-                  <option key={cat} value={cat}>{cat}</option>
+              
+              <div className="variants-container">
+                {variants.map((variant, index) => (
+                  <div key={index} className="variant-item">
+                    <div className="variant-header">
+                      <span className="variant-label">規格 {index + 1}</span>
+                      {variants.length > 1 && (
+                        <button
+                          type="button"
+                          onClick={() => handleRemoveVariant(index)}
+                          className="remove-variant-btn"
+                          disabled={loading}
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      )}
+                    </div>
+                    
+                    <div className="variant-fields">
+                      <input
+                        type="text"
+                        placeholder="規格名稱（例如：黑色-M、白色-L）"
+                        value={variant.name}
+                        onChange={(e) => handleVariantChange(index, 'name', e.target.value)}
+                        className="form-input"
+                        required
+                        disabled={loading}
+                      />
+                      <input
+                        type="number"
+                        placeholder="價格"
+                        value={variant.price}
+                        onChange={(e) => handleVariantChange(index, 'price', e.target.value)}
+                        className="form-input"
+                        min="0"
+                        required
+                        disabled={loading}
+                      />
+                      <input
+                        type="number"
+                        placeholder="庫存"
+                        value={variant.stock}
+                        onChange={(e) => handleVariantChange(index, 'stock', e.target.value)}
+                        className="form-input"
+                        min="0"
+                        required
+                        disabled={loading}
+                      />
+                    </div>
+                  </div>
                 ))}
-              </select>
+                
+                {variants.length < MAX_VARIANTS && (
+                  <button
+                    type="button"
+                    onClick={handleAddVariant}
+                    className="add-variant-btn"
+                    disabled={loading}
+                  >
+                    <Plus size={16} />
+                    新增規格
+                  </button>
+                )}
+              </div>
             </div>
 
-            <div className="form-row">
-              <div className="form-group">
-                <label className="form-label">
-                  價格 (NT$) <span className="required">*</span>
-                </label>
-                <input
-                  type="number"
-                  name="price"
-                  value={formData.price}
-                  onChange={handleChange}
-                  className="form-input"
-                  placeholder="0"
-                  min="0"
-                  required
-                  disabled={loading}
-                />
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">
-                  庫存 <span className="required">*</span>
-                </label>
-                <input
-                  type="number"
-                  name="stock"
-                  value={formData.stock}
-                  onChange={handleChange}
-                  className="form-input"
-                  placeholder="0"
-                  min="0"
-                  required
-                  disabled={loading}
-                />
+            {/* ⭐ 新增：多分類選擇 */}
+            <div className="form-group">
+              <label className="form-label">
+                商品分類 <span className="required">*</span>
+                <span style={{ fontSize: '0.875rem', color: '#6b7280', marginLeft: '0.5rem' }}>
+                  （最多選 {MAX_CATEGORIES} 個，已選 {selectedCategories.length}/{MAX_CATEGORIES}）
+                </span>
+              </label>
+              
+              <div className="categories-container">
+                {categories.map(category => (
+                  <label key={category.id} className="category-checkbox">
+                    <input
+                      type="checkbox"
+                      checked={selectedCategories.includes(category.id)}
+                      onChange={() => handleCategoryToggle(category.id)}
+                      disabled={loading || (!selectedCategories.includes(category.id) && selectedCategories.length >= MAX_CATEGORIES)}
+                    />
+                    <span>{category.name}</span>
+                  </label>
+                ))}
               </div>
             </div>
 
@@ -460,66 +598,66 @@ const handleRemoveImage = async (index: number) => {
               </label>
               
               <div className="image-upload-area">
-            <input
-              type="file"
-              id="image-upload"
-              accept="image/*"
-              multiple
-              onChange={handleImageUpload}
-              style={{ display: 'none' }}
-              disabled={uploading || loading || uploadedImages.length >= MAX_IMAGES}
-            />
-  
-              <label 
-                htmlFor="image-upload" 
-                className="upload-button"
-                style={{
-                  cursor: uploadedImages.length >= MAX_IMAGES ? 'not-allowed' : 'pointer',
-                  opacity: uploadedImages.length >= MAX_IMAGES ? 0.5 : 1
-                }}
-                          >
-                <Upload className="upload-icon" />
-                {uploading ? '上傳中...' : 
-                uploadedImages.length >= MAX_IMAGES ? '已達上限' :
-                '點擊上傳圖片（可多選）'}
-              </label>
-  
+                <input
+                  type="file"
+                  id="image-upload"
+                  accept="image/*"
+                  multiple
+                  onChange={handleImageUpload}
+                  style={{ display: 'none' }}
+                  disabled={uploading || loading || uploadedImages.length >= MAX_IMAGES}
+                />
+      
+                <label 
+                  htmlFor="image-upload" 
+                  className="upload-button"
+                  style={{
+                    cursor: uploadedImages.length >= MAX_IMAGES ? 'not-allowed' : 'pointer',
+                    opacity: uploadedImages.length >= MAX_IMAGES ? 0.5 : 1
+                  }}
+                >
+                  <Upload className="upload-icon" />
+                  {uploading ? '上傳中...' : 
+                  uploadedImages.length >= MAX_IMAGES ? '已達上限' :
+                  '點擊上傳圖片（可多選）'}
+                </label>
+      
                 <p className="upload-hint">
                   支援 JPG, PNG 格式，最多 8 張，每張限制 5MB
                   {uploadedImages.length > 0 && ` (已上傳 ${uploadedImages.length}/8)`}
                 </p>
               </div>
 
-              {/* ✅ 已上傳的圖片預覽（支援拖曳排序） */}
-                {uploadedImages.length > 0 && (
-                  <div className="uploaded-images-container">
-                    <p className="drag-hint">💡 拖曳圖片可調整順序，第一張為主圖</p>
-                    
-                    <DndContext 
-                      sensors={sensors}
-                      collisionDetection={closestCenter}
-                      onDragEnd={handleDragEnd}
+              {uploadedImages.length > 0 && (
+                <div className="uploaded-images-container">
+                  <p className="drag-hint">💡 拖曳圖片可調整順序，第一張為主圖</p>
+                  
+                  <DndContext 
+                    sensors={sensors}
+                    collisionDetection={closestCenter}
+                    onDragEnd={handleDragEnd}
+                  >
+                    <SortableContext 
+                      items={uploadedImages}
+                      strategy={horizontalListSortingStrategy}
                     >
-                      <SortableContext 
-                        items={uploadedImages}
-                        strategy={horizontalListSortingStrategy}
-                      >
-                        <div className="uploaded-images">
-                          {uploadedImages.map((url, index) => (
-                            <SortableImage
-                              key={url}
-                              url={url}
-                              index={index}
-                              onRemove={handleRemoveImage}
-                            />
-                          ))}
-                        </div>
-                      </SortableContext>
-                    </DndContext>
-                  </div>
-                )}
+                      <div className="uploaded-images">
+                        {uploadedImages.map((url, index) => (
+                          <SortableImage
+                            key={url}
+                            url={url}
+                            index={index}
+                            onRemove={handleRemoveImage}
+                          />
+                        ))}
+                      </div>
+                    </SortableContext>
+                  </DndContext>
+                </div>
+              )}
             </div>
 
+            {/* 商品描述 */}
             <div className="form-group">
               <label className="form-label">商品描述</label>
               <textarea
@@ -533,6 +671,7 @@ const handleRemoveImage = async (index: number) => {
               />
             </div>
 
+            {/* 商品狀態 */}
             <div className="form-group">
               <label className="form-label">商品狀態</label>
               <div className="radio-group">
