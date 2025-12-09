@@ -38,7 +38,7 @@ const ProductManagement: React.FC = () => {
         category: getCategoryName(product.category_id),
         price: parseFloat(product.price),
         stock: product.stock,
-        image: product.image_url || 'data:image/svg+xml,%3Csvg xmlns="http://www.w3.org/2000/svg" width="100" height="100"%3E%3Crect fill="%23e5e7eb" width="100" height="100"/%3E%3Ctext fill="%239ca3af" font-size="12" x="50%25" y="50%25" text-anchor="middle"%3E暫無圖片%3C/text%3E%3C/svg%3E',
+        image: product.image_url || '/placeholder.png',
         description: product.description || '',
         status: product.status === '上架' ? 'active' : 'inactive'
       }));

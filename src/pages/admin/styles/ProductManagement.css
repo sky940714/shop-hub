@@ -1,0 +1,289 @@
+/* ProductManagement.css */
+
+.product-management {
+  padding: 24px;
+}
+
+/* ===================================
+   頁面標題區
+   =================================== */
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+}
+
+.page-title {
+  font-size: 24px;
+  font-weight: 700;
+  color: #111827;
+  margin: 0;
+}
+
+.btn-primary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  color: white;
+  border: none;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s;
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.btn-primary:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(102, 126, 234, 0.4);
+}
+
+.btn-icon {
+  width: 18px;
+  height: 18px;
+}
+
+/* ===================================
+   內容卡片
+   =================================== */
+
+.content-card {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+  overflow: hidden;
+}
+
+/* ===================================
+   搜尋欄
+   =================================== */
+
+.search-bar {
+  padding: 20px;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.search-input-wrapper {
+  position: relative;
+  max-width: 400px;
+}
+
+.search-icon {
+  position: absolute;
+  left: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 20px;
+  height: 20px;
+  color: #9ca3af;
+}
+
+.search-input {
+  width: 100%;
+  padding: 10px 12px 10px 40px;
+  border: 2px solid #e5e7eb;
+  border-radius: 8px;
+  font-size: 14px;
+  transition: all 0.2s;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: #667eea;
+  box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+}
+
+/* ===================================
+   表格樣式
+   =================================== */
+
+.table-container {
+  overflow-x: auto;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.data-table thead {
+  background: #f9fafb;
+}
+
+.data-table th {
+  padding: 16px 20px;
+  text-align: left;
+  font-size: 13px;
+  font-weight: 600;
+  color: #6b7280;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.data-table tbody tr {
+  border-bottom: 1px solid #e5e7eb;
+  transition: background 0.2s;
+}
+
+.data-table tbody tr:hover {
+  background: #f9fafb;
+}
+
+.data-table td {
+  padding: 16px 20px;
+  font-size: 14px;
+  color: #374151;
+  vertical-align: middle;
+}
+
+/* 商品圖片 */
+.product-image {
+  width: 60px;
+  height: 60px;
+  object-fit: cover;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+}
+
+/* 商品名稱 */
+.product-name {
+  font-weight: 600;
+  color: #111827;
+}
+
+/* 價格 */
+.product-price {
+  font-weight: 600;
+  color: #059669;
+}
+
+/* 庫存 */
+.stock-low {
+  color: #dc2626;
+  font-weight: 600;
+}
+
+.stock-normal {
+  color: #059669;
+  font-weight: 600;
+}
+
+/* 狀態標籤 */
+.status-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  border-radius: 12px;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.status-active {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.status-inactive {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+/* 操作按鈕 */
+.action-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.btn-icon-edit,
+.btn-icon-delete {
+  padding: 8px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-icon-edit {
+  background: #eff6ff;
+  color: #2563eb;
+}
+
+.btn-icon-edit:hover {
+  background: #dbeafe;
+  transform: scale(1.1);
+}
+
+.btn-icon-delete {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.btn-icon-delete:hover {
+  background: #fecaca;
+  transform: scale(1.1);
+}
+
+.btn-icon-edit .icon,
+.btn-icon-delete .icon {
+  width: 16px;
+  height: 16px;
+}
+
+/* 空狀態 */
+.empty-state {
+  padding: 60px 20px;
+  text-align: center;
+  color: #9ca3af;
+  font-size: 14px;
+}
+
+/* ===================================
+   響應式設計
+   =================================== */
+
+@media (max-width: 768px) {
+  .product-management {
+    padding: 16px;
+  }
+
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+  }
+
+  .btn-primary {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .search-input-wrapper {
+    max-width: 100%;
+  }
+
+  .table-container {
+    overflow-x: scroll;
+  }
+
+  .data-table {
+    min-width: 800px;
+  }
+
+  .product-image {
+    width: 50px;
+    height: 50px;
+  }
+
+  .data-table th,
+  .data-table td {
+    padding: 12px 16px;
+  }
+}
