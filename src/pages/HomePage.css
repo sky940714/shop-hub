@@ -315,16 +315,19 @@
 .product-image-container {
   position: relative;
   width: 100%;
-  aspect-ratio: 1 / 1;  /* ← 新增：1:1 正方形容器 */
-  background-color: #ffffff;  /* ← 新增：白色背景 */
-  overflow: hidden;  /* ← 新增：防止溢出 */
+  padding-bottom: 100%;  /* ← 用這個方法創建 1:1 正方形 */
+  background-color: #ffffff;
+  overflow: hidden;
 }
 
 .product-image {
+  position: absolute;  /* ← 關鍵：絕對定位 */
+  top: 0;
+  left: 0;
   width: 100%;
-  height: 100%;  /* ← 改這裡：填滿容器 */
-  object-fit: contain;  /* ← 保持：完整顯示 */
-  object-position: center;  /* ← 新增：置中 */
+  height: 100%;
+  object-fit: contain;
+  object-position: center;
   border-radius: 0.5rem 0.5rem 0 0;
 }
 
