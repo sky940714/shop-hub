@@ -10,14 +10,6 @@ interface Stats {
   totalRevenue: number;
 }
 
-interface RecentOrder {
-  id: string;
-  customerName: string;
-  total: number;
-  status: string;
-  date: string;
-}
-
 const Dashboard: React.FC = () => {
   const [stats, setStats] = useState<Stats>({
     totalProducts: 0,
@@ -25,87 +17,86 @@ const Dashboard: React.FC = () => {
     totalMembers: 0,
     totalRevenue: 0
   });
-
-  const [recentOrders, setRecentOrders] = useState<RecentOrder[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    // TODO: 替換成 API 調用
     fetchDashboardData();
   }, []);
 
   const fetchDashboardData = async () => {
-    // 模擬 API 調用
-    // const response = await fetch('/api/admin/dashboard');
-    // const data = await response.json();
-    
-    // 模擬數據
-    setStats({
-      totalProducts: 156,
-      totalOrders: 89,
-      totalMembers: 342,
-      totalRevenue: 487650
-    });
+    try {
+      setLoading(true);
+      setError(null);
 
-    setRecentOrders([
-      {
-        id: 'ORD001',
-        customerName: '王小明',
-        total: 2580,
-        status: 'processing',
-        date: '2025-10-12'
-      },
-      {
-        id: 'ORD002',
-        customerName: '李小華',
-        total: 590,
-        status: 'shipped',
-        date: '2025-10-11'
-      },
-      {
-        id: 'ORD003',
-        customerName: '張大同',
-        total: 3420,
-        status: 'completed',
-        date: '2025-10-10'
-      },
-      {
-        id: 'ORD004',
-        customerName: '陳美玲',
-        total: 1250,
-        status: 'pending',
-        date: '2025-10-10'
-      },
-      {
-        id: 'ORD005',
-        customerName: '林志明',
-        total: 890,
-        status: 'processing',
-        date: '2025-10-09'
+      const token = localStorage.getItem('token');
+      
+      if (!token) {
+        setError('請先登入');
+        return;
       }
-    ]);
+
+      const response = await fetch('http://45.32.24.240:5001/api/orders/admin/dashboard/stats', {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error('取得統計資料失敗');
+      }
+
+      const data = await response.json();
+
+      if (data.success) {
+        setStats(data.stats);
+      } else {
+        setError(data.message || '取得統計資料失敗');
+      }
+
+    } catch (error) {
+      console.error('取得統計資料錯誤:', error);
+      setError('無法載入統計資料，請稍後再試');
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const getStatusClass = (status: string) => {
-    const statusMap: { [key: string]: string } = {
-      pending: 'status-pending',
-      processing: 'status-processing',
-      shipped: 'status-shipped',
-      completed: 'status-completed',
-      cancelled: 'status-cancelled'
-    };
-    return statusMap[status] || '';
-  };
+  if (loading) {
+    return (
+      <div className="dashboard">
+        <div style={{ textAlign: 'center', padding: '40px' }}>
+          <p>載入中...</p>
+        </div>
+      </div>
+    );
+  }
 
-  const getStatusLabel = (status: string) => {
-    const labelMap: { [key: string]: string } = {
-      pending: '待處理',
-      processing: '處理中',
-      shipped: '已出貨',
-      completed: '已完成',
-      cancelled: '已取消'
-    };
-    return labelMap[status] || status;
-  };
+  if (error) {
+    return (
+      <div className="dashboard">
+        <div style={{ textAlign: 'center', padding: '40px', color: '#ef4444' }}>
+          <p>{error}</p>
+          <button 
+            onClick={fetchDashboardData}
+            style={{
+              marginTop: '20px',
+              padding: '10px 20px',
+              backgroundColor: '#3b82f6',
+              color: 'white',
+              border: 'none',
+              borderRadius: '6px',
+              cursor: 'pointer'
+            }}
+          >
+            重新載入
+          </button>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="dashboard">
@@ -151,39 +142,6 @@ const Dashboard: React.FC = () => {
             </div>
             <BarChart3 className="stat-icon" />
           </div>
-        </div>
-      </div>
-
-      {/* 最近訂單 */}
-      <div className="recent-orders">
-        <h3 className="section-title">最近訂單</h3>
-        <div className="table-container">
-          <table className="orders-table">
-            <thead>
-              <tr>
-                <th>訂單編號</th>
-                <th>客戶</th>
-                <th>金額</th>
-                <th>狀態</th>
-                <th>日期</th>
-              </tr>
-            </thead>
-            <tbody>
-              {recentOrders.map(order => (
-                <tr key={order.id}>
-                  <td className="order-id">{order.id}</td>
-                  <td>{order.customerName}</td>
-                  <td className="order-total">NT$ {order.total.toLocaleString()}</td>
-                  <td>
-                    <span className={`status-badge ${getStatusClass(order.status)}`}>
-                      {getStatusLabel(order.status)}
-                    </span>
-                  </td>
-                  <td>{order.date}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
         </div>
       </div>
     </div>
