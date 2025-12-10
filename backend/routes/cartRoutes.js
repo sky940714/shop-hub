@@ -9,8 +9,8 @@ const { protect } = require('../middleware/auth');
 // ========================================
 async function getOrCreateCart(userId) {
   try {
-    // 檢查使用者是否已有購物車
-    const carts = await db.query(
+    // ✅ 修改：加上解構
+    const [carts] = await db.query(
       'SELECT id FROM carts WHERE user_id = ?',
       [userId]
     );
@@ -19,8 +19,8 @@ async function getOrCreateCart(userId) {
       return carts[0].id;
     }
 
-    // 如果沒有,建立新購物車
-    const result = await db.query(
+    // ✅ 修改：加上解構
+    const [result] = await db.query(
       'INSERT INTO carts (user_id) VALUES (?)',
       [userId]
     );
@@ -44,16 +44,18 @@ router.get('/', protect, async (req, res) => {
     // 獲取或建立購物車
     const cartId = await getOrCreateCart(userId);
 
-    // 查詢購物車商品(JOIN 三個表)
+    // ✅ 修改：查詢包含 variant 資訊
     const query = `
       SELECT 
         ci.id as cart_item_id,
         ci.quantity,
+        ci.variant_id,
         p.id as product_id,
         p.name,
-        p.price,
-        p.stock,
         p.status,
+        COALESCE(pv.price, p.price) as price,
+        COALESCE(pv.stock, p.stock) as stock,
+        pv.variant_name,
         (SELECT image_url 
          FROM product_images 
          WHERE product_id = p.id 
@@ -61,11 +63,12 @@ router.get('/', protect, async (req, res) => {
          LIMIT 1) as image_url
       FROM cart_items ci
       JOIN products p ON ci.product_id = p.id
+      LEFT JOIN product_variants pv ON ci.variant_id = pv.id
       WHERE ci.cart_id = ?
       ORDER BY ci.id DESC
     `;
 
-    const items = await db.query(query, [cartId]);
+    const [items] = await db.query(query, [cartId]);
 
     // 計算總價
     const total = items.reduce((sum, item) => {
@@ -100,14 +103,14 @@ router.get('/', protect, async (req, res) => {
 // ========================================
 // 2. 加入購物車
 // POST /api/cart/add
-// Body: { product_id, quantity }
+// Body: { product_id, quantity, variant_id }
 // ========================================
 router.post('/add', protect, async (req, res) => {
   try {
     const userId = req.user.id;
-    const { product_id, quantity = 1 } = req.body;
+    const { product_id, quantity = 1, variant_id } = req.body;  // ✅ 新增：接收 variant_id
 
-    console.log('📦 加入購物車請求:', { userId, product_id, quantity });
+    console.log('📦 加入購物車請求:', { userId, product_id, quantity, variant_id });
 
     // 驗證輸入
     if (!product_id) {
@@ -124,8 +127,8 @@ router.post('/add', protect, async (req, res) => {
       });
     }
 
-    // 檢查商品是否存在
-    const products = await db.query(
+    // ✅ 修改：加上解構
+    const [products] = await db.query(
       'SELECT id, name, price, stock, status FROM products WHERE id = ?',
       [product_id]
     );
@@ -148,11 +151,37 @@ router.post('/add', protect, async (req, res) => {
       });
     }
 
+    // ✅ 新增：如果有 variant_id，檢查規格
+    let variantStock = product.stock;
+    let variantPrice = product.price;
+    let variantName = null;
+
+    if (variant_id) {
+      const [variants] = await db.query(
+        'SELECT id, variant_name, price, stock FROM product_variants WHERE id = ? AND product_id = ?',
+        [variant_id, product_id]
+      );
+
+      if (variants.length === 0) {
+        return res.status(404).json({ 
+          success: false, 
+          message: '商品規格不存在' 
+        });
+      }
+
+      const variant = variants[0];
+      variantStock = variant.stock;
+      variantPrice = variant.price;
+      variantName = variant.variant_name;
+
+      console.log('📦 規格資訊:', variant);
+    }
+
     // 檢查庫存
-    if (product.stock < quantity) {
+    if (variantStock < quantity) {
       return res.status(400).json({ 
         success: false, 
-        message: `庫存不足,目前庫存:${product.stock}` 
+        message: `庫存不足,目前庫存:${variantStock}` 
       });
     }
 
@@ -160,20 +189,20 @@ router.post('/add', protect, async (req, res) => {
     const cartId = await getOrCreateCart(userId);
     console.log('🛒 購物車 ID:', cartId);
 
-    // 檢查購物車是否已有此商品
-    const existingItems = await db.query(
-      'SELECT id, quantity FROM cart_items WHERE cart_id = ? AND product_id = ?',
-      [cartId, product_id]
+    // ✅ 修改：檢查是否已有相同商品+規格的組合
+    const [existingItems] = await db.query(
+      'SELECT id, quantity FROM cart_items WHERE cart_id = ? AND product_id = ? AND (variant_id = ? OR (variant_id IS NULL AND ? IS NULL))',
+      [cartId, product_id, variant_id, variant_id]
     );
 
     if (existingItems.length > 0) {
       // 更新數量
       const newQuantity = existingItems[0].quantity + quantity;
 
-      if (newQuantity > product.stock) {
+      if (newQuantity > variantStock) {
         return res.status(400).json({ 
           success: false, 
-          message: `超過庫存數量,目前庫存:${product.stock}` 
+          message: `超過庫存數量,目前庫存:${variantStock}` 
         });
       }
 
@@ -192,10 +221,10 @@ router.post('/add', protect, async (req, res) => {
       });
 
     } else {
-      // 新增到購物車
+      // ✅ 修改：新增到購物車時包含 variant_id
       await db.query(
-        'INSERT INTO cart_items (cart_id, product_id, quantity) VALUES (?, ?, ?)',
-        [cartId, product_id, quantity]
+        'INSERT INTO cart_items (cart_id, product_id, quantity, variant_id) VALUES (?, ?, ?, ?)',
+        [cartId, product_id, quantity, variant_id || null]
       );
 
       console.log('✅ 新增商品到購物車');
@@ -240,11 +269,17 @@ router.put('/update/:id', protect, async (req, res) => {
     // 獲取使用者的購物車 ID
     const cartId = await getOrCreateCart(userId);
 
-    // 檢查是否為該使用者的購物車項目
-    const cartItems = await db.query(
-      `SELECT ci.*, p.stock, p.status, p.name
+    // ✅ 修改：查詢包含 variant 庫存
+    const [cartItems] = await db.query(
+      `SELECT 
+         ci.*,
+         p.status,
+         p.name,
+         COALESCE(pv.stock, p.stock) as stock,
+         COALESCE(pv.price, p.price) as price
        FROM cart_items ci 
        JOIN products p ON ci.product_id = p.id 
+       LEFT JOIN product_variants pv ON ci.variant_id = pv.id
        WHERE ci.id = ? AND ci.cart_id = ?`,
       [cartItemId, cartId]
     );
@@ -275,7 +310,7 @@ router.put('/update/:id', protect, async (req, res) => {
       });
     }
 
-    // 更新數量
+    // ✅ 修改：加上解構
     await db.query(
       'UPDATE cart_items SET quantity = ? WHERE id = ?',
       [quantity, cartItemId]
@@ -311,8 +346,8 @@ router.delete('/remove/:id', protect, async (req, res) => {
     // 獲取使用者的購物車 ID
     const cartId = await getOrCreateCart(userId);
 
-    // 檢查是否為該使用者的購物車項目
-    const cartItems = await db.query(
+    // ✅ 修改：加上解構
+    const [cartItems] = await db.query(
       'SELECT * FROM cart_items WHERE id = ? AND cart_id = ?',
       [cartItemId, cartId]
     );
@@ -324,7 +359,7 @@ router.delete('/remove/:id', protect, async (req, res) => {
       });
     }
 
-    // 刪除項目
+    // ✅ 修改：加上解構（雖然不需要返回值，但保持一致性）
     await db.query('DELETE FROM cart_items WHERE id = ?', [cartItemId]);
 
     console.log('✅ 已從購物車移除');
@@ -356,7 +391,7 @@ router.delete('/clear', protect, async (req, res) => {
     // 獲取使用者的購物車 ID
     const cartId = await getOrCreateCart(userId);
 
-    // 刪除所有項目
+    // ✅ 修改：加上解構
     await db.query('DELETE FROM cart_items WHERE cart_id = ?', [cartId]);
 
     console.log('✅ 購物車已清空');
@@ -386,8 +421,8 @@ router.get('/count', protect, async (req, res) => {
     // 獲取或建立購物車
     const cartId = await getOrCreateCart(userId);
 
-    // 計算總數量(所有商品的 quantity 總和)
-    const result = await db.query(
+    // ✅ 修改：加上解構
+    const [result] = await db.query(
       'SELECT COALESCE(SUM(quantity), 0) as count FROM cart_items WHERE cart_id = ?',
       [cartId]
     );
