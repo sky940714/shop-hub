@@ -4,6 +4,8 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 interface CartItem {
   cart_item_id: number;
   product_id: number;
+  variant_id?: number;        // ✅ 新增
+  variant_name?: string;      // ✅ 新增
   name: string;
   price: number;
   quantity: number;
@@ -16,7 +18,7 @@ interface CartItem {
 interface CartContextType {
   cartCount: number;
   cartItems: CartItem[];
-  addToCart: (productId: number, quantity?: number) => Promise<void>;
+  addToCart: (productId: number, quantity?: number, variantId?: number) => Promise<void>;
   removeFromCart: (cartItemId: number) => Promise<void>;
   updateQuantity: (cartItemId: number, quantity: number) => Promise<void>;
   clearCart: () => Promise<void>;
@@ -69,7 +71,7 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
   };
 
   // 加入購物車
-  const addToCart = async (productId: number, quantity: number = 1) => {
+  const addToCart = async (productId: number, quantity: number = 1, variantId?: number) => {
     const token = localStorage.getItem('token');
     
     if (!token) {
@@ -88,7 +90,8 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
         },
         body: JSON.stringify({
           product_id: productId,
-          quantity: quantity
+          quantity: quantity,
+          variant_id: variantId
         })
       });
 
