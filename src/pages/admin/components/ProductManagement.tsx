@@ -138,7 +138,6 @@ const getCategoryName = (categoryId: number): string => {
           <table className="data-table">
             <thead>
               <tr>
-                <th>圖片</th>
                 <th>商品名稱</th>
                 <th>分類</th>
                 <th>價格</th>
@@ -150,13 +149,6 @@ const getCategoryName = (categoryId: number): string => {
             <tbody>
               {filteredProducts.map(product => (
                 <tr key={product.id}>
-                  <td>
-                    <img
-                      src={product.image}
-                      alt={product.name}
-                      className="product-image"
-                    />
-                  </td>
                   <td className="product-name">{product.name}</td>
                   <td>{product.category}</td>
                   <td className="product-price">NT$ {product.price.toLocaleString()}</td>

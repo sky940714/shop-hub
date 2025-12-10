@@ -100,7 +100,14 @@ const ProductModal: React.FC<ProductModalProps> = ({ product, onClose, onSave })
     status: 'active' as 'active' | 'inactive'
   });
 
-  // ⭐ 新增：規格狀態
+  // ⭐ 新增：規格開關狀態
+  const [hasVariants, setHasVariants] = useState(false);
+  
+  // ⭐ 新增：單一商品的價格和庫存
+  const [singlePrice, setSinglePrice] = useState<number>(0);
+  const [singleStock, setSingleStock] = useState<number>(0);
+
+  // ⭐ 原有：多規格狀態
   const [variants, setVariants] = useState<ProductVariant[]>([
     { name: '', price: 0, stock: 0 }
   ]);
@@ -158,13 +165,22 @@ const ProductModal: React.FC<ProductModalProps> = ({ product, onClose, onSave })
           status: productData.status === '上架' ? 'active' : 'inactive'
         });
 
-        // 設定規格
+        // ⭐ 修改：判斷是單一商品還是多規格商品
         if (productData.variants && productData.variants.length > 0) {
-          setVariants(productData.variants.map((v: any) => ({
-            name: v.variant_name,
-            price: parseFloat(v.price),
-            stock: v.stock
-          })));
+          // 如果只有一個規格且名稱是「標準款」，視為單一商品
+          if (productData.variants.length === 1 && productData.variants[0].variant_name === '標準款') {
+            setHasVariants(false);
+            setSinglePrice(parseFloat(productData.variants[0].price));
+            setSingleStock(productData.variants[0].stock);
+          } else {
+            // 多規格商品
+            setHasVariants(true);
+            setVariants(productData.variants.map((v: any) => ({
+              name: v.variant_name,
+              price: parseFloat(v.price),
+              stock: v.stock
+            })));
+          }
         }
 
         // 設定分類
@@ -193,6 +209,9 @@ const ProductModal: React.FC<ProductModalProps> = ({ product, onClose, onSave })
     } else {
       // 新增模式：重置所有狀態
       setFormData({ name: '', description: '', status: 'active' });
+      setHasVariants(false);  // ⭐ 新增：預設不啟用規格
+      setSinglePrice(0);
+      setSingleStock(0);
       setVariants([{ name: '', price: 0, stock: 0 }]);
       setSelectedCategories([]);
       setUploadedImages([]);
@@ -373,16 +392,29 @@ const ProductModal: React.FC<ProductModalProps> = ({ product, onClose, onSave })
       return;
     }
 
-    // 驗證規格
-    for (let i = 0; i < variants.length; i++) {
-      const v = variants[i];
-      if (!v.name || v.price === undefined || v.stock === undefined) {
-        alert(`請填寫規格 ${i + 1} 的所有欄位`);
+    // ⭐ 修改：根據規格開關驗證
+    if (!hasVariants) {
+      // 單一商品驗證
+      if (!singlePrice || singlePrice <= 0) {
+        alert('請填寫商品價格（必須大於 0）');
         return;
       }
-      if (v.price < 0 || v.stock < 0) {
-        alert(`規格 ${i + 1} 的價格和庫存不能為負數`);
+      if (singleStock < 0) {
+        alert('庫存數量不能為負數');
         return;
+      }
+    } else {
+      // 多規格驗證
+      for (let i = 0; i < variants.length; i++) {
+        const v = variants[i];
+        if (!v.name || v.price === undefined || v.stock === undefined) {
+          alert(`請填寫規格 ${i + 1} 的所有欄位`);
+          return;
+        }
+        if (v.price < 0 || v.stock < 0) {
+          alert(`規格 ${i + 1} 的價格和庫存不能為負數`);
+          return;
+        }
       }
     }
 
@@ -409,12 +441,14 @@ const ProductModal: React.FC<ProductModalProps> = ({ product, onClose, onSave })
         return;
       }
 
-      // 準備要送到後端的資料
+      // ⭐ 修改：根據規格開關準備資料
       const productData = {
         name: formData.name,
         description: formData.description || '',
-        variants: variants,  // ⭐ 規格陣列
-        categoryIds: selectedCategories,  // ⭐ 分類ID陣列
+        variants: hasVariants 
+          ? variants  // 多規格：使用 variants 陣列
+          : [{ name: '標準款', price: singlePrice, stock: singleStock }],  // 單一商品：轉成一個規格
+        categoryIds: selectedCategories,
         status: formData.status === 'active' ? '上架' : '下架',
         imageUrls: uploadedImages
       };
@@ -487,84 +521,139 @@ const ProductModal: React.FC<ProductModalProps> = ({ product, onClose, onSave })
                 value={formData.name}
                 onChange={handleChange}
                 className="form-input"
-                placeholder="請輸入商品名稱"
+                placeholder="請輸入商品名稱（例如：純棉T恤、USB充電頭）"
                 required
                 disabled={loading}
               />
             </div>
 
-            {/* ⭐ 新增：商品規格 */}
+            {/* ⭐ 新增：規格切換區域 */}
             <div className="form-group">
               <label className="form-label">
                 商品規格 <span className="required">*</span>
-                <span style={{ fontSize: '0.875rem', color: '#6b7280', marginLeft: '0.5rem' }}>
-                  （最多 {MAX_VARIANTS} 個）
-                </span>
               </label>
               
-              <div className="variants-container">
-                {variants.map((variant, index) => (
-                  <div key={index} className="variant-item">
-                    <div className="variant-header">
-                      <span className="variant-label">規格 {index + 1}</span>
-                      {variants.length > 1 && (
-                        <button
-                          type="button"
-                          onClick={() => handleRemoveVariant(index)}
-                          className="remove-variant-btn"
-                          disabled={loading}
-                        >
-                          <Trash2 size={16} />
-                        </button>
-                      )}
-                    </div>
-                    
-                    <div className="variant-fields">
-                      <input
-                        type="text"
-                        placeholder="規格名稱（例如：黑色-M、白色-L）"
-                        value={variant.name}
-                        onChange={(e) => handleVariantChange(index, 'name', e.target.value)}
-                        className="form-input"
-                        required
-                        disabled={loading}
-                      />
+              {/* ⭐ 規格開關 */}
+              <label className="variant-toggle-checkbox">
+                <input
+                  type="checkbox"
+                  checked={hasVariants}
+                  onChange={(e) => setHasVariants(e.target.checked)}
+                  disabled={loading}
+                />
+                <span>此商品有多種規格（如顏色、尺寸）</span>
+              </label>
+
+              {/* ⭐ 條件渲染：單一商品 or 多規格 */}
+              {!hasVariants ? (
+                /* 單一商品：顯示價格和庫存輸入框 */
+                <div className="single-product-fields">
+                  <div className="form-row">
+                    <div className="form-group">
+                      <label className="form-label">
+                        商品價格 <span className="required">*</span>
+                      </label>
                       <input
                         type="number"
-                        placeholder="價格"
-                        value={variant.price}
-                        onChange={(e) => handleVariantChange(index, 'price', e.target.value)}
+                        value={singlePrice}
+                        onChange={(e) => setSinglePrice(Number(e.target.value))}
                         className="form-input"
+                        placeholder="請輸入商品價格（例如：299）"
                         min="0"
+                        step="0.01"
                         required
                         disabled={loading}
                       />
+                    </div>
+
+                    <div className="form-group">
+                      <label className="form-label">
+                        商品庫存 <span className="required">*</span>
+                      </label>
                       <input
                         type="number"
-                        placeholder="庫存"
-                        value={variant.stock}
-                        onChange={(e) => handleVariantChange(index, 'stock', e.target.value)}
+                        value={singleStock}
+                        onChange={(e) => setSingleStock(Number(e.target.value))}
                         className="form-input"
+                        placeholder="請輸入庫存數量（例如：100）"
                         min="0"
                         required
                         disabled={loading}
                       />
                     </div>
                   </div>
-                ))}
-                
-                {variants.length < MAX_VARIANTS && (
-                  <button
-                    type="button"
-                    onClick={handleAddVariant}
-                    className="add-variant-btn"
-                    disabled={loading}
-                  >
-                    <Plus size={16} />
-                    新增規格
-                  </button>
-                )}
-              </div>
+                </div>
+              ) : (
+                /* 多規格：顯示規格管理介面 */
+                <div className="variants-container">
+                  <div className="variant-hint">
+                    💡 提示：為商品新增不同的規格選項（例如：黑色-M、白色-L），最多 {MAX_VARIANTS} 個
+                  </div>
+
+                  {variants.map((variant, index) => (
+                    <div key={index} className="variant-item">
+                      <div className="variant-header">
+                        <span className="variant-label">規格 {index + 1}</span>
+                        {variants.length > 1 && (
+                          <button
+                            type="button"
+                            onClick={() => handleRemoveVariant(index)}
+                            className="remove-variant-btn"
+                            disabled={loading}
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        )}
+                      </div>
+                      
+                      <div className="variant-fields">
+                        <input
+                          type="text"
+                          placeholder="規格名稱（例如：黑色-M、紅色-L、均碼）"
+                          value={variant.name}
+                          onChange={(e) => handleVariantChange(index, 'name', e.target.value)}
+                          className="form-input"
+                          required
+                          disabled={loading}
+                        />
+                        <input
+                          type="number"
+                          placeholder="價格（新台幣）"
+                          value={variant.price}
+                          onChange={(e) => handleVariantChange(index, 'price', e.target.value)}
+                          className="form-input"
+                          min="0"
+                          step="0.01"
+                          required
+                          disabled={loading}
+                        />
+                        <input
+                          type="number"
+                          placeholder="庫存數量"
+                          value={variant.stock}
+                          onChange={(e) => handleVariantChange(index, 'stock', e.target.value)}
+                          className="form-input"
+                          min="0"
+                          required
+                          disabled={loading}
+                        />
+                      </div>
+                    </div>
+                  ))}
+                  
+                  {variants.length < MAX_VARIANTS && (
+                    <button
+                      type="button"
+                      onClick={handleAddVariant}
+                      className="add-variant-btn"
+                      disabled={loading}
+                    >
+                      <Plus size={16} />
+                      新增規格
+                    </button>
+                  )}
+                </div>
+              )}
             </div>
 
             {/* ⭐ 新增：多分類選擇 */}

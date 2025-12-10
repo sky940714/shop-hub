@@ -692,3 +692,87 @@
     gap: 8px;
   }
 }
+
+/* ===================================
+   規格切換開關樣式
+   =================================== */
+
+.variant-toggle-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  background: linear-gradient(135deg, #f0f4ff 0%, #ffffff 100%);
+  border: 2px solid #e5e7eb;
+  border-radius: 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+  margin-bottom: 16px;
+  user-select: none;
+}
+
+.variant-toggle-checkbox:hover {
+  border-color: #667eea;
+  background: linear-gradient(135deg, #e8edff 0%, #f8f9ff 100%);
+}
+
+.variant-toggle-checkbox input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  cursor: pointer;
+  accent-color: #667eea;
+}
+
+.variant-toggle-checkbox span {
+  font-size: 14px;
+  font-weight: 600;
+  color: #374151;
+}
+
+/* ===================================
+   單一商品欄位樣式
+   =================================== */
+
+.single-product-fields {
+  margin-top: 16px;
+  padding: 16px;
+  background: linear-gradient(135deg, #f9fafb 0%, #ffffff 100%);
+  border-radius: 12px;
+  border: 2px solid #e5e7eb;
+}
+
+.single-product-fields .form-row {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 0;
+}
+
+.single-product-fields .form-group {
+  margin-bottom: 0;
+}
+
+/* ===================================
+   規格提示樣式
+   =================================== */
+
+.variant-hint {
+  font-size: 13px;
+  color: #667eea;
+  margin-bottom: 12px;
+  padding: 10px 12px;
+  background: #f0f4ff;
+  border-left: 3px solid #667eea;
+  border-radius: 6px;
+  font-weight: 500;
+}
+
+/* ===================================
+   響應式補充
+   =================================== */
+
+@media (max-width: 768px) {
+  .single-product-fields .form-row {
+    grid-template-columns: 1fr;
+  }
+}
