@@ -42,10 +42,11 @@ const testConnection = async () => {
 // 執行 SQL 查詢的輔助函數
 const query = async (sql, params) => {
   try {
-    const [results] = await promisePool.execute(sql, params);
-    return results;
+    return await promisePool.query(sql, params);  // ✅ 改用 query，返回完整 [results, fields]
   } catch (error) {
     console.error('SQL 查詢錯誤：', error.message);
+    console.error('SQL：', sql);      // ✅ 新增：方便除錯
+    console.error('參數：', params);  // ✅ 新增：方便除錯
     throw error;
   }
 };
