@@ -367,6 +367,32 @@ router.put('/admin/:orderNo/status', protect, async (req, res) => {
   }
 });
 
+// 7. 刪除訂單
+router.delete('/admin/:orderNo', protect, async (req, res) => {
+  const connection = await promisePool.getConnection();
+  try {
+    await connection.beginTransaction();
+    const { orderNo } = req.params;
+    
+    const [orders] = await connection.query('SELECT id FROM orders WHERE order_no = ?', [orderNo]);
+    if (orders.length === 0) {
+      return res.status(404).json({ success: false, message: '找不到訂單' });
+    }
+    
+    const orderId = orders[0].id;
+    await connection.query('DELETE FROM order_items WHERE order_id = ?', [orderId]);
+    await connection.query('DELETE FROM orders WHERE id = ?', [orderId]);
+    await connection.commit();
+    
+    res.json({ success: true, message: '訂單已刪除' });
+  } catch (error) {
+    await connection.rollback();
+    res.status(500).json({ success: false, message: '刪除訂單失敗' });
+  } finally {
+    connection.release();
+  }
+});
+
 // ========================================
 // 7. 數據總覽統計 (後台)
 // GET /api/orders/admin/dashboard/stats

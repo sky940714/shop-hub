@@ -171,7 +171,16 @@
             subtotal,
             shippingFee,
             total,
-            items: checkoutItems,
+            items: checkoutItems.map(item => ({
+            product_id: item.product_id,
+            variant_id: item.variant_id || null,
+            name: item.name,
+            image_url: item.image_url,
+            variant_name: item.variant_name || null,
+            price: item.price,
+            quantity: item.quantity,
+            cart_item_id: item.cart_item_id
+    }))
         };
 
         const response = await fetch('http://45.32.24.240/api/orders/create', {
