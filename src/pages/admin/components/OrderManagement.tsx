@@ -138,7 +138,7 @@ const OrderManagement: React.FC = () => {
 
   // 更新訂單狀態
   const handleStatusChange = async (orderNo: string, newStatus: string) => {
-    if (!confirm(`確定要將訂單狀態改為「${getStatusText(newStatus)}」嗎？`)) {
+    if (!window.confirm(`確定要將訂單狀態改為「${getStatusText(newStatus)}」嗎？`)) {
       return;
     }
 
@@ -172,7 +172,7 @@ const OrderManagement: React.FC = () => {
 
   // 刪除訂單（API 尚未實作，會報錯）
   const handleDeleteOrder = async (orderNo: string) => {
-    if (!confirm(`確定要刪除訂單 ${orderNo} 嗎？此操作無法復原！`)) {
+    if (!window.confirm(`確定要刪除訂單 ${orderNo} 嗎？此操作無法復原！`)) {
       return;
     }
 
