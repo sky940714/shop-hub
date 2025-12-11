@@ -14,7 +14,7 @@ router.post('/create', protect, async (req, res) => {
   try {
     await connection.beginTransaction();
     
-    const userId = req.user.id;  // ← 改成 id
+    const userId = req.user.id;
     const {
       shippingInfo,
       shippingMethod,
@@ -55,47 +55,61 @@ router.post('/create', protect, async (req, res) => {
 
     const orderId = orderResult.insertId;
 
-    // 插入訂單明細
+    // ✅ 修正：插入訂單明細（保存完整快照）
     for (const item of items) {
       await connection.query(`
         INSERT INTO order_items (
-          order_id, product_id, product_name, price, quantity, subtotal
-        ) VALUES (?, ?, ?, ?, ?, ?)
+          order_id, product_id, variant_id,
+          product_name, product_image, variant_name,
+          price, quantity, subtotal
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
       `, [
         orderId,
         item.product_id,
-        item.name,
+        item.variant_id || null,         // ✅ 修正：規格 ID
+        item.name,                        // 商品名稱快照
+        item.image_url || null,           // ✅ 修正：商品圖片快照
+        item.variant_name || null,        // ✅ 修正：規格名稱快照
         item.price,
         item.quantity,
         item.price * item.quantity
       ]);
 
-      // 扣除商品庫存
-      await connection.query(`
-        UPDATE products SET stock = stock - ? WHERE id = ?
-      `, [item.quantity, item.product_id]);
+      // ✅ 修正：區分商品庫存和規格庫存
+      if (item.variant_id) {
+        // 如果有規格，扣減規格庫存
+        await connection.query(`
+          UPDATE product_variants 
+          SET stock = stock - ? 
+          WHERE id = ?
+        `, [item.quantity, item.variant_id]);
+      } else {
+        // 如果沒有規格，扣減商品總庫存
+        await connection.query(`
+          UPDATE products 
+          SET stock = stock - ? 
+          WHERE id = ?
+        `, [item.quantity, item.product_id]);
+      }
     }
 
     // 如果是從購物車來的,清空購物車
     if (items[0] && items[0].cart_item_id) {
-    // 先取得該會員的 cart_id
-    const [carts] = await connection.query(`
+      const [carts] = await connection.query(`
         SELECT id FROM carts WHERE user_id = ?
-    `, [userId]);
-    
-    if (carts.length > 0) {
+      `, [userId]);
+      
+      if (carts.length > 0) {
         const cartId = carts[0].id;
-        // 刪除該購物車的所有商品
         await connection.query(`
-        DELETE FROM cart_items WHERE cart_id = ?
+          DELETE FROM cart_items WHERE cart_id = ?
         `, [cartId]);
-    }
+      }
     }
 
     await connection.commit();
 
     // 如果是線上付款,這裡應該要導向綠界
-    // 目前先回傳假的 paymentUrl
     const paymentUrl = paymentMethod !== 'cod' 
       ? `http://45.32.24.240/api/ecpay/payment/${orderNo}` 
       : null;
@@ -127,7 +141,7 @@ router.post('/create', protect, async (req, res) => {
 router.get('/:orderNo', protect, async (req, res) => {
   try {
     const { orderNo } = req.params;
-    const userId = req.user.id;  // ← 改成 id
+    const userId = req.user.id;
 
     // 查詢訂單基本資料
     const [orders] = await promisePool.query(`
@@ -168,11 +182,11 @@ router.get('/:orderNo', protect, async (req, res) => {
 
 // ========================================
 // 3. 查詢會員的所有訂單 (前台)
-// GET /api/orders/user/:userId
+// GET /api/orders/user/list
 // ========================================
-router.get('/user/:userId', protect, async (req, res) => {
+router.get('/user/list', protect, async (req, res) => {
   try {
-    const userId = req.user.id;  // ← 改成 id
+    const userId = req.user.id;
 
     // 查詢該會員的所有訂單
     const [orders] = await promisePool.query(`
@@ -199,25 +213,65 @@ router.get('/user/:userId', protect, async (req, res) => {
 });
 
 // ========================================
-// 4. 取得所有訂單 (後台)
+// 4. 取得所有訂單 (後台 - 帶分頁、搜尋、篩選)
 // GET /api/orders/admin/all
 // ========================================
 router.get('/admin/all', protect, async (req, res) => {
   try {
     // TODO: 檢查是否為管理員
-    // if (req.user.role !== 'admin') { return res.status(403)... }
 
+    // 分頁參數
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 20;
+    const offset = (page - 1) * limit;
+    
+    // 搜尋和篩選參數
+    const search = req.query.search || '';
+    const status = req.query.status || '';
+    
+    // 建立動態查詢條件
+    let whereClause = 'WHERE 1=1';
+    const params = [];
+    
+    // 搜尋：訂單編號或客戶名稱
+    if (search) {
+      whereClause += ' AND (o.order_no LIKE ? OR o.receiver_name LIKE ?)';
+      params.push(`%${search}%`, `%${search}%`);
+    }
+    
+    // 篩選：訂單狀態
+    if (status && status !== 'all') {
+      whereClause += ' AND o.status = ?';
+      params.push(status);
+    }
+    
+    // 查詢總筆數
+    const [countResult] = await promisePool.query(
+      `SELECT COUNT(*) as total FROM orders o ${whereClause}`,
+      params
+    );
+    const total = countResult[0].total;
+
+    // 查詢訂單列表
     const [orders] = await promisePool.query(`
       SELECT 
         o.id, o.order_no, o.receiver_name, o.total, 
         o.status, o.payment_status, o.created_at
       FROM orders o
+      ${whereClause}
       ORDER BY o.created_at DESC
-    `);
+      LIMIT ? OFFSET ?
+    `, [...params, limit, offset]);
 
     res.json({
       success: true,
-      orders: orders
+      orders: orders,
+      pagination: {
+        page: page,
+        limit: limit,
+        total: total,
+        totalPages: Math.ceil(total / limit)
+      }
     });
 
   } catch (error) {
