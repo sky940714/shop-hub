@@ -335,11 +335,14 @@ router.get('/admin/:orderNo', protect, async (req, res) => {
 // PUT /api/orders/admin/:orderNo/status
 // ========================================
 router.put('/admin/:orderNo/status', protect, async (req, res) => {
+  const connection = await promisePool.getConnection();
+  
   try {
+    await connection.beginTransaction();
+    
     const { orderNo } = req.params;
     const { status } = req.body;
 
-    // 驗證狀態值
     const validStatuses = ['pending', 'paid', 'shipped', 'completed', 'cancelled'];
     if (!validStatuses.includes(status)) {
       return res.status(400).json({
@@ -348,10 +351,46 @@ router.put('/admin/:orderNo/status', protect, async (req, res) => {
       });
     }
 
+    // 查詢訂單資訊
+    const [orders] = await connection.query(`
+      SELECT id, user_id, subtotal, status FROM orders WHERE order_no = ?
+    `, [orderNo]);
+    
+    if (orders.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: '找不到訂單'
+      });
+    }
+    
+    const order = orders[0];
+    const oldStatus = order.status;
+    
     // 更新訂單狀態
-    await promisePool.query(`
+    await connection.query(`
       UPDATE orders SET status = ? WHERE order_no = ?
     `, [status, orderNo]);
+
+    // ✅ 新增：當狀態改為 completed 且之前不是 completed 時，自動加點數
+    if (status === 'completed' && oldStatus !== 'completed') {
+      // 計算點數：每100元1點（只算商品金額，不含運費）
+      const points = Math.floor(order.subtotal / 100);
+      
+      if (points > 0) {
+        // 更新會員點數
+        await connection.query(`
+          UPDATE members SET points = points + ? WHERE id = ?
+        `, [points, order.user_id]);
+        
+        // 記錄點數交易
+        await connection.query(`
+          INSERT INTO point_transactions (member_id, order_no, points, type, description)
+          VALUES (?, ?, ?, 'earn', ?)
+        `, [order.user_id, orderNo, points, `訂單完成獲得 ${points} 點`]);
+      }
+    }
+    
+    await connection.commit();
 
     res.json({
       success: true,
@@ -359,11 +398,14 @@ router.put('/admin/:orderNo/status', protect, async (req, res) => {
     });
 
   } catch (error) {
+    await connection.rollback();
     console.error('更新訂單狀態失敗:', error);
     res.status(500).json({
       success: false,
       message: '更新訂單狀態失敗'
     });
+  } finally {
+    connection.release();
   }
 });
 
