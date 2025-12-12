@@ -1,50 +1,97 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Heart, Home, ShoppingCart, Search, User, Trash2 } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Heart, Home, ShoppingCart, Search, User, Trash2, Loader } from 'lucide-react';
 import './WishlistPage.css';
+// 引入你提供的 CartContext
+import { useCart } from '../context/CartContext';
 
+// 定義介面 (根據後端回傳的資料結構)
 interface WishlistProduct {
-  id: number;
+  wishlist_id: number;
+  product_id: number;
   name: string;
   price: number;
-  originalPrice?: number;
-  image: string;
-  category: string;
-  rating: number;
-  inStock: boolean;
+  original_price?: number;
+  image_url: string; // 注意這裡配合資料庫欄位可能叫 image_url
+  stock: number;
 }
 
 const WishlistPage: React.FC = () => {
-  const [wishlist, setWishlist] = useState<WishlistProduct[]>([
-    {
-      id: 1,
-      name: '經典白色T恤',
-      price: 890,
-      originalPrice: 1200,
-      image: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?w=400&h=400&fit=crop',
-      category: 'clothing',
-      rating: 4.5,
-      inStock: true
-    },
-    {
-      id: 2,
-      name: '藍牙無線耳機',
-      price: 2990,
-      originalPrice: 3990,
-      image: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?w=400&h=400&fit=crop',
-      category: 'electronics',
-      rating: 4.8,
-      inStock: true
+  const [wishlist, setWishlist] = useState<WishlistProduct[]>([]);
+  const [loading, setLoading] = useState<boolean>(true);
+  const { addToCart } = useCart(); // 使用全域購物車功能
+  const navigate = useNavigate();
+  const API_BASE = 'http://45.32.24.240/api'; // 你的 API 位址
+
+  // 1. 獲取收藏清單
+  const fetchWishlist = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      alert('請先登入會員');
+      navigate('/login'); // 導向登入頁
+      return;
     }
-  ]);
 
-  const removeFromWishlist = (productId: number) => {
-    setWishlist(wishlist.filter(item => item.id !== productId));
+    try {
+      setLoading(true);
+      const res = await fetch(`${API_BASE}/wishlist`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await res.json();
+      
+      if (data.success) {
+        setWishlist(data.data);
+      }
+    } catch (error) {
+      console.error('獲取收藏失敗:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const addToCart = (product: WishlistProduct) => {
-    alert(`已將 ${product.name} 加入購物車`);
+  useEffect(() => {
+    fetchWishlist();
+  }, []);
+
+  // 2. 移除收藏功能
+  const removeFromWishlist = async (productId: number) => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    try {
+      const res = await fetch(`${API_BASE}/wishlist/${productId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        // 前端直接過濾掉該商品，不需重新 fetch，體驗較快
+        setWishlist(prev => prev.filter(item => item.product_id !== productId));
+      } else {
+        alert(data.message);
+      }
+    } catch (error) {
+      alert('移除失敗，請稍後再試');
+    }
   };
+
+  // 3. 加入購物車處理
+  const handleAddToCart = async (product: WishlistProduct) => {
+    // 呼叫 CartContext 的方法
+    // 注意：因為收藏頁通常沒有選擇規格(Variant)，這裡暫時傳 undefined
+    // 如果你的商品強制需要規格，這裡可能需要彈出 Modal 讓使用者選
+    await addToCart(product.product_id, 1);
+  };
+
+  if (loading) {
+    return (
+      <div className="wishlist-page loading-center">
+        <Loader className="animate-spin" size={48} />
+        <p>載入最愛清單中...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="wishlist-page">
@@ -73,51 +120,55 @@ const WishlistPage: React.FC = () => {
               <p>共 {wishlist.length} 件商品</p>
             </div>
             <div className="wishlist-grid">
-              {wishlist.map(product => (
-                <div key={product.id} className="wishlist-card">
-                  <button
-                    onClick={() => removeFromWishlist(product.id)}
-                    className="remove-wishlist-btn"
-                  >
-                    <Trash2 size={20} />
-                  </button>
-                  
-                  {!product.inStock && (
-                    <div className="out-of-stock-badge">已售完</div>
-                  )}
-
-                  <img
-                    src={product.image}
-                    alt={product.name}
-                    className="wishlist-product-image"
-                  />
-
-                  <div className="wishlist-product-info">
-                    <h3 className="wishlist-product-name">{product.name}</h3>
-                    
-                    <div className="wishlist-product-rating">
-                      ⭐ {product.rating}
-                    </div>
-
-                    <div className="wishlist-product-price">
-                      <span className="price">NT$ {product.price.toLocaleString()}</span>
-                      {product.originalPrice && (
-                        <span className="original-price">
-                          NT$ {product.originalPrice.toLocaleString()}
-                        </span>
-                      )}
-                    </div>
-
+              {wishlist.map(product => {
+                const inStock = product.stock > 0;
+                
+                return (
+                  <div key={product.product_id} className="wishlist-card">
                     <button
-                      onClick={() => addToCart(product)}
-                      className="add-to-cart-btn"
-                      disabled={!product.inStock}
+                      onClick={() => removeFromWishlist(product.product_id)}
+                      className="remove-wishlist-btn"
+                      title="移除收藏"
                     >
-                      {product.inStock ? '加入購物車' : '已售完'}
+                      <Trash2 size={20} />
                     </button>
+                    
+                    {!inStock && (
+                      <div className="out-of-stock-badge">已售完</div>
+                    )}
+
+                    <img
+                      src={product.image_url || 'https://via.placeholder.com/400'} 
+                      alt={product.name}
+                      className="wishlist-product-image"
+                    />
+
+                    <div className="wishlist-product-info">
+                      <h3 className="wishlist-product-name">{product.name}</h3>
+                      
+                      {/* 如果資料庫沒有評分欄位，先隱藏或顯示預設值 */}
+                      {/* <div className="wishlist-product-rating">⭐ 4.5</div> */}
+
+                      <div className="wishlist-product-price">
+                        <span className="price">NT$ {product.price.toLocaleString()}</span>
+                        {product.original_price && product.original_price > product.price && (
+                          <span className="original-price">
+                            NT$ {product.original_price.toLocaleString()}
+                          </span>
+                        )}
+                      </div>
+
+                      <button
+                        onClick={() => handleAddToCart(product)}
+                        className={`add-to-cart-btn ${!inStock ? 'disabled' : ''}`}
+                        disabled={!inStock}
+                      >
+                        {inStock ? '加入購物車' : '已售完'}
+                      </button>
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </>
         )}
@@ -133,7 +184,7 @@ const WishlistPage: React.FC = () => {
           <Heart size={24} />
           <span>最愛</span>
         </Link>
-        <Link to="/" className="nav-item">
+        <Link to="/cart" className="nav-item">
           <ShoppingCart size={24} />
           <span>購物車</span>
         </Link>
