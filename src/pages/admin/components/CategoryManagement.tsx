@@ -9,6 +9,8 @@ import {
   useSensor,
   useSensors,
   DragEndEvent,
+  DragStartEvent,
+  DragOverlay,
 } from '@dnd-kit/core';
 import {
   arrayMove,
@@ -92,6 +94,7 @@ const CategoryManagement: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [activeId, setActiveId] = useState<number | null>(null);
 
   // 設定拖拽感應器
   const sensors = useSensors(
@@ -128,31 +131,38 @@ const CategoryManagement: React.FC = () => {
     }
   };
 
-  // 處理拖拽結束
-  const handleDragEnd = async (event: DragEndEvent) => {
-    const { active, over } = event;
+    // 處理拖拽開始
+    const handleDragStart = (event: DragStartEvent) => {
+      setActiveId(event.active.id as number);
+    };
 
-    if (!over || active.id === over.id) {
-      return;
-    }
+    // 處理拖拽結束
+const handleDragEnd = async (event: DragEndEvent) => {
+  const { active, over } = event;
 
-    const oldIndex = categories.findIndex((cat) => cat.id === active.id);
-    const newIndex = categories.findIndex((cat) => cat.id === over.id);
+  setActiveId(null);
 
-    // 更新本地順序
-    const newCategories = arrayMove(categories, oldIndex, newIndex);
-    
-    // 更新 sort_order
-    const updatedCategories = newCategories.map((cat, index) => ({
-      ...cat,
-      sort_order: index + 1,
-    }));
+  if (!over || active.id === over.id) {
+    return;
+  }
 
-    setCategories(updatedCategories);
+  const oldIndex = categories.findIndex((cat) => cat.id === active.id);
+  const newIndex = categories.findIndex((cat) => cat.id === over.id);
 
-    // 保存到後端
-    await saveOrder(updatedCategories);
-  };
+  // 更新本地順序
+  const newCategories = arrayMove(categories, oldIndex, newIndex);
+
+  // 更新 sort_order
+  const updatedCategories = newCategories.map((cat, index) => ({
+    ...cat,
+    sort_order: index + 1,
+  }));
+
+  setCategories(updatedCategories);
+
+  // 保存到後端
+  await saveOrder(updatedCategories);
+};
 
   // 保存排序到後端
   const saveOrder = async (orderedCategories: Category[]) => {
@@ -360,25 +370,45 @@ const CategoryManagement: React.FC = () => {
             <p>目前沒有任何分類</p>
           </div>
         ) : (
-          <DndContext
-            sensors={sensors}
-            collisionDetection={closestCenter}
-            onDragEnd={handleDragEnd}
-          >
-            <SortableContext
-              items={categories.map((cat) => cat.id)}
-              strategy={verticalListSortingStrategy}
-            >
-              {categories.map((category) => (
-                <SortableCategory
-                  key={category.id}
-                  category={category}
-                  onEdit={handleEditCategory}
-                  onDelete={handleDeleteCategory}
-                />
-              ))}
-            </SortableContext>
-          </DndContext>
+         <DndContext
+  sensors={sensors}
+  collisionDetection={closestCenter}
+  onDragStart={handleDragStart}
+  onDragEnd={handleDragEnd}
+>
+  <SortableContext
+    items={categories.map((cat) => cat.id)}
+    strategy={verticalListSortingStrategy}
+  >
+    {categories.map((category) => (
+      <SortableCategory
+        key={category.id}
+        category={category}
+        onEdit={handleEditCategory}
+        onDelete={handleDeleteCategory}
+      />
+    ))}
+  </SortableContext>
+  <DragOverlay>
+    {activeId ? (
+      <div className="category-card">
+        <div className="category-content">
+          <div className="drag-handle">
+            <GripVertical className="drag-icon" />
+          </div>
+          <div className="category-info">
+            <h3 className="category-name">
+              {categories.find(cat => cat.id === activeId)?.name}
+            </h3>
+            <p className="category-count">
+              商品數量: {categories.find(cat => cat.id === activeId)?.productCount}
+            </p>
+          </div>
+        </div>
+      </div>
+    ) : null}
+  </DragOverlay>
+</DndContext>
         )}
       </div>
     </div>
