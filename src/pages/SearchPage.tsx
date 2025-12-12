@@ -225,7 +225,7 @@ const SearchPage: React.FC = () => {
             ) : (
               <div className="results-grid">
                 {searchResults.map(product => (
-                  <Link to={`/products/${product.id}`} key={product.id} className="product-card-link">
+                  <Link to={`/product/${product.id}`} key={product.id} className="product-card-link">
                     <div className="product-card">
                       <div className="product-image-container">
                          <img 
