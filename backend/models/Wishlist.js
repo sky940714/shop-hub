@@ -23,16 +23,18 @@ class Wishlist {
 
   // 取得某人的收藏列表 (包含商品詳細資訊)
   static async getByUserId(userId) {
-    // 假設你的商品圖片存在 products 表的 image_url 或是關聯表，這裡以 products 表為例
-    // 請根據你的 products 資料表欄位微調 SQL
     const sql = `
       SELECT 
         w.id as wishlist_id,
         p.id as product_id,
         p.name,
         p.price,
-        p.image_url,      -- 確認你的圖片欄位名稱
-        p.stock,          -- 用來判斷是否缺貨
+        -- 移除不存在的 original_price
+        
+        -- ✅ 修改重點：去 product_images 表抓第一張圖片
+        (SELECT image_url FROM product_images WHERE product_id = p.id LIMIT 1) as image_url,
+        
+        p.stock,
         p.category_id
       FROM wishlists w
       JOIN products p ON w.product_id = p.id
