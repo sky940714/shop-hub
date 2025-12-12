@@ -20,7 +20,7 @@ exports.getAllCategories = async (req, res) => {
       LEFT JOIN products p ON c.id = p.category_id
       WHERE c.is_active = 1
       GROUP BY c.id
-      ORDER BY c.level ASC, c.name ASC
+      ORDER BY c.sort_order ASC  // ← 改成按排序
     `);
 
     res.json({
@@ -293,5 +293,52 @@ exports.getParentCategories = async (req, res) => {
       success: false,
       message: '取得父分類列表失敗'
     });
+  }
+};
+
+// ========================================
+// 7. 批次更新分類排序
+// PUT /api/categories/update-order
+// ========================================
+exports.updateCategoriesOrder = async (req, res) => {
+  const connection = await promisePool.getConnection();
+  
+  try {
+    await connection.beginTransaction();
+    
+    const { categories } = req.body;
+    
+    // 驗證資料
+    if (!categories || !Array.isArray(categories)) {
+      return res.status(400).json({
+        success: false,
+        message: '無效的資料格式'
+      });
+    }
+    
+    // 批次更新排序
+    for (const category of categories) {
+      await connection.query(
+        'UPDATE categories SET sort_order = ? WHERE id = ?',
+        [category.sort_order, category.id]
+      );
+    }
+    
+    await connection.commit();
+    
+    res.json({
+      success: true,
+      message: '排序更新成功'
+    });
+    
+  } catch (error) {
+    await connection.rollback();
+    console.error('更新排序失敗:', error);
+    res.status(500).json({
+      success: false,
+      message: '更新排序失敗'
+    });
+  } finally {
+    connection.release();
   }
 };

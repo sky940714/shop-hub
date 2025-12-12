@@ -30,4 +30,6 @@ router.delete('/:id', protect, categoryController.deleteCategory);
 // 取得父分類列表
 router.get('/parent/list', categoryController.getParentCategories);
 
+router.put('/update-order', protect, categoryController.updateCategoriesOrder);  // ← 新增這行
+
 module.exports = router;

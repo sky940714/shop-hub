@@ -1,6 +1,23 @@
 // pages/admin/components/CategoryManagement.tsx
 import React, { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2 } from 'lucide-react';
+import { Plus, Edit2, Trash2, GripVertical } from 'lucide-react';
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
 import '../styles/CategoryManagement.css';
 
 interface Category {
@@ -8,15 +25,81 @@ interface Category {
   name: string;
   parent_id: number | null;
   level: number;
+  sort_order: number;
   is_active: number;
   productCount: number;
   created_at: string;
 }
 
+// 可拖拽的分類卡片組件
+const SortableCategory: React.FC<{
+  category: Category;
+  onEdit: (category: Category) => void;
+  onDelete: (category: Category) => void;
+}> = ({ category, onEdit, onDelete }) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: category.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`category-card ${isDragging ? 'dragging' : ''}`}
+    >
+      <div className="category-content">
+        <div className="drag-handle" {...attributes} {...listeners}>
+          <GripVertical className="drag-icon" />
+        </div>
+        <div className="category-info">
+          <h3 className="category-name">{category.name}</h3>
+          <p className="category-count">商品數量: {category.productCount}</p>
+        </div>
+        <div className="category-actions">
+          <button
+            className="btn-icon-edit"
+            onClick={() => onEdit(category)}
+            title="編輯"
+          >
+            <Edit2 className="icon" />
+          </button>
+          <button
+            className="btn-icon-delete"
+            onClick={() => onDelete(category)}
+            title="刪除"
+          >
+            <Trash2 className="icon" />
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
 const CategoryManagement: React.FC = () => {
   const [categories, setCategories] = useState<Category[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+
+  // 設定拖拽感應器
+  const sensors = useSensors(
+    useSensor(PointerSensor),
+    useSensor(KeyboardSensor, {
+      coordinateGetter: sortableKeyboardCoordinates,
+    })
+  );
 
   // 載入分類列表
   useEffect(() => {
@@ -45,6 +128,72 @@ const CategoryManagement: React.FC = () => {
     }
   };
 
+  // 處理拖拽結束
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+
+    if (!over || active.id === over.id) {
+      return;
+    }
+
+    const oldIndex = categories.findIndex((cat) => cat.id === active.id);
+    const newIndex = categories.findIndex((cat) => cat.id === over.id);
+
+    // 更新本地順序
+    const newCategories = arrayMove(categories, oldIndex, newIndex);
+    
+    // 更新 sort_order
+    const updatedCategories = newCategories.map((cat, index) => ({
+      ...cat,
+      sort_order: index + 1,
+    }));
+
+    setCategories(updatedCategories);
+
+    // 保存到後端
+    await saveOrder(updatedCategories);
+  };
+
+  // 保存排序到後端
+  const saveOrder = async (orderedCategories: Category[]) => {
+    try {
+      setIsSaving(true);
+      const token = localStorage.getItem('token');
+      if (!token) {
+        alert('請先登入');
+        return;
+      }
+
+      const response = await fetch('http://45.32.24.240/api/categories/update-order', {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({
+          categories: orderedCategories.map((cat) => ({
+            id: cat.id,
+            sort_order: cat.sort_order,
+          })),
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!data.success) {
+        alert('保存排序失敗');
+        // 失敗時重新載入
+        fetchCategories();
+      }
+    } catch (error) {
+      console.error('保存排序失敗:', error);
+      alert('保存排序時發生錯誤');
+      fetchCategories();
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   // 新增分類
   const handleAddCategory = async () => {
     const name = prompt('請輸入新分類名稱：');
@@ -61,20 +210,20 @@ const CategoryManagement: React.FC = () => {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({
           name: name.trim(),
           parent_id: null,
-          level: 1
-        })
+          level: 1,
+        }),
       });
 
       const data = await response.json();
 
       if (data.success) {
         alert('分類新增成功！');
-        fetchCategories(); // 重新載入列表
+        fetchCategories();
       } else {
         alert(data.message || '新增失敗');
       }
@@ -100,21 +249,21 @@ const CategoryManagement: React.FC = () => {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+          'Authorization': `Bearer ${token}`,
         },
         body: JSON.stringify({
           name: newName.trim(),
           parent_id: category.parent_id,
           level: category.level,
-          is_active: category.is_active
-        })
+          is_active: category.is_active,
+        }),
       });
 
       const data = await response.json();
 
       if (data.success) {
         alert('分類更新成功！');
-        fetchCategories(); // 重新載入列表
+        fetchCategories();
       } else {
         alert(data.message || '更新失敗');
       }
@@ -138,15 +287,15 @@ const CategoryManagement: React.FC = () => {
       const response = await fetch(`http://45.32.24.240/api/categories/${category.id}`, {
         method: 'DELETE',
         headers: {
-          'Authorization': `Bearer ${token}`
-        }
+          'Authorization': `Bearer ${token}`,
+        },
       });
 
       const data = await response.json();
 
       if (data.success) {
         alert('分類刪除成功！');
-        fetchCategories(); // 重新載入列表
+        fetchCategories();
       } else {
         alert(data.message || '刪除失敗');
       }
@@ -182,7 +331,7 @@ const CategoryManagement: React.FC = () => {
               color: 'white',
               border: 'none',
               borderRadius: '6px',
-              cursor: 'pointer'
+              cursor: 'pointer',
             }}
           >
             重新載入
@@ -195,45 +344,41 @@ const CategoryManagement: React.FC = () => {
   return (
     <div className="category-management">
       <div className="page-header">
-        <h2 className="page-title">分類管理</h2>
+        <div>
+          <h2 className="page-title">分類管理</h2>
+          {isSaving && <span className="saving-indicator">保存中...</span>}
+        </div>
         <button className="btn-primary" onClick={handleAddCategory}>
           <Plus className="btn-icon" />
           新增分類
         </button>
       </div>
 
-      <div className="category-grid">
+      <div className="category-list">
         {categories.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '40px', gridColumn: '1 / -1' }}>
+          <div style={{ textAlign: 'center', padding: '40px' }}>
             <p>目前沒有任何分類</p>
           </div>
         ) : (
-          categories.map(category => (
-            <div key={category.id} className="category-card">
-              <div className="category-content">
-                <div className="category-info">
-                  <h3 className="category-name">{category.name}</h3>
-                  <p className="category-count">商品數量: {category.productCount}</p>
-                </div>
-                <div className="category-actions">
-                  <button
-                    className="btn-icon-edit"
-                    onClick={() => handleEditCategory(category)}
-                    title="編輯"
-                  >
-                    <Edit2 className="icon" />
-                  </button>
-                  <button
-                    className="btn-icon-delete"
-                    onClick={() => handleDeleteCategory(category)}
-                    title="刪除"
-                  >
-                    <Trash2 className="icon" />
-                  </button>
-                </div>
-              </div>
-            </div>
-          ))
+          <DndContext
+            sensors={sensors}
+            collisionDetection={closestCenter}
+            onDragEnd={handleDragEnd}
+          >
+            <SortableContext
+              items={categories.map((cat) => cat.id)}
+              strategy={verticalListSortingStrategy}
+            >
+              {categories.map((category) => (
+                <SortableCategory
+                  key={category.id}
+                  category={category}
+                  onEdit={handleEditCategory}
+                  onDelete={handleDeleteCategory}
+                />
+              ))}
+            </SortableContext>
+          </DndContext>
         )}
       </div>
     </div>
