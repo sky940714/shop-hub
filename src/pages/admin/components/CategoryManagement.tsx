@@ -97,12 +97,16 @@ const CategoryManagement: React.FC = () => {
   const [activeId, setActiveId] = useState<number | null>(null);
 
   // 設定拖拽感應器
-  const sensors = useSensors(
-    useSensor(PointerSensor),
-    useSensor(KeyboardSensor, {
-      coordinateGetter: sortableKeyboardCoordinates,
-    })
-  );
+const sensors = useSensors(
+  useSensor(PointerSensor, {
+    activationConstraint: {
+      distance: 8, // 移動8px後開始拖拽
+    },
+  }),
+  useSensor(KeyboardSensor, {
+    coordinateGetter: sortableKeyboardCoordinates,
+  })
+);
 
   // 載入分類列表
   useEffect(() => {

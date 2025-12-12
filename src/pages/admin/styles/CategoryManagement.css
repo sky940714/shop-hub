@@ -75,19 +75,31 @@
   gap: 0.75rem;
 }
 
-/* ========== 分類卡片 ========== */
 .category-card {
   background: white;
   border: 1px solid #e5e7eb;
   border-radius: 0.5rem;
   padding: 1rem;
-  transition: all 0.2s;
+  transition: all 0.2s ease;
   cursor: default;
+  position: relative;
 }
 
 .category-card:hover {
-  border-color: #d1d5db;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  border-color: #3b82f6;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+  transform: translateY(-1px);
+}
+
+.category-card:hover::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: #3b82f6;
+  border-radius: 0 2px 2px 0;
 }
 
 .category-card.dragging {
@@ -105,7 +117,6 @@
   gap: 1rem;
 }
 
-/* ========== 拖拽手柄 ========== */
 .drag-handle {
   display: flex;
   align-items: center;
@@ -113,20 +124,33 @@
   padding: 0.5rem;
   cursor: grab;
   color: #9ca3af;
-  transition: color 0.2s;
+  transition: all 0.2s ease;
+  border-radius: 0.375rem;
 }
 
 .drag-handle:hover {
   color: #3b82f6;
+  background: rgba(59, 130, 246, 0.1);
 }
 
-.drag-handle:active {
-  cursor: grabbing;
+.category-card:hover .drag-handle {
+  color: #3b82f6;
+  background: rgba(59, 130, 246, 0.15);
 }
 
 .drag-icon {
   width: 1.25rem;
   height: 1.25rem;
+  transition: transform 0.2s ease;
+}
+
+.category-card:hover .drag-icon {
+  transform: scale(1.1);
+}
+
+.drag-handle:active {
+  cursor: grabbing;
+  background: rgba(59, 130, 246, 0.2);
 }
 
 /* ========== 分類資訊 ========== */
@@ -241,6 +265,10 @@
     width: 1.75rem;
     height: 1.75rem;
   }
+
+  .category-card:hover .category-info::after {
+    display: none;
+  }
 }
 
 @media (max-width: 480px) {
@@ -271,5 +299,23 @@
 
 /* 拖拽時的覆蓋層樣式 */
 [data-dnd-context] {
+  position: relative;
+}
+
+.category-card:hover .category-info::after {
+  content: '拖拽來重新排序';
+  position: absolute;
+  right: -100px;  /* 改為負值，讓它出現在按鈕右側 */
+  top: 50%;
+  transform: translateY(-50%);
+  font-size: 0.75rem;
+  color: #3b82f6;
+  opacity: 0.7;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+  white-space: nowrap; /* 防止文字換行 */
+}
+
+.category-info {
   position: relative;
 }
