@@ -31,7 +31,6 @@ class Wishlist {
         p.id as product_id,
         p.name,
         p.price,
-        p.original_price, -- 如果你資料表沒有這個欄位，請移除這行
         p.image_url,      -- 確認你的圖片欄位名稱
         p.stock,          -- 用來判斷是否缺貨
         p.category_id
