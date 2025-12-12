@@ -302,20 +302,6 @@
   position: relative;
 }
 
-.category-card:hover .category-info::after {
-  content: '拖拽來重新排序';
-  position: absolute;
-  right: -100px;  /* 改為負值，讓它出現在按鈕右側 */
-  top: 50%;
-  transform: translateY(-50%);
-  font-size: 0.75rem;
-  color: #3b82f6;
-  opacity: 0.7;
-  pointer-events: none;
-  transition: opacity 0.2s ease;
-  white-space: nowrap; /* 防止文字換行 */
-}
-
 .category-info {
   position: relative;
 }
