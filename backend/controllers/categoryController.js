@@ -20,7 +20,7 @@ exports.getAllCategories = async (req, res) => {
       LEFT JOIN products p ON c.id = p.category_id
       WHERE c.is_active = 1
       GROUP BY c.id
-      ORDER BY c.sort_order ASC  // ← 改成按排序
+      ORDER BY c.sort_order ASC
     `);
 
     res.json({
