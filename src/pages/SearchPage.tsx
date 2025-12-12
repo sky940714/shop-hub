@@ -1,9 +1,22 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Search, Home, Heart, ShoppingCart, User, X, TrendingUp } from 'lucide-react';
-import './SearchPage.css';
+import React, { useState, useEffect, useMemo } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Search, Home, Heart, ShoppingCart, User, X, TrendingUp, Loader } from 'lucide-react';
+import './SearchPage.css'; 
 
-interface Product {
+// 定義後端回傳的資料格式
+interface BackendProduct {
+  id: number;
+  name: string;
+  price: number;
+  description?: string;
+  stock: number;
+  category_name: string | null;
+  main_image: string | null;
+  created_at?: string;
+}
+
+// 定義前端顯示用的資料格式
+interface DisplayProduct {
   id: number;
   name: string;
   price: number;
@@ -14,15 +27,83 @@ interface Product {
 }
 
 const SearchPage: React.FC = () => {
+  const navigate = useNavigate();
+  
+  // 狀態管理
   const [searchTerm, setSearchTerm] = useState('');
-  const [searchResults] = useState<Product[]>([]);
-  const [recentSearches, setRecentSearches] = useState<string[]>([
-    '白色T恤',
-    '藍牙耳機',
-    '咖啡豆'
-  ]);
+  const [allProducts, setAllProducts] = useState<DisplayProduct[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  
+  // 從 localStorage 讀取歷史紀錄
+  const [recentSearches, setRecentSearches] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem('recentSearches');
+      return saved ? JSON.parse(saved) : ['白色T恤', '藍牙耳機', '咖啡豆'];
+    } catch (e) {
+      return ['白色T恤', '藍牙耳機', '咖啡豆'];
+    }
+  });
 
   const hotKeywords = ['特價商品', '新品上市', '熱銷排行', '限時優惠'];
+
+  // 1. 初始化：從後端抓取所有「上架中」的商品
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        setIsLoading(true);
+        // 呼叫後端 API
+        const response = await fetch('/api/products/published');
+        
+        if (!response.ok) {
+          throw new Error('無法連線至伺服器');
+        }
+
+        const data = await response.json();
+
+        if (data.success && Array.isArray(data.products)) {
+          // 資料轉換：將後端欄位對應到前端 UI
+          const mappedProducts: DisplayProduct[] = data.products.map((p: BackendProduct) => ({
+            id: p.id,
+            name: p.name,
+            price: p.price,
+            originalPrice: undefined, // 後端目前無此欄位
+            // 處理圖片路徑：如果後端沒圖，顯示預設圖；如果有圖但不是完整網址，補上開頭
+            image: p.main_image 
+              ? (p.main_image.startsWith('http') ? p.main_image : `/uploads/${p.main_image}`)
+              : 'https://placehold.co/300x300?text=No+Image', 
+            category: p.category_name || '未分類',
+            rating: 5.0, // 暫時給予預設評分
+          }));
+          setAllProducts(mappedProducts);
+        }
+      } catch (err) {
+        console.error('Fetch error:', err);
+        setError('目前無法載入商品目錄，請稍後再試。');
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    fetchProducts();
+  }, []);
+
+  // 2. 監聽歷史紀錄變化並存入 LocalStorage
+  useEffect(() => {
+    localStorage.setItem('recentSearches', JSON.stringify(recentSearches));
+  }, [recentSearches]);
+
+  // 3. 即時過濾搜尋結果 (由前端計算，速度極快)
+  const searchResults = useMemo(() => {
+    if (!searchTerm.trim()) return [];
+    
+    const lowerTerm = searchTerm.toLowerCase();
+    // 搜尋 名稱 或 分類
+    return allProducts.filter(product => 
+      product.name.toLowerCase().includes(lowerTerm) || 
+      product.category.toLowerCase().includes(lowerTerm)
+    );
+  }, [searchTerm, allProducts]);
 
   const handleClearSearch = () => {
     setSearchTerm('');
@@ -30,9 +111,9 @@ const SearchPage: React.FC = () => {
 
   const handleSearch = (keyword: string) => {
     setSearchTerm(keyword);
-    if (!recentSearches.includes(keyword)) {
-      setRecentSearches([keyword, ...recentSearches.slice(0, 4)]);
-    }
+    // 加入歷史紀錄 (去除重複並保持最新的在前面，保留前 6 筆)
+    const newHistory = [keyword, ...recentSearches.filter(k => k !== keyword)].slice(0, 6);
+    setRecentSearches(newHistory);
   };
 
   const removeRecentSearch = (keyword: string) => {
@@ -58,8 +139,9 @@ const SearchPage: React.FC = () => {
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             onKeyPress={(e) => e.key === 'Enter' && handleSearch(searchTerm)}
-            placeholder="搜尋商品..."
+            placeholder="搜尋商品名稱或分類..."
             className="search-input"
+            autoFocus
           />
           {searchTerm && (
             <button onClick={handleClearSearch} className="clear-button">
@@ -68,8 +150,23 @@ const SearchPage: React.FC = () => {
           )}
         </div>
 
-        {/* Recent Searches */}
-        {recentSearches.length > 0 && !searchTerm && (
+        {/* Loading State */}
+        {isLoading && (
+          <div className="loading-state">
+            <Loader className="animate-spin" size={24} />
+            <span>正在載入商品目錄...</span>
+          </div>
+        )}
+
+        {/* Error State */}
+        {error && !isLoading && (
+          <div className="error-message">
+            ⚠️ {error}
+          </div>
+        )}
+
+        {/* Recent Searches (只有在沒搜尋文字且載入完畢時顯示) */}
+        {!isLoading && recentSearches.length > 0 && !searchTerm && (
           <div className="search-section">
             <h2 className="section-title">最近搜尋</h2>
             <div className="keyword-list">
@@ -82,7 +179,10 @@ const SearchPage: React.FC = () => {
                     {keyword}
                   </button>
                   <button
-                    onClick={() => removeRecentSearch(keyword)}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      removeRecentSearch(keyword);
+                    }}
                     className="remove-button"
                   >
                     <X size={16} />
@@ -94,7 +194,7 @@ const SearchPage: React.FC = () => {
         )}
 
         {/* Hot Keywords */}
-        {!searchTerm && (
+        {!isLoading && !searchTerm && (
           <div className="search-section">
             <h2 className="section-title">
               <TrendingUp size={20} />
@@ -115,7 +215,7 @@ const SearchPage: React.FC = () => {
         )}
 
         {/* Search Results */}
-        {searchTerm && (
+        {!isLoading && searchTerm && (
           <div className="search-results">
             {searchResults.length === 0 ? (
               <div className="empty-results">
@@ -125,21 +225,35 @@ const SearchPage: React.FC = () => {
             ) : (
               <div className="results-grid">
                 {searchResults.map(product => (
-                  <div key={product.id} className="product-card">
-                    <img src={product.image} alt={product.name} className="product-image" />
-                    <div className="product-info">
-                      <h3 className="product-name">{product.name}</h3>
-                      <div className="product-price">
-                        <span className="price">NT$ {product.price.toLocaleString()}</span>
-                        {product.originalPrice && (
-                          <span className="original-price">
-                            NT$ {product.originalPrice.toLocaleString()}
-                          </span>
-                        )}
+                  <Link to={`/products/${product.id}`} key={product.id} className="product-card-link">
+                    <div className="product-card">
+                      <div className="product-image-container">
+                         <img 
+                           src={product.image} 
+                           alt={product.name} 
+                           className="product-image"
+                           onError={(e) => {
+                             (e.target as HTMLImageElement).src = 'https://placehold.co/300x300?text=No+Image';
+                           }}
+                         />
                       </div>
-                      <div className="product-rating">⭐ {product.rating}</div>
+                      <div className="product-info">
+                        <h3 className="product-name">{product.name}</h3>
+                        <div className="product-meta">
+                           <span className="product-category">{product.category}</span>
+                        </div>
+                        <div className="product-price-row">
+                          <span className="price">NT$ {product.price.toLocaleString()}</span>
+                          {product.originalPrice && (
+                            <span className="original-price">
+                              NT$ {product.originalPrice.toLocaleString()}
+                            </span>
+                          )}
+                        </div>
+                        <div className="product-rating">⭐ {product.rating}</div>
+                      </div>
                     </div>
-                  </div>
+                  </Link>
                 ))}
               </div>
             )}
@@ -157,7 +271,7 @@ const SearchPage: React.FC = () => {
           <Heart size={24} />
           <span>最愛</span>
         </Link>
-        <Link to="/" className="nav-item">
+        <Link to="/cart" className="nav-item">
           <ShoppingCart size={24} />
           <span>購物車</span>
         </Link>
