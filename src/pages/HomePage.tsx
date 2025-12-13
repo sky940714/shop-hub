@@ -39,8 +39,9 @@ const HomePage: React.FC = () => {
   const [categories, setCategories] = useState<Category[]>([]);  // ← 新增這行
 
   useEffect(() => {
-    fetchCategories();  // ← 新增這行
+    fetchCategories();
     fetchProducts();
+    fetchWishlist();  // 新增
   }, []);
 
   // ← 新增這個函數
@@ -82,6 +83,26 @@ const HomePage: React.FC = () => {
     }
   };
 
+  const fetchWishlist = async () => {
+    const token = localStorage.getItem('token');
+    if (!token) return;
+
+    try {
+      const response = await fetch('http://45.32.24.240/api/wishlist', {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await response.json();
+
+      if (data.success) {
+        // 只取 product_id 組成陣列
+        const wishlistIds = data.data.map((item: any) => item.product_id);
+        setWishlist(wishlistIds);
+      }
+    } catch (error) {
+      console.error('獲取收藏失敗：', error);
+    }
+  };
+
   // ← 刪除整個 getCategoryId 函數
 
   // ← 刪除整個 categories 陣列
@@ -93,11 +114,49 @@ const HomePage: React.FC = () => {
     return matchesCategory && matchesSearch;
   });
 
-  const toggleWishlist = (productId: number) => {
-    setWishlist(prev =>
-      prev.includes(productId) ? prev.filter(id => id !== productId) : [...prev, productId]
-    );
-  };
+  const toggleWishlist = async (productId: number) => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      alert('請先登入會員');
+      navigate('/login');
+      return;
+    }
+
+  const isWishlisted = wishlist.includes(productId);
+
+  try {
+    if (isWishlisted) {
+      // 移除收藏
+      const response = await fetch(`http://45.32.24.240/api/wishlist/${productId}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await response.json();
+
+      if (data.success) {
+        setWishlist(prev => prev.filter(id => id !== productId));
+      }
+    } else {
+      // 新增收藏
+      const response = await fetch('http://45.32.24.240/api/wishlist', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ productId })
+      });
+      const data = await response.json();
+
+      if (data.success) {
+        setWishlist(prev => [...prev, productId]);
+      }
+    }
+  } catch (error) {
+    console.error('收藏操作失敗：', error);
+    alert('操作失敗，請稍後再試');
+  }
+};
 
   const totalItems = cartCount;
   const totalPrice = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
