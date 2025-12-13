@@ -244,4 +244,103 @@ router.post('/admin/:id/points', protect, async (req, res) => {
   }
 });
 
+// ========================================
+// 前台會員 API
+// ========================================
+
+// 6. 取得登入會員資料
+// GET /api/members/profile
+router.get('/profile', protect, async (req, res) => {
+  try {
+    const [members] = await promisePool.query(`
+    SELECT id, name, email, phone, points, date as join_date, carrier_code
+    FROM members WHERE id = ?
+    `, [req.user.id]);
+
+    if (members.length === 0) {
+      return res.status(404).json({ success: false, message: '找不到會員' });
+    }
+
+    res.json({ success: true, member: members[0] });
+  } catch (error) {
+    console.error('取得會員資料失敗:', error);
+    res.status(500).json({ success: false, message: '取得會員資料失敗' });
+  }
+});
+
+// 7. 更新會員基本資料
+// PUT /api/members/profile
+router.put('/profile', protect, async (req, res) => {
+  try {
+    const { name, phone } = req.body;
+
+    await promisePool.query(`
+      UPDATE members SET name = ?, phone = ? WHERE id = ?
+    `, [name, phone, req.user.id]);
+
+    res.json({ success: true, message: '資料更新成功' });
+  } catch (error) {
+    console.error('更新會員資料失敗:', error);
+    res.status(500).json({ success: false, message: '更新會員資料失敗' });
+  }
+});
+
+// 8. 取得會員訂單列表
+// GET /api/members/orders
+router.get('/orders', protect, async (req, res) => {
+  try {
+    const [orders] = await promisePool.query(`
+      SELECT 
+        id,
+        order_no,
+        total,
+        status,
+        payment_status,
+        created_at
+      FROM orders
+      WHERE user_id = ?
+      ORDER BY created_at DESC
+    `, [req.user.id]);
+
+    // 取得每筆訂單的商品
+    for (let order of orders) {
+      const [items] = await promisePool.query(`
+        SELECT product_name, quantity, price
+        FROM order_items WHERE order_id = ?
+      `, [order.id]);
+      order.items = items;
+    }
+
+    res.json({ success: true, orders });
+  } catch (error) {
+    console.error('取得訂單失敗:', error);
+    res.status(500).json({ success: false, message: '取得訂單失敗' });
+  }
+});
+
+// 9. 更新手機載具
+// PUT /api/members/carrier
+router.put('/carrier', protect, async (req, res) => {
+  try {
+    const { carrier_code } = req.body;
+
+    // 驗證格式（手機載具以 / 開頭，共 8 碼）
+    if (carrier_code && !/^\/[A-Z0-9]{7}$/.test(carrier_code)) {
+      return res.status(400).json({ 
+        success: false, 
+        message: '載具格式錯誤，應為 /+7碼英數字' 
+      });
+    }
+
+    await promisePool.query(`
+      UPDATE members SET carrier_code = ? WHERE id = ?
+    `, [carrier_code || null, req.user.id]);
+
+    res.json({ success: true, message: '載具設定成功' });
+  } catch (error) {
+    console.error('更新載具失敗:', error);
+    res.status(500).json({ success: false, message: '更新載具失敗' });
+  }
+});
+
 module.exports = router;

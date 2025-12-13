@@ -550,3 +550,22 @@
     grid-template-columns: repeat(3, 1fr);
   }
 }
+
+/* 會員資訊顯示 */
+.member-info-display {
+  flex: 1;
+  text-align: center;
+}
+
+.member-name {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #111827;
+  margin-bottom: 0.25rem;
+}
+
+.member-points {
+  font-size: 0.875rem;
+  color: #3b82f6;
+  font-weight: 500;
+}
