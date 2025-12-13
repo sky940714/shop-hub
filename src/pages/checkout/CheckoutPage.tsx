@@ -7,6 +7,7 @@
     import ShippingForm from './components/ShippingForm';
     import OrderSummary from './components/OrderSummary';
     import './styles/CheckoutPage.css';
+    import ECPayForm from './components/ECPayForm';
 
     interface ShippingInfo {
     name: string;
@@ -22,6 +23,7 @@
     const navigate = useNavigate();
     const location = useLocation();
     const { cartItems, clearCart } = useCart();
+    const [ecpayParams, setEcpayParams] = useState<any>(null);
 
     // 檢查是否為立即購買模式
     const directBuyState = location.state as { directBuy?: boolean; items?: any[] };
@@ -192,29 +194,37 @@
             body: JSON.stringify(orderData),
         });
 
-        const data = await response.json();
+        // ... 前面 fetch 程式碼 ...
+    const data = await response.json();
 
-        if (data.success) {
-    // 只有從購物車來的才清空購物車
-    if (!isDirectBuy) {
+    if (data.success) {
+      // 只有從購物車來的才清空購物車
+      if (!isDirectBuy) {
         clearCart();
-    }
-    
-    // 如果是線上付款,導向綠界付款頁面
-    if (paymentMethod !== 'cod') {
-        window.location.href = data.paymentUrl;
-    } else {
+      }
+
+      // 如果是線上付款 (信用卡/ATM等)
+      if (paymentMethod !== 'cod') {
+        // 將後端回傳的參數存入 state
+        if (data.ecpayParams) {
+           setEcpayParams(data.ecpayParams);
+        } else {
+           alert('無法取得付款資訊');
+        }
+      } else {
         // 取貨付款直接完成
         navigate(`/checkout/order-success/${data.orderNo}`);
-    }
-        } else {
-            alert(data.message || '建立訂單失敗');
-        }
-        } catch (error) {
-        console.error('建立訂單失敗:', error);
-        alert('建立訂單失敗,請稍後再試');
-        }
-    };
+      }
+    } else { 
+      // 【修正】這裡直接接 else，不要有多餘的 "}"
+      alert(data.message || '建立訂單失敗');
+    } // <--- 這裡才是 try 區塊的結尾
+
+  } catch (error) {
+    console.error('建立訂單失敗:', error);
+    alert('建立訂單失敗,請稍後再試');
+  }
+};
 
     return (
         <div className="checkout-page">
@@ -260,6 +270,10 @@
             total={total}
             />
         </div>
+
+        {/* 新增：隱藏的綠界表單，當 ecpayParams 有值時會自動 Submit */}
+            <ECPayForm params={ecpayParams} />
+
         </div>
     );
     };

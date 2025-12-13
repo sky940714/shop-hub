@@ -3,6 +3,7 @@ const express = require('express');
 const router = express.Router();
 const { promisePool, query } = require('../config/database');
 const { protect } = require('../middleware/auth');
+const ecpayUtils = require('../utils/ecpay');
 
 // ========================================
 // 1. 建立訂單 (前台)
@@ -109,16 +110,24 @@ router.post('/create', protect, async (req, res) => {
 
     await connection.commit();
 
-    // 如果是線上付款,這裡應該要導向綠界
-    const paymentUrl = paymentMethod !== 'cod' 
-      ? `http://45.32.24.240/api/ecpay/payment/${orderNo}` 
-      : null;
+    // 準備綠界參數 (如果不是貨到付款)
+    let ecpayParams = null;
+    if (paymentMethod !== 'cod') {
+      // 構建傳給 utils 的物件，這裡只傳必要的，其他讓 utils 處理
+      const orderData = {
+        order_no: orderNo,
+        total: total,
+        created_at: new Date() // 傳入當下時間讓 utils 格式化
+      };
+      // 產生加密參數
+      ecpayParams = ecpayUtils.getParams(orderData);
+    }
 
     res.json({
       success: true,
       message: '訂單建立成功',
       orderNo: orderNo,
-      paymentUrl: paymentUrl
+      ecpayParams: ecpayParams // <--- 關鍵：回傳這包給前端 ECPayForm 用
     });
 
   } catch (error) {

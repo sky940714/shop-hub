@@ -13,6 +13,7 @@ const orderRoutes = require('./routes/orders');
 const categoryRoutes = require('./routes/categoryRoutes');
 const memberRoutes = require('./routes/members');
 const wishlistRoutes = require('./routes/wishlistRoutes');
+const ecpayRoutes = require('./routes/ecpayRoutes');
 
 const app = express();
 const PORT = process.env.PORT || 5001;
@@ -64,6 +65,7 @@ app.use('/api/orders', orderRoutes);
 app.use('/api/categories', categoryRoutes); 
 app.use('/api/members', memberRoutes);
 app.use('/api/wishlist', wishlistRoutes);
+app.use('/api/ecpay', ecpayRoutes);
 
 // ==========================================
 // 404 處理（必須放在所有路由之後）
