@@ -1,6 +1,6 @@
-const db = require('../config/database');
+// backend/controllers/ecpayController.js
+const { promisePool } = require('../config/database'); // 修正 1：直接解構取出 promisePool
 const ecpayUtils = require('../utils/ecpay');
-// ⚠️ 記得要引入這兩個套件，不然物流請求會失敗
 const axios = require('axios');
 const qs = require('qs');
 
@@ -15,7 +15,8 @@ const createPayment = async (req, res) => {
       return res.status(400).json({ error: '缺少訂單 ID' });
     }
 
-    const [rows] = await db.pool.execute(
+    // 修正 2：使用 promisePool.execute
+    const [rows] = await promisePool.execute(
       'SELECT * FROM orders WHERE id = ?',
       [orderId]
     );
@@ -64,7 +65,8 @@ const handleCallback = async (req, res) => {
         WHERE order_no = ?
       `;
 
-      await db.pool.execute(sql, [tradeNo, orderNo]);
+      // 修正 3：使用 promisePool.execute
+      await promisePool.execute(sql, [tradeNo, orderNo]);
 
       console.log(`訂單 ${orderNo} 已更新為付款完成`);
       res.send('1|OK');
@@ -99,7 +101,6 @@ const getMapParams = (req, res) => {
 const handleMapCallback = (req, res) => {
   try {
     const { CVSStoreID, CVSStoreName, CVSAddress, LogisticsSubType } = req.body;
-
     console.log('收到門市資料:', CVSStoreName);
 
     const html = `
@@ -121,9 +122,7 @@ const handleMapCallback = (req, res) => {
       </body>
       </html>
     `;
-
     res.send(html);
-
   } catch (error) {
     console.error(error);
     res.send('處理門市資料失敗');
@@ -131,32 +130,28 @@ const handleMapCallback = (req, res) => {
 };
 
 // ==========================================
-// 5. [新增] 產生寄貨單 (按鈕 A) - 你剛剛缺這個！
+// 5. 產生寄貨單 (按鈕 A)
 // ==========================================
 const createShippingOrder = async (req, res) => {
   try {
     const { orderNo } = req.body;
 
-    // 1. 查訂單
-    const [rows] = await db.pool.execute('SELECT * FROM orders WHERE order_no = ?', [orderNo]);
+    // 修正 4：使用 promisePool.execute
+    const [rows] = await promisePool.execute('SELECT * FROM orders WHERE order_no = ?', [orderNo]);
     if (rows.length === 0) return res.status(404).json({ error: '無此訂單' });
     const order = rows[0];
 
-    // 防呆
     if (order.ecpay_payment_no) {
       return res.status(400).json({ error: '此訂單已產生過寄貨編號' });
     }
 
-    // 2. 準備參數並呼叫綠界 API
     const params = ecpayUtils.getLogisticsCreateParams(order);
     const logisticsUrl = 'https://logistics-stage.ecpay.com.tw/Express/Create';
     
-    // 使用 axios 發送 POST
     const response = await axios.post(logisticsUrl, qs.stringify(params), {
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
     });
 
-    // 3. 解析回應
     const resultText = response.data;
     console.log('綠界物流回傳:', resultText);
 
@@ -165,8 +160,8 @@ const createShippingOrder = async (req, res) => {
       const AllPayLogisticsID = resultParams.get('AllPayLogisticsID');
       const CVSPaymentNo = resultParams.get('CVSPaymentNo');
 
-      // 4. 存回資料庫
-      await db.pool.execute(
+      // 修正 5：使用 promisePool.execute
+      await promisePool.execute(
         `UPDATE orders SET ecpay_logistics_id = ?, ecpay_payment_no = ?, status = 'shipped', updated_at = NOW() WHERE order_no = ?`,
         [AllPayLogisticsID, CVSPaymentNo, orderNo]
       );
@@ -182,13 +177,14 @@ const createShippingOrder = async (req, res) => {
 };
 
 // ==========================================
-// 6. [新增] 列印託運單 (按鈕 B) - 你剛剛也缺這個！
+// 6. 列印託運單 (按鈕 B)
 // ==========================================
 const printShippingLabel = async (req, res) => {
   try {
     const { orderNo } = req.query;
 
-    const [rows] = await db.pool.execute('SELECT ecpay_logistics_id FROM orders WHERE order_no = ?', [orderNo]);
+    // 修正 6：使用 promisePool.execute
+    const [rows] = await promisePool.execute('SELECT ecpay_logistics_id FROM orders WHERE order_no = ?', [orderNo]);
 
     if (rows.length === 0 || !rows[0].ecpay_logistics_id) {
       return res.send('此訂單尚未產生寄貨編號，無法列印');
@@ -203,14 +199,11 @@ const printShippingLabel = async (req, res) => {
   }
 };
 
-// ==========================================
-// 7. 統一導出所有函式 (一定要包含這 6 個!)
-// ==========================================
 module.exports = {
   createPayment,
   handleCallback,
   getMapParams,
   handleMapCallback,
-  createShippingOrder, // <--- 補上這個
-  printShippingLabel   // <--- 補上這個
+  createShippingOrder,
+  printShippingLabel
 };
