@@ -31,6 +31,7 @@ interface OrderDetail {
   user_email: string;
   items: OrderItem[];
   ecpay_payment_no?: string;
+  ecpay_logistics_id?: string;
 }
 
 interface OrderItem {
@@ -548,8 +549,8 @@ const OrderManagement: React.FC = () => {
                       <span className="label">物流操作：</span>
                       <div className="value" style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
                         
-                        {/* 如果還沒產生寄貨編號 -> 顯示產生按鈕 */}
-                        {!selectedOrder.ecpay_payment_no ? (
+                        {/* 改判斷：如果沒有 logistics_id 才顯示產生按鈕 */}
+                        {!selectedOrder.ecpay_logistics_id ? (
                           <button 
                             onClick={() => handleCreateShipping(selectedOrder.order_no)}
                             style={{ 
@@ -564,10 +565,12 @@ const OrderManagement: React.FC = () => {
                             📦 產生綠界寄貨單
                           </button>
                         ) : (
-                          /* 如果已經有編號 -> 顯示編號 + 列印按鈕 */
+                          /* 如果有 logistics_id -> 顯示狀態 + 列印按鈕 */
                           <>
                             <span style={{ color: '#0056b3', fontWeight: 'bold' }}>
-                              寄貨編號：{selectedOrder.ecpay_payment_no}
+                              {selectedOrder.ecpay_payment_no 
+                                ? `寄貨編號：${selectedOrder.ecpay_payment_no}`
+                                : '訂單已建立 (請列印查看編號)'}
                             </span>
                             <button 
                               onClick={() => handlePrintShipping(selectedOrder.order_no)}
