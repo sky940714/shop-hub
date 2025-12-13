@@ -11,9 +11,10 @@ interface WishlistProduct {
   product_id: number;
   name: string;
   price: number;
-  original_price?: number;
-  image_url: string; // 注意這裡配合資料庫欄位可能叫 image_url
+  image_url: string;
   stock: number;
+  status: string;
+  variant_count: number;
 }
 
 const WishlistPage: React.FC = () => {
@@ -55,10 +56,12 @@ const WishlistPage: React.FC = () => {
 
   // 2. 移除收藏功能
   const removeFromWishlist = async (productId: number) => {
-    const token = localStorage.getItem('token');
-    if (!token) return;
+  if (!window.confirm('確定要移除此收藏嗎？')) return;
+  
+  const token = localStorage.getItem('token');
+  if (!token) return;
 
-    try {
+  try {
       const res = await fetch(`${API_BASE}/wishlist/${productId}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
@@ -78,9 +81,10 @@ const WishlistPage: React.FC = () => {
 
   // 3. 加入購物車處理
   const handleAddToCart = async (product: WishlistProduct) => {
-    // 呼叫 CartContext 的方法
-    // 注意：因為收藏頁通常沒有選擇規格(Variant)，這裡暫時傳 undefined
-    // 如果你的商品強制需要規格，這裡可能需要彈出 Modal 讓使用者選
+  if (product.variant_count > 0) {
+    navigate(`/product/${product.product_id}`);
+    return;
+  }
     await addToCart(product.product_id, 1);
   };
 
@@ -141,21 +145,24 @@ const WishlistPage: React.FC = () => {
                       src={product.image_url || 'https://via.placeholder.com/400'} 
                       alt={product.name}
                       className="wishlist-product-image"
+                      onClick={() => navigate(`/product/${product.product_id}`)}
+                      style={{ cursor: 'pointer' }}
                     />
 
                     <div className="wishlist-product-info">
-                      <h3 className="wishlist-product-name">{product.name}</h3>
+                      <h3 
+                        className="wishlist-product-name"
+                        onClick={() => navigate(`/product/${product.product_id}`)}
+                        style={{ cursor: 'pointer' }}
+                      >
+                        {product.name}
+                      </h3>
                       
                       {/* 如果資料庫沒有評分欄位，先隱藏或顯示預設值 */}
                       {/* <div className="wishlist-product-rating">⭐ 4.5</div> */}
 
                       <div className="wishlist-product-price">
                         <span className="price">NT$ {product.price.toLocaleString()}</span>
-                        {product.original_price && product.original_price > product.price && (
-                          <span className="original-price">
-                            NT$ {product.original_price.toLocaleString()}
-                          </span>
-                        )}
                       </div>
 
                       <button

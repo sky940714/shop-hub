@@ -24,23 +24,20 @@ class Wishlist {
   // 取得某人的收藏列表 (包含商品詳細資訊)
   static async getByUserId(userId) {
     const sql = `
-      SELECT 
-        w.id as wishlist_id,
-        p.id as product_id,
-        p.name,
-        p.price,
-        -- 移除不存在的 original_price
-        
-        -- ✅ 修改重點：去 product_images 表抓第一張圖片
-        (SELECT image_url FROM product_images WHERE product_id = p.id LIMIT 1) as image_url,
-        
-        p.stock,
-        p.category_id
-      FROM wishlists w
-      JOIN products p ON w.product_id = p.id
-      WHERE w.user_id = ?
-      ORDER BY w.created_at DESC
-    `;
+  SELECT 
+    w.id as wishlist_id,
+    p.id as product_id,
+    p.name,
+    p.price,
+    (SELECT image_url FROM product_images WHERE product_id = p.id LIMIT 1) as image_url,
+    p.stock,
+    p.status,
+    (SELECT COUNT(*) FROM product_variants WHERE product_id = p.id) as variant_count
+  FROM wishlists w
+  JOIN products p ON w.product_id = p.id
+  WHERE w.user_id = ?
+  ORDER BY w.created_at DESC
+`;
     
     const [rows] = await promisePool.execute(sql, [userId]);
     return rows;
