@@ -1,20 +1,22 @@
-const db = require('../config/database'); 
+const db = require('../config/database');
 const ecpayUtils = require('../utils/ecpay');
+// ⚠️ 記得要引入這兩個套件，不然物流請求會失敗
+const axios = require('axios');
+const qs = require('qs');
 
 // ==========================================
 // 1. 產生綠界付款資料 (金流 - 前往結帳)
 // ==========================================
 const createPayment = async (req, res) => {
   try {
-    const { orderId } = req.body; 
+    const { orderId } = req.body;
 
     if (!orderId) {
       return res.status(400).json({ error: '缺少訂單 ID' });
     }
 
-    // 從資料庫查詢該筆訂單
     const [rows] = await db.pool.execute(
-      'SELECT * FROM orders WHERE id = ?', 
+      'SELECT * FROM orders WHERE id = ?',
       [orderId]
     );
 
@@ -23,8 +25,6 @@ const createPayment = async (req, res) => {
     }
 
     const order = rows[0];
-
-    // 呼叫工具產生綠界需要的參數
     const paymentParams = ecpayUtils.getParams(order);
 
     res.json(paymentParams);
@@ -40,7 +40,7 @@ const createPayment = async (req, res) => {
 // ==========================================
 const handleCallback = async (req, res) => {
   try {
-    const ecpayData = req.body; 
+    const ecpayData = req.body;
     console.log('收到綠界回調:', ecpayData);
 
     const isValid = ecpayUtils.verifyCheckMacValue(ecpayData);
@@ -65,7 +65,7 @@ const handleCallback = async (req, res) => {
       `;
 
       await db.pool.execute(sql, [tradeNo, orderNo]);
-      
+
       console.log(`訂單 ${orderNo} 已更新為付款完成`);
       res.send('1|OK');
     } else {
@@ -80,11 +80,11 @@ const handleCallback = async (req, res) => {
 };
 
 // ==========================================
-// 3. [新增] 取得地圖參數 (物流 - 去程)
+// 3. 取得地圖參數 (物流 - 去程)
 // ==========================================
 const getMapParams = (req, res) => {
   try {
-    const { logisticsSubType } = req.query; // 前端傳來: UNIMART, FAMI...
+    const { logisticsSubType } = req.query;
     const params = ecpayUtils.getMapParams(logisticsSubType);
     res.json(params);
   } catch (error) {
@@ -94,16 +94,14 @@ const getMapParams = (req, res) => {
 };
 
 // ==========================================
-// 4. [新增] 地圖選完後的回調 (物流 - 回程)
+// 4. 地圖選完後的回調 (物流 - 回程)
 // ==========================================
 const handleMapCallback = (req, res) => {
   try {
-    // 綠界 POST 回來的門市資料
     const { CVSStoreID, CVSStoreName, CVSAddress, LogisticsSubType } = req.body;
-    
+
     console.log('收到門市資料:', CVSStoreName);
 
-    // 回傳一段 HTML Script，透過 postMessage 把資料傳回原本的 React 頁面
     const html = `
       <!DOCTYPE html>
       <html>
@@ -117,13 +115,13 @@ const handleMapCallback = (req, res) => {
               storeAddress: '${CVSAddress}',
               logisticsSubType: '${LogisticsSubType}'
             }, '*');
-            window.close(); // 傳完後自動關閉視窗
+            window.close();
           }
         </script>
       </body>
       </html>
     `;
-    
+
     res.send(html);
 
   } catch (error) {
@@ -132,10 +130,87 @@ const handleMapCallback = (req, res) => {
   }
 };
 
-// 統一導出所有函式
+// ==========================================
+// 5. [新增] 產生寄貨單 (按鈕 A) - 你剛剛缺這個！
+// ==========================================
+const createShippingOrder = async (req, res) => {
+  try {
+    const { orderNo } = req.body;
+
+    // 1. 查訂單
+    const [rows] = await db.pool.execute('SELECT * FROM orders WHERE order_no = ?', [orderNo]);
+    if (rows.length === 0) return res.status(404).json({ error: '無此訂單' });
+    const order = rows[0];
+
+    // 防呆
+    if (order.ecpay_payment_no) {
+      return res.status(400).json({ error: '此訂單已產生過寄貨編號' });
+    }
+
+    // 2. 準備參數並呼叫綠界 API
+    const params = ecpayUtils.getLogisticsCreateParams(order);
+    const logisticsUrl = 'https://logistics-stage.ecpay.com.tw/Express/Create';
+    
+    // 使用 axios 發送 POST
+    const response = await axios.post(logisticsUrl, qs.stringify(params), {
+      headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
+    });
+
+    // 3. 解析回應
+    const resultText = response.data;
+    console.log('綠界物流回傳:', resultText);
+
+    if (String(resultText).startsWith('1|')) {
+      const resultParams = new URLSearchParams(resultText.split('|')[1]);
+      const AllPayLogisticsID = resultParams.get('AllPayLogisticsID');
+      const CVSPaymentNo = resultParams.get('CVSPaymentNo');
+
+      // 4. 存回資料庫
+      await db.pool.execute(
+        `UPDATE orders SET ecpay_logistics_id = ?, ecpay_payment_no = ?, status = 'shipped', updated_at = NOW() WHERE order_no = ?`,
+        [AllPayLogisticsID, CVSPaymentNo, orderNo]
+      );
+
+      res.json({ success: true, AllPayLogisticsID, CVSPaymentNo });
+    } else {
+      res.status(400).json({ error: '綠界建立失敗', details: resultText });
+    }
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: '建立物流訂單失敗' });
+  }
+};
+
+// ==========================================
+// 6. [新增] 列印託運單 (按鈕 B) - 你剛剛也缺這個！
+// ==========================================
+const printShippingLabel = async (req, res) => {
+  try {
+    const { orderNo } = req.query;
+
+    const [rows] = await db.pool.execute('SELECT ecpay_logistics_id FROM orders WHERE order_no = ?', [orderNo]);
+
+    if (rows.length === 0 || !rows[0].ecpay_logistics_id) {
+      return res.send('此訂單尚未產生寄貨編號，無法列印');
+    }
+
+    const html = ecpayUtils.getPrintHtml(rows[0].ecpay_logistics_id);
+    res.send(html);
+
+  } catch (error) {
+    console.error(error);
+    res.send('列印發生錯誤');
+  }
+};
+
+// ==========================================
+// 7. 統一導出所有函式 (一定要包含這 6 個!)
+// ==========================================
 module.exports = {
   createPayment,
   handleCallback,
   getMapParams,
-  handleMapCallback
+  handleMapCallback,
+  createShippingOrder, // <--- 補上這個
+  printShippingLabel   // <--- 補上這個
 };
