@@ -1,14 +1,14 @@
+// backend/utils/ecpay.js
 const crypto = require('crypto');
 
 class ECPayUtils {
   constructor() {
-    // 測試環境參數 (固定值)
     this.merchantId = '2000132';
     this.hashKey = '5294y06JbISpM5x9';
     this.hashIv = 'v77hoKGq4kWxNNIS';
   }
 
-  // 1. 金流：產生給綠界的表單參數
+  // 1. 金流參數
   getParams(order) {
     const tradeDate = this.formatDate(new Date()); 
     const totalAmount = Math.round(order.total).toString();
@@ -28,20 +28,17 @@ class ECPayUtils {
     };
 
     params.CheckMacValue = this.generateCheckMacValue(params);
-    return {
-      ...params,
-      actionUrl: 'https://payment-stage.ecpay.com.tw/Cashier/AioCheckOut/V5'
-    };
+    return { ...params, actionUrl: 'https://payment-stage.ecpay.com.tw/Cashier/AioCheckOut/V5' };
   }
 
-  // 2. 金流：驗證綠界回傳的檢查碼
+  // 2. 驗證檢查碼
   verifyCheckMacValue(params) {
     const receivedCheckMacValue = params.CheckMacValue;
     const calculatedCheckMacValue = this.generateCheckMacValue(params);
     return receivedCheckMacValue === calculatedCheckMacValue;
   }
 
-  // 3. 物流：產生電子地圖參數
+  // 3. 地圖參數
   getMapParams(logisticsSubType) {
     return {
       MerchantID: this.merchantId,
@@ -53,22 +50,22 @@ class ECPayUtils {
     };
   }
 
-  // 4. [修正重點] 物流：產生「建立物流訂單」的參數
+  // 4. [修正] 物流參數：加入特殊符號過濾
   getLogisticsCreateParams(order) {
     const tradeDate = this.formatDate(new Date());
     const amount = Math.round(order.total).toString();
-    
-    // 判斷是否為貨到付款 (COD)
     const isCollection = order.payment_method === 'cod';
     const collectionAmount = isCollection ? amount : '0';
+    const storeID = order.store_id || '991182'; 
 
-    // 確保 ReceiverStoreID 有值，如果是測試可以用假門市
-    // 注意：如果 store_id 是 null，這裡會報錯，所以加個防呆
-    const storeID = order.store_id || '991182'; // 991182 是 7-11 統測門市 (測試用)
+    // ★ 強制過濾收件人姓名，只保留 中文、英文、數字
+    // 綠界規定：收件人姓名不可有特殊符號
+    let cleanName = (order.receiver_name || '測試收件人').replace(/[^\u4e00-\u9fa5a-zA-Z0-9]/g, '');
+    if (cleanName.length > 10) cleanName = cleanName.substring(0, 10); // 長度限制
 
     const params = {
       MerchantID: this.merchantId,
-      MerchantTradeNo: order.order_no + 'L', 
+      MerchantTradeNo: order.order_no + 'L',
       MerchantTradeDate: tradeDate,
       LogisticsType: 'CVS',
       LogisticsSubType: order.shipping_sub_type || 'UNIMART',
@@ -78,9 +75,9 @@ class ECPayUtils {
       GoodsName: 'ShopHub商品',
       SenderName: '測試賣家',
       SenderCellPhone: '0912345678',
-      ReceiverName: order.receiver_name || '測試收件人',
+      ReceiverName: cleanName, // 使用過濾後的姓名
       ReceiverCellPhone: order.receiver_phone || '0912345678',
-      ReceiverEmail: order.receiver_email || '', // Email 允許為空字串
+      ReceiverEmail: order.receiver_email || '', 
       ReceiverStoreID: storeID, 
       ServerReplyURL: `${process.env.SERVER_URL || 'http://45.32.24.240'}/api/ecpay/logistics-callback`,
     };
@@ -89,7 +86,7 @@ class ECPayUtils {
     return params;
   }
 
-  // 5. 物流：產生「列印託運單」的 HTML
+  // 5. 列印 HTML
   getPrintHtml(allPayLogisticsID) {
     const params = {
       MerchantID: this.merchantId,
@@ -107,24 +104,20 @@ class ECPayUtils {
     `;
   }
 
-  // 核心：加密邏輯 (針對物流優化)
+  // 6. [核心修正] 加密邏輯：嚴格處理 URL Encode
   generateCheckMacValue(params) {
     const rawParams = { ...params };
     delete rawParams.CheckMacValue;
 
-    // 1. 依照 Key 排序
     const keys = Object.keys(rawParams).sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
-    
-    // 2. 組成字串
     let raw = keys.map(k => `${k}=${rawParams[k]}`).join('&');
     
-    // 3. 前後加 Key/IV
     raw = `HashKey=${this.hashKey}&${raw}&HashIV=${this.hashIv}`;
 
-    // 4. URL Encode
+    // 先做一次 URL Encode
     let encoded = encodeURIComponent(raw).toLowerCase();
 
-    // 5. 綠界特殊符號置換 (這一步最關鍵)
+    // 再手動替換綠界指定的特殊符號 (順序很重要)
     encoded = encoded
       .replace(/%2d/g, '-')
       .replace(/%5f/g, '_')
@@ -133,9 +126,8 @@ class ECPayUtils {
       .replace(/%2a/g, '*')
       .replace(/%28/g, '(')
       .replace(/%29/g, ')')
-      .replace(/%20/g, '+'); // 空格要轉成 +
+      .replace(/%20/g, '+'); // 必須放在最後
 
-    // 6. SHA256 加密並轉大寫
     return crypto.createHash('sha256').update(encoded).digest('hex').toUpperCase();
   }
 
