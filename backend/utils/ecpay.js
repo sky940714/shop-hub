@@ -1,3 +1,4 @@
+// backend/utils/ecpay.js
 const crypto = require('crypto');
 
 class ECPayUtils {
@@ -7,7 +8,7 @@ class ECPayUtils {
     this.hashIv = 'v77hoKGq4kWxNNIS';
   }
 
-  // 1. 金流參數
+  // 1. 金流參數 (維持 SHA256)
   getParams(order) {
     const tradeDate = this.formatDate(new Date()); 
     const totalAmount = Math.round(order.total).toString();
@@ -26,18 +27,20 @@ class ECPayUtils {
       EncryptType: '1',
     };
 
-    params.CheckMacValue = this.generateCheckMacValue(params);
+    // 金流使用 SHA256
+    params.CheckMacValue = this.generateCheckMacValue(params, 'sha256');
+    
     return { ...params, actionUrl: 'https://payment-stage.ecpay.com.tw/Cashier/AioCheckOut/V5' };
   }
 
-  // 2. 驗證檢查碼
+  // 2. 驗證檢查碼 (金流用 SHA256)
   verifyCheckMacValue(params) {
     const receivedCheckMacValue = params.CheckMacValue;
-    const calculatedCheckMacValue = this.generateCheckMacValue(params);
+    const calculatedCheckMacValue = this.generateCheckMacValue(params, 'sha256');
     return receivedCheckMacValue === calculatedCheckMacValue;
   }
 
-  // 3. 地圖參數
+  // 3. 地圖參數 (物流地圖通常不檢查 MacValue，但若要檢查可用 MD5)
   getMapParams(logisticsSubType) {
     return {
       MerchantID: this.merchantId,
@@ -49,7 +52,7 @@ class ECPayUtils {
     };
   }
 
-  // 4. [除錯重點] 物流參數：加入 Log 與強力過濾
+  // 4. [重點修正] 物流訂單參數
   getLogisticsCreateParams(order) {
     const tradeDate = this.formatDate(new Date());
     const amount = Math.round(order.total).toString();
@@ -57,24 +60,12 @@ class ECPayUtils {
     const collectionAmount = isCollection ? amount : '0';
     const storeID = order.store_id || '991182'; 
 
-    // 原始姓名
-    const originalName = order.receiver_name || '';
-    
-    // 強力過濾：只保留 中文、英文、數字 (連空格都拿掉)
-    let cleanName = originalName.replace(/[^\u4e00-\u9fa5a-zA-Z0-9]/g, '');
-    
-    // 若過濾後變空字串(例如原本全是符號)，就給個預設值
+    // 過濾姓名
+    let cleanName = (order.receiver_name || '測試收件人').replace(/[^\u4e00-\u9fa5a-zA-Z0-9]/g, '');
     if (!cleanName) cleanName = 'Customer';
-    
-    // 長度限制 10 字
     if (cleanName.length > 10) cleanName = cleanName.substring(0, 10);
 
-    // ★ 照妖鏡：印出來看看發生什麼事
-    console.log('------------------------------------------------');
-    console.log('物流訂單姓名檢查:');
-    console.log('原始姓名:', originalName);
-    console.log('過濾後姓名:', cleanName);
-    console.log('------------------------------------------------');
+    console.log('物流訂單姓名:', cleanName);
 
     const params = {
       MerchantID: this.merchantId,
@@ -86,26 +77,28 @@ class ECPayUtils {
       CollectionAmount: collectionAmount, 
       IsCollection: isCollection ? 'Y' : 'N',
       GoodsName: 'ShopHub商品',
-      SenderName: 'ShopHub',
+      SenderName: '測試賣家', // 改回中文，避免英文長度問題
       SenderCellPhone: '0912345678',
-      ReceiverName: cleanName, // 使用過濾後的姓名
+      ReceiverName: cleanName,
       ReceiverCellPhone: order.receiver_phone || '0912345678',
       ReceiverEmail: order.receiver_email || '', 
       ReceiverStoreID: storeID, 
       ServerReplyURL: `${process.env.SERVER_URL || 'http://45.32.24.240'}/api/ecpay/logistics-callback`,
     };
 
-    params.CheckMacValue = this.generateCheckMacValue(params);
+    // ★ 關鍵修正：物流 API 強制使用 MD5
+    params.CheckMacValue = this.generateCheckMacValue(params, 'md5');
     return params;
   }
 
-  // 5. 列印 HTML
+  // 5. 列印 HTML (物流用 MD5)
   getPrintHtml(allPayLogisticsID) {
     const params = {
       MerchantID: this.merchantId,
       AllPayLogisticsID: allPayLogisticsID,
     };
-    params.CheckMacValue = this.generateCheckMacValue(params);
+    // ★ 關鍵修正：物流 API 強制使用 MD5
+    params.CheckMacValue = this.generateCheckMacValue(params, 'md5');
 
     return `
       <form id="printForm" action="https://logistics-stage.ecpay.com.tw/Helper/PrintTradeDocument" method="POST">
@@ -117,8 +110,8 @@ class ECPayUtils {
     `;
   }
 
-  // 6. 加密邏輯
-  generateCheckMacValue(params) {
+  // 6. [核心修正] 加密邏輯：支援 algorithm 參數切換
+  generateCheckMacValue(params, algorithm = 'sha256') {
     const rawParams = { ...params };
     delete rawParams.CheckMacValue;
 
@@ -139,7 +132,8 @@ class ECPayUtils {
       .replace(/%29/g, ')')
       .replace(/%20/g, '+');
 
-    return crypto.createHash('sha256').update(encoded).digest('hex').toUpperCase();
+    // 根據傳入的演算法決定使用 sha256 還是 md5
+    return crypto.createHash(algorithm).update(encoded).digest('hex').toUpperCase();
   }
 
   formatDate(date) {
