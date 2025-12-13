@@ -9,6 +9,19 @@ class ECPayUtils {
     this.hashIv = 'v77hoKGq4kWxNNIS';
   }
 
+  // [請新增這個方法在 class 裡面]
+  getMapParams(logisticsSubType) {
+    return {
+      MerchantID: this.merchantId,
+      LogisticsType: 'CVS',
+      LogisticsSubType: logisticsSubType || 'UNIMART',
+      // 這裡要改成你的後端 callback 網址
+      ServerReplyURL: `${process.env.SERVER_URL || 'http://45.32.24.240'}/api/ecpay/map-callback`,
+      IsCollection: 'N',
+      actionUrl: 'https://logistics-stage.ecpay.com.tw/Express/map'
+    };
+  }
+
   // 1. 產生給綠界的表單參數
   getParams(order) {
     // 將資料庫的 created_at 轉為綠界要的格式 (yyyy/MM/dd HH:mm:ss)

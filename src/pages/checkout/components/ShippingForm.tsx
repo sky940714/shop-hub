@@ -61,33 +61,61 @@ const ShippingForm: React.FC<ShippingFormProps> = ({
 
   // 選擇超商門市
   const handleSelectStore = async () => {
+    // 防呆：確認有選超商類型
+    if (!shippingSubType) {
+      alert('請先選擇超商類型 (7-11/全家/萊爾富/OK)');
+      return;
+    }
+
     try {
-      const response = await fetch('http://45.32.24.240/api/ecpay/store-map', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          logisticsSubType: shippingSubType,
-        }),
+      // 1. 呼叫後端取得地圖參數 (改用 GET)
+      // 注意：這裡的 URL 必須對應你後端 routes 設定的 /api/ecpay/map
+      const response = await fetch(`http://45.32.24.240/api/ecpay/map?logisticsSubType=${shippingSubType}`);
+      
+      if (!response.ok) throw new Error('Network response was not ok');
+      const params = await response.json();
+
+      // 2. 建立一個隱藏的表單 (Form)
+      const form = document.createElement('form');
+      form.method = 'POST';
+      form.action = params.actionUrl; // 綠界的網址
+      form.target = 'ECPayMapPopup';  // 指定目標視窗名稱
+
+      // 3. 將後端回傳的參數填入 input
+      Object.keys(params).forEach(key => {
+        if (key !== 'actionUrl') {
+          const input = document.createElement('input');
+          input.type = 'hidden';
+          input.name = key;
+          input.value = params[key];
+          form.appendChild(input);
+        }
       });
 
-      const data = await response.json();
+      // 必須將 form 加入 document 才能送出
+      document.body.appendChild(form);
+
+      // 4. 計算視窗位置並開啟彈跳視窗
+      const width = 800;
+      const height = 600;
+      const left = (window.screen.width - width) / 2;
+      const top = (window.screen.height - height) / 2;
       
-      if (data.success) {
-        // 開啟綠界門市選擇頁面
-        const width = 800;
-        const height = 600;
-        const left = (window.screen.width - width) / 2;
-        const top = (window.screen.height - height) / 2;
-        
-        window.open(
-          data.mapUrl,
-          'ECPayMap',
-          `width=${width},height=${height},left=${left},top=${top}`
-        );
-      }
+      window.open(
+        '', 
+        'ECPayMapPopup', 
+        `width=${width},height=${height},left=${left},top=${top},scrollbars=yes,resizable=yes`
+      );
+      
+      // 5. 送出表單到該視窗
+      form.submit();
+      
+      // 6. 清理 DOM
+      document.body.removeChild(form);
+
     } catch (error) {
       console.error('開啟門市地圖失敗:', error);
-      alert('開啟門市地圖失敗');
+      alert('開啟門市地圖失敗，請稍後再試');
     }
   };
 
@@ -216,7 +244,7 @@ const ShippingForm: React.FC<ShippingFormProps> = ({
 
               {shippingSubType && (
                 <div className="store-selector">
-                  <button className="select-store-btn" onClick={handleSelectStore}>
+                  <button type="button" className="select-store-btn" onClick={handleSelectStore}>
                     <MapPin size={20} />
                     {shippingInfo.storeId ? '變更門市' : '選擇門市'}
                   </button>

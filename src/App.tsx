@@ -16,6 +16,7 @@ import CheckoutPage from './pages/checkout/CheckoutPage';
 import OrderSuccessPage from './pages/checkout/OrderSuccessPage';
 import OrderListPage from './pages/checkout/OrderListPage';
 import OrderDetailPage from './pages/checkout/OrderDetailPage';
+import PaymentResultPage from './pages/checkout/PaymentResultPage';
 
 function App() {
   return (
@@ -82,11 +83,21 @@ function App() {
               </ProtectedRoute>
             }
           />
-          <Route
+         <Route
             path="/checkout/orders/:orderNo"
             element={
               <ProtectedRoute>
                 <OrderDetailPage />
+              </ProtectedRoute>
+            }
+          />
+
+          {/* 新增：綠界付款完成後的跳轉頁面 */}
+          <Route
+            path="/order/result"
+            element={
+              <ProtectedRoute>
+                <PaymentResultPage />
               </ProtectedRoute>
             }
           />

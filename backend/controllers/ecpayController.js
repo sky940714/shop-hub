@@ -1,12 +1,11 @@
-// backend/controllers/ecpayController.js
-// ↓↓↓ 請確認這裡引入的是你專案的資料庫連線物件 (通常是有 promise() 的 pool)
 const db = require('../config/database'); 
 const ecpayUtils = require('../utils/ecpay');
 
-// 1. 產生綠界付款資料 (前往結帳)
+// ==========================================
+// 1. 產生綠界付款資料 (金流 - 前往結帳)
+// ==========================================
 const createPayment = async (req, res) => {
   try {
-    // 前端傳來訂單 ID (orders table 的 id)
     const { orderId } = req.body; 
 
     if (!orderId) {
@@ -36,13 +35,14 @@ const createPayment = async (req, res) => {
   }
 };
 
-// 2. 接收綠界背景通知 (Webhook)
+// ==========================================
+// 2. 接收綠界背景通知 (金流 - Webhook)
+// ==========================================
 const handleCallback = async (req, res) => {
   try {
-    const ecpayData = req.body; // 綠界是用 application/x-www-form-urlencoded POST 過來
+    const ecpayData = req.body; 
     console.log('收到綠界回調:', ecpayData);
 
-    // A. 驗證檢查碼 (防止偽造)
     const isValid = ecpayUtils.verifyCheckMacValue(ecpayData);
 
     if (!isValid) {
@@ -50,14 +50,10 @@ const handleCallback = async (req, res) => {
       return res.send('0|ErrorMessage');
     }
 
-    // B. 確認交易是否成功 (RtnCode === '1')
     if (ecpayData.RtnCode === '1') {
-      const orderNo = ecpayData.MerchantTradeNo; // 你的訂單編號
-      const tradeNo = ecpayData.TradeNo;         // 綠界的交易編號
-      const paymentDate = ecpayData.PaymentDate; // 付款時間
+      const orderNo = ecpayData.MerchantTradeNo;
+      const tradeNo = ecpayData.TradeNo;
 
-      // C. 更新資料庫狀態
-      // 根據你的 schema，我們要更新: payment_status, status, ecpay_trade_no
       const sql = `
         UPDATE orders 
         SET 
@@ -71,12 +67,10 @@ const handleCallback = async (req, res) => {
       await db.pool.execute(sql, [tradeNo, orderNo]);
       
       console.log(`訂單 ${orderNo} 已更新為付款完成`);
-
-      // D. 回傳 '1|OK' 給綠界 (這是規定)
       res.send('1|OK');
     } else {
       console.log('交易失敗或代碼非 1');
-      res.send('1|OK'); // 即使失敗通常也回傳收到，避免綠界一直重試
+      res.send('1|OK');
     }
 
   } catch (error) {
@@ -85,7 +79,63 @@ const handleCallback = async (req, res) => {
   }
 };
 
+// ==========================================
+// 3. [新增] 取得地圖參數 (物流 - 去程)
+// ==========================================
+const getMapParams = (req, res) => {
+  try {
+    const { logisticsSubType } = req.query; // 前端傳來: UNIMART, FAMI...
+    const params = ecpayUtils.getMapParams(logisticsSubType);
+    res.json(params);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: '取得地圖參數失敗' });
+  }
+};
+
+// ==========================================
+// 4. [新增] 地圖選完後的回調 (物流 - 回程)
+// ==========================================
+const handleMapCallback = (req, res) => {
+  try {
+    // 綠界 POST 回來的門市資料
+    const { CVSStoreID, CVSStoreName, CVSAddress, LogisticsSubType } = req.body;
+    
+    console.log('收到門市資料:', CVSStoreName);
+
+    // 回傳一段 HTML Script，透過 postMessage 把資料傳回原本的 React 頁面
+    const html = `
+      <!DOCTYPE html>
+      <html>
+      <head><meta charset="UTF-8"></head>
+      <body>
+        <script>
+          if (window.opener) {
+            window.opener.postMessage({
+              storeId: '${CVSStoreID}',
+              storeName: '${CVSStoreName}',
+              storeAddress: '${CVSAddress}',
+              logisticsSubType: '${LogisticsSubType}'
+            }, '*');
+            window.close(); // 傳完後自動關閉視窗
+          }
+        </script>
+      </body>
+      </html>
+    `;
+    
+    res.send(html);
+
+  } catch (error) {
+    console.error(error);
+    res.send('處理門市資料失敗');
+  }
+};
+
+// 統一導出所有函式
 module.exports = {
   createPayment,
-  handleCallback
+  handleCallback,
+  getMapParams,
+  handleMapCallback
 };
