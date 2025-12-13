@@ -16,7 +16,7 @@ router.use(protect);
 
 // 路由設定
 router.get('/', wishlistController.getWishlist);
-router.post('/add', wishlistController.addToWishlist);
+router.post('/', wishlistController.addToWishlist);
 router.delete('/:productId', wishlistController.removeFromWishlist);
 
 module.exports = router;
