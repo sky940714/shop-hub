@@ -30,6 +30,7 @@ interface OrderDetail {
   user_name: string;
   user_email: string;
   items: OrderItem[];
+  ecpay_payment_no?: string;
 }
 
 interface OrderItem {
@@ -200,6 +201,44 @@ const OrderManagement: React.FC = () => {
       console.error('刪除訂單失敗:', error);
       alert('刪除訂單失敗：API 尚未實作');
     }
+  };
+
+// 1. 產生寄貨單 (呼叫後端建立物流訂單)
+  const handleCreateShipping = async (orderNo: string) => {
+    if (!window.confirm('確定要產生綠界寄貨單嗎？')) return;
+
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch('http://45.32.24.240/api/ecpay/create-shipping', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ orderNo })
+      });
+
+      const data = await response.json();
+      
+      if (data.success) {
+        alert(`成功！寄貨編號：${data.CVSPaymentNo}`);
+        // 重新載入訂單詳情以更新按鈕狀態
+        handleViewDetails(orderNo);
+        // 也重新載入列表
+        fetchOrders(pagination.page);
+      } else {
+        alert('產生失敗：' + (data.error || '未知錯誤'));
+      }
+    } catch (error) {
+      console.error(error);
+      alert('連線錯誤');
+    }
+  };
+
+  // 2. 列印託運單 (開啟綠界列印頁面)
+  const handlePrintShipping = (orderNo: string) => {
+    const url = `http://45.32.24.240/api/ecpay/print-shipping?orderNo=${orderNo}`;
+    window.open(url, '_blank');
   };
 
   // 搜尋
@@ -502,6 +541,53 @@ const OrderManagement: React.FC = () => {
                       {selectedOrder.shipping_method === 'home' ? '宅配到府' : '超商取貨'}
                     </span>
                   </div>
+                  
+                  {/* 新增：綠界物流操作區 (只在超商取貨時顯示) */}
+                  {selectedOrder.shipping_method === 'cvs' && (
+                    <div className="detail-item full-width" style={{ marginTop: '15px', borderTop: '1px dashed #eee', paddingTop: '15px' }}>
+                      <span className="label">物流操作：</span>
+                      <div className="value" style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
+                        
+                        {/* 如果還沒產生寄貨編號 -> 顯示產生按鈕 */}
+                        {!selectedOrder.ecpay_payment_no ? (
+                          <button 
+                            onClick={() => handleCreateShipping(selectedOrder.order_no)}
+                            style={{ 
+                              padding: '6px 12px', 
+                              backgroundColor: '#28a745', 
+                              color: 'white', 
+                              border: 'none', 
+                              borderRadius: '4px',
+                              cursor: 'pointer'
+                            }}
+                          >
+                            📦 產生綠界寄貨單
+                          </button>
+                        ) : (
+                          /* 如果已經有編號 -> 顯示編號 + 列印按鈕 */
+                          <>
+                            <span style={{ color: '#0056b3', fontWeight: 'bold' }}>
+                              寄貨編號：{selectedOrder.ecpay_payment_no}
+                            </span>
+                            <button 
+                              onClick={() => handlePrintShipping(selectedOrder.order_no)}
+                              style={{ 
+                                padding: '6px 12px', 
+                                backgroundColor: '#17a2b8', 
+                                color: 'white', 
+                                border: 'none', 
+                                borderRadius: '4px',
+                                cursor: 'pointer'
+                              }}
+                            >
+                              🖨️ 列印託運單
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
                 </div>
               </section>
 
