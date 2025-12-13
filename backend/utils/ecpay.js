@@ -8,11 +8,9 @@ class ECPayUtils {
     this.hashIv = 'v77hoKGq4kWxNNIS';
   }
 
-  // 1. 金流：產生給綠界的表單參數 (消費者付款用)
+  // 1. 金流：產生給綠界的表單參數
   getParams(order) {
-    // 將資料庫的 created_at 轉為綠界要的格式
     const tradeDate = this.formatDate(new Date()); 
-    // 將金額轉為整數字串
     const totalAmount = Math.round(order.total).toString();
 
     const params = {
@@ -30,21 +28,20 @@ class ECPayUtils {
     };
 
     params.CheckMacValue = this.generateCheckMacValue(params);
-
     return {
       ...params,
       actionUrl: 'https://payment-stage.ecpay.com.tw/Cashier/AioCheckOut/V5'
     };
   }
 
-  // 2. 金流：驗證綠界回傳的檢查碼 (用於 callback)
+  // 2. 金流：驗證綠界回傳的檢查碼
   verifyCheckMacValue(params) {
     const receivedCheckMacValue = params.CheckMacValue;
     const calculatedCheckMacValue = this.generateCheckMacValue(params);
     return receivedCheckMacValue === calculatedCheckMacValue;
   }
 
-  // 3. 物流：產生電子地圖參數 (選門市用)
+  // 3. 物流：產生電子地圖參數
   getMapParams(logisticsSubType) {
     return {
       MerchantID: this.merchantId,
@@ -56,9 +53,7 @@ class ECPayUtils {
     };
   }
 
-  // ==========================================
-  // 4. [新增] 物流：產生「建立物流訂單」的參數 (後台出貨用)
-  // ==========================================
+  // 4. [修正重點] 物流：產生「建立物流訂單」的參數
   getLogisticsCreateParams(order) {
     const tradeDate = this.formatDate(new Date());
     const amount = Math.round(order.total).toString();
@@ -67,9 +62,13 @@ class ECPayUtils {
     const isCollection = order.payment_method === 'cod';
     const collectionAmount = isCollection ? amount : '0';
 
+    // 確保 ReceiverStoreID 有值，如果是測試可以用假門市
+    // 注意：如果 store_id 是 null，這裡會報錯，所以加個防呆
+    const storeID = order.store_id || '991182'; // 991182 是 7-11 統測門市 (測試用)
+
     const params = {
       MerchantID: this.merchantId,
-      MerchantTradeNo: order.order_no + 'L', // 物流訂單號通常跟金流分開，這裡加個 'L' 避免重複
+      MerchantTradeNo: order.order_no + 'L', 
       MerchantTradeDate: tradeDate,
       LogisticsType: 'CVS',
       LogisticsSubType: order.shipping_sub_type || 'UNIMART',
@@ -79,21 +78,18 @@ class ECPayUtils {
       GoodsName: 'ShopHub商品',
       SenderName: '測試賣家',
       SenderCellPhone: '0912345678',
-      ReceiverName: order.receiver_name,
-      ReceiverCellPhone: order.receiver_phone,
-      ReceiverEmail: order.receiver_email || '',
-      ReceiverStoreID: order.store_id, // ★ 關鍵：這就是消費者選的那家店
+      ReceiverName: order.receiver_name || '測試收件人',
+      ReceiverCellPhone: order.receiver_phone || '0912345678',
+      ReceiverEmail: order.receiver_email || '', // Email 允許為空字串
+      ReceiverStoreID: storeID, 
       ServerReplyURL: `${process.env.SERVER_URL || 'http://45.32.24.240'}/api/ecpay/logistics-callback`,
     };
 
-    // 計算檢查碼
     params.CheckMacValue = this.generateCheckMacValue(params);
     return params;
   }
 
-  // ==========================================
-  // 5. [新增] 物流：產生「列印託運單」的 HTML (列印用)
-  // ==========================================
+  // 5. 物流：產生「列印託運單」的 HTML
   getPrintHtml(allPayLogisticsID) {
     const params = {
       MerchantID: this.merchantId,
@@ -101,7 +97,6 @@ class ECPayUtils {
     };
     params.CheckMacValue = this.generateCheckMacValue(params);
 
-    // 回傳一段 HTML，瀏覽器打開後會自動 POST 到綠界列印頁面
     return `
       <form id="printForm" action="https://logistics-stage.ecpay.com.tw/Helper/PrintTradeDocument" method="POST">
         <input type="hidden" name="MerchantID" value="${params.MerchantID}" />
@@ -112,31 +107,38 @@ class ECPayUtils {
     `;
   }
 
-  // 核心：加密邏輯
+  // 核心：加密邏輯 (針對物流優化)
   generateCheckMacValue(params) {
     const rawParams = { ...params };
     delete rawParams.CheckMacValue;
 
+    // 1. 依照 Key 排序
     const keys = Object.keys(rawParams).sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
-
+    
+    // 2. 組成字串
     let raw = keys.map(k => `${k}=${rawParams[k]}`).join('&');
     
+    // 3. 前後加 Key/IV
     raw = `HashKey=${this.hashKey}&${raw}&HashIV=${this.hashIv}`;
 
-    let encoded = encodeURIComponent(raw).toLowerCase()
-      .replace(/%20/g, '+')
+    // 4. URL Encode
+    let encoded = encodeURIComponent(raw).toLowerCase();
+
+    // 5. 綠界特殊符號置換 (這一步最關鍵)
+    encoded = encoded
       .replace(/%2d/g, '-')
       .replace(/%5f/g, '_')
       .replace(/%2e/g, '.')
       .replace(/%21/g, '!')
       .replace(/%2a/g, '*')
       .replace(/%28/g, '(')
-      .replace(/%29/g, ')');
+      .replace(/%29/g, ')')
+      .replace(/%20/g, '+'); // 空格要轉成 +
 
+    // 6. SHA256 加密並轉大寫
     return crypto.createHash('sha256').update(encoded).digest('hex').toUpperCase();
   }
 
-  // 輔助：日期格式化
   formatDate(date) {
     const year = date.getFullYear();
     const month = ('0' + (date.getMonth() + 1)).slice(-2);
