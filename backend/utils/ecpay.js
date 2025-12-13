@@ -1,4 +1,3 @@
-// backend/utils/ecpay.js
 const crypto = require('crypto');
 
 class ECPayUtils {
@@ -50,7 +49,7 @@ class ECPayUtils {
     };
   }
 
-  // 4. [修正] 物流參數：加入特殊符號過濾
+  // 4. [除錯重點] 物流參數：加入 Log 與強力過濾
   getLogisticsCreateParams(order) {
     const tradeDate = this.formatDate(new Date());
     const amount = Math.round(order.total).toString();
@@ -58,10 +57,24 @@ class ECPayUtils {
     const collectionAmount = isCollection ? amount : '0';
     const storeID = order.store_id || '991182'; 
 
-    // ★ 強制過濾收件人姓名，只保留 中文、英文、數字
-    // 綠界規定：收件人姓名不可有特殊符號
-    let cleanName = (order.receiver_name || '測試收件人').replace(/[^\u4e00-\u9fa5a-zA-Z0-9]/g, '');
-    if (cleanName.length > 10) cleanName = cleanName.substring(0, 10); // 長度限制
+    // 原始姓名
+    const originalName = order.receiver_name || '';
+    
+    // 強力過濾：只保留 中文、英文、數字 (連空格都拿掉)
+    let cleanName = originalName.replace(/[^\u4e00-\u9fa5a-zA-Z0-9]/g, '');
+    
+    // 若過濾後變空字串(例如原本全是符號)，就給個預設值
+    if (!cleanName) cleanName = 'Customer';
+    
+    // 長度限制 10 字
+    if (cleanName.length > 10) cleanName = cleanName.substring(0, 10);
+
+    // ★ 照妖鏡：印出來看看發生什麼事
+    console.log('------------------------------------------------');
+    console.log('物流訂單姓名檢查:');
+    console.log('原始姓名:', originalName);
+    console.log('過濾後姓名:', cleanName);
+    console.log('------------------------------------------------');
 
     const params = {
       MerchantID: this.merchantId,
@@ -73,7 +86,7 @@ class ECPayUtils {
       CollectionAmount: collectionAmount, 
       IsCollection: isCollection ? 'Y' : 'N',
       GoodsName: 'ShopHub商品',
-      SenderName: '測試賣家',
+      SenderName: 'ShopHub',
       SenderCellPhone: '0912345678',
       ReceiverName: cleanName, // 使用過濾後的姓名
       ReceiverCellPhone: order.receiver_phone || '0912345678',
@@ -104,7 +117,7 @@ class ECPayUtils {
     `;
   }
 
-  // 6. [核心修正] 加密邏輯：嚴格處理 URL Encode
+  // 6. 加密邏輯
   generateCheckMacValue(params) {
     const rawParams = { ...params };
     delete rawParams.CheckMacValue;
@@ -114,10 +127,8 @@ class ECPayUtils {
     
     raw = `HashKey=${this.hashKey}&${raw}&HashIV=${this.hashIv}`;
 
-    // 先做一次 URL Encode
     let encoded = encodeURIComponent(raw).toLowerCase();
 
-    // 再手動替換綠界指定的特殊符號 (順序很重要)
     encoded = encoded
       .replace(/%2d/g, '-')
       .replace(/%5f/g, '_')
@@ -126,7 +137,7 @@ class ECPayUtils {
       .replace(/%2a/g, '*')
       .replace(/%28/g, '(')
       .replace(/%29/g, ')')
-      .replace(/%20/g, '+'); // 必須放在最後
+      .replace(/%20/g, '+');
 
     return crypto.createHash('sha256').update(encoded).digest('hex').toUpperCase();
   }
