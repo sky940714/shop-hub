@@ -372,6 +372,7 @@ useEffect(() => {
           <h2 className="section-title">付款方式</h2>
 
           <div className="payment-methods">
+            {/* 超商取貨付款 - 只有超商取貨才顯示 */}
             {shippingMethod === 'cvs' && (
               <div
                 className={`payment-option ${paymentMethod === 'cod' ? 'selected' : ''}`}
@@ -391,56 +392,81 @@ useEffect(() => {
               </div>
             )}
 
-            <div
-              className={`payment-option ${paymentMethod === 'Credit' ? 'selected' : ''}`}
-              onClick={() => setPaymentMethod('Credit')}
-            >
-              <input
-                type="radio"
-                name="payment"
-                checked={paymentMethod === 'Credit'}
-                readOnly
-              />
-              <CreditCard size={24} />
-              <div className="option-info">
-                <div className="option-title">信用卡</div>
-                <div className="option-desc">Visa, MasterCard, JCB</div>
+            {/* 到店付款 - 只有門市自取才顯示 */}
+            {shippingMethod === 'pickup' && (
+              <div
+                className={`payment-option ${paymentMethod === 'store_pay' ? 'selected' : ''}`}
+                onClick={() => setPaymentMethod('store_pay')}
+              >
+                <input
+                  type="radio"
+                  name="payment"
+                  checked={paymentMethod === 'store_pay'}
+                  readOnly
+                />
+                <Store size={24} />
+                <div className="option-info">
+                  <div className="option-title">到店付款</div>
+                  <div className="option-desc">親臨門市時付款（現金或刷卡）</div>
+                </div>
               </div>
-            </div>
+            )}
 
-            <div
-              className={`payment-option ${paymentMethod === 'ATM' ? 'selected' : ''}`}
-              onClick={() => setPaymentMethod('ATM')}
-            >
-              <input
-                type="radio"
-                name="payment"
-                checked={paymentMethod === 'ATM'}
-                readOnly
-              />
-              <div className="payment-icon">ATM</div>
-              <div className="option-info">
-                <div className="option-title">ATM 虛擬帳號</div>
-                <div className="option-desc">取得繳費帳號後轉帳</div>
-              </div>
-            </div>
+            {/* 線上付款方式 - 超商取貨和宅配才顯示 */}
+            {shippingMethod !== 'pickup' && (
+              <>
+                <div
+                  className={`payment-option ${paymentMethod === 'Credit' ? 'selected' : ''}`}
+                  onClick={() => setPaymentMethod('Credit')}
+                >
+                  <input
+                    type="radio"
+                    name="payment"
+                    checked={paymentMethod === 'Credit'}
+                    readOnly
+                  />
+                  <CreditCard size={24} />
+                  <div className="option-info">
+                    <div className="option-title">信用卡</div>
+                    <div className="option-desc">Visa, MasterCard, JCB</div>
+                  </div>
+                </div>
 
-            <div
-              className={`payment-option ${paymentMethod === 'CVS' ? 'selected' : ''}`}
-              onClick={() => setPaymentMethod('CVS')}
-            >
-              <input
-                type="radio"
-                name="payment"
-                checked={paymentMethod === 'CVS'}
-                readOnly
-              />
-              <Store size={24} />
-              <div className="option-info">
-                <div className="option-title">超商代碼繳費</div>
-                <div className="option-desc">取得繳費代碼後至超商繳費</div>
-              </div>
-            </div>
+                <div
+                  className={`payment-option ${paymentMethod === 'ATM' ? 'selected' : ''}`}
+                  onClick={() => setPaymentMethod('ATM')}
+                >
+                  <input
+                    type="radio"
+                    name="payment"
+                    checked={paymentMethod === 'ATM'}
+                    readOnly
+                  />
+                  <div className="payment-icon">ATM</div>
+                  <div className="option-info">
+                    <div className="option-title">ATM 虛擬帳號</div>
+                    <div className="option-desc">取得繳費帳號後轉帳</div>
+                  </div>
+                </div>
+
+                <div
+                  className={`payment-option ${paymentMethod === 'CVS' ? 'selected' : ''}`}
+                  onClick={() => setPaymentMethod('CVS')}
+                >
+                  <input
+                    type="radio"
+                    name="payment"
+                    checked={paymentMethod === 'CVS'}
+                    readOnly
+                  />
+                  <Store size={24} />
+                  <div className="option-info">
+                    <div className="option-title">超商代碼繳費</div>
+                    <div className="option-desc">取得繳費代碼後至超商繳費</div>
+                  </div>
+                </div>
+              </>
+            )}
           </div>
 
           {/* 發票資訊 */}
@@ -565,6 +591,7 @@ useEffect(() => {
               <div className="confirm-content">
                 <p>
                   {paymentMethod === 'cod' && '超商取貨付款'}
+                  {paymentMethod === 'store_pay' && '到店付款'}
                   {paymentMethod === 'Credit' && '信用卡'}
                   {paymentMethod === 'ATM' && 'ATM 虛擬帳號'}
                   {paymentMethod === 'CVS' && '超商代碼繳費'}

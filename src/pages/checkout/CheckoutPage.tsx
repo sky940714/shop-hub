@@ -210,7 +210,7 @@
       }
 
       // 如果是線上付款 (信用卡/ATM等)
-      if (paymentMethod !== 'cod') {
+        if (paymentMethod !== 'cod' && paymentMethod !== 'store_pay') {
         // 將後端回傳的參數存入 state
         if (data.ecpayParams) {
            setEcpayParams(data.ecpayParams);
