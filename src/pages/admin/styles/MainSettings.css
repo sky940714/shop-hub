@@ -19,6 +19,12 @@
   gap: 1rem;
 }
 
+.section-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
 .section-title {
   display: flex;
   align-items: center;
@@ -40,6 +46,229 @@
   border-radius: 0.75rem;
   padding: 1.5rem;
   box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.1);
+}
+
+/* 新增門市按鈕 */
+.btn-add {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  background: linear-gradient(to right, #10b981, #059669);
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-add:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 6px rgba(16, 185, 129, 0.3);
+}
+
+/* 自取門市列表 */
+.pickup-store-list {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.pickup-store-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  padding: 1rem;
+  background: #f9fafb;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  transition: all 0.2s;
+}
+
+.pickup-store-item:hover {
+  border-color: #d1d5db;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+.pickup-store-item.inactive {
+  opacity: 0.6;
+  background: #f3f4f6;
+}
+
+.store-main-info {
+  flex: 1;
+}
+
+.store-name-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.store-icon {
+  font-size: 1.25rem;
+}
+
+.store-name {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.status-badge {
+  padding: 0.125rem 0.5rem;
+  border-radius: 9999px;
+  font-size: 0.75rem;
+  font-weight: 500;
+}
+
+.status-badge.active {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.status-badge.inactive {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.store-address {
+  margin: 0 0 0.25rem 0;
+  font-size: 0.875rem;
+  color: #4b5563;
+}
+
+.store-detail {
+  margin: 0;
+  font-size: 0.8rem;
+  color: #6b7280;
+}
+
+.store-actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.btn-toggle {
+  padding: 0.375rem 0.75rem;
+  background: white;
+  border: 1px solid #d1d5db;
+  border-radius: 0.375rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: #374151;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-toggle:hover {
+  background: #f9fafb;
+  border-color: #9ca3af;
+}
+
+.btn-edit-icon,
+.btn-delete-icon {
+  padding: 0.5rem;
+  border: none;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.btn-edit-icon {
+  background: #eff6ff;
+  color: #2563eb;
+}
+
+.btn-edit-icon:hover {
+  background: #dbeafe;
+}
+
+.btn-delete-icon {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.btn-delete-icon:hover {
+  background: #fecaca;
+}
+
+.loading-text,
+.empty-text {
+  text-align: center;
+  color: #6b7280;
+  padding: 2rem;
+}
+
+/* Modal 樣式 */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 1rem;
+}
+
+.modal-content {
+  background: white;
+  border-radius: 0.75rem;
+  width: 100%;
+  max-width: 500px;
+  max-height: 90vh;
+  overflow-y: auto;
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1);
+}
+
+.modal-title {
+  margin: 0;
+  padding: 1.5rem;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #1f2937;
+  border-bottom: 1px solid #e5e7eb;
+}
+
+.modal-body {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.modal-footer {
+  padding: 1rem 1.5rem;
+  border-top: 1px solid #e5e7eb;
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+}
+
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  cursor: pointer;
+  font-weight: 500;
+  color: #374151;
+}
+
+.checkbox-label input[type="checkbox"] {
+  width: 1rem;
+  height: 1rem;
+  cursor: pointer;
 }
 
 /* 查詢會員點數 */
@@ -143,6 +372,40 @@
 }
 
 /* 退貨地址設定 */
+.address-card {
+  margin-bottom: 1rem;
+}
+
+.address-card:last-child {
+  margin-bottom: 0;
+}
+
+.address-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 2px solid #e5e7eb;
+}
+
+.address-title {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.address-title h4 {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: #1f2937;
+}
+
+.address-icon {
+  font-size: 1.5rem;
+}
+
 .address-info {
   display: flex;
   flex-direction: column;
@@ -218,8 +481,46 @@
   border-color: #9ca3af;
 }
 
+.btn-edit-small {
+  padding: 0.375rem 1rem;
+  background: white;
+  border: 1px solid #d1d5db;
+  color: #2563eb;
+  border-radius: 0.375rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.btn-edit-small:hover {
+  background: #eff6ff;
+  border-color: #2563eb;
+}
+
 /* 響應式設計 */
 @media (max-width: 768px) {
+  .section-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+
+  .btn-add {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .pickup-store-item {
+    flex-direction: column;
+    gap: 1rem;
+  }
+
+  .store-actions {
+    width: 100%;
+    justify-content: flex-end;
+  }
+
   .search-input-group {
     flex-direction: column;
   }
@@ -247,60 +548,6 @@
     width: 100%;
   }
 
-  /* 退貨方式卡片 */
-.address-card {
-  margin-bottom: 1.5rem;
-}
-
-.address-card:last-child {
-  margin-bottom: 0;
-}
-
-.address-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 1rem;
-  padding-bottom: 0.75rem;
-  border-bottom: 2px solid #e5e7eb;
-}
-
-.address-title {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-}
-
-.address-title h4 {
-  margin: 0;
-  font-size: 1.125rem;
-  font-weight: 600;
-  color: #1f2937;
-}
-
-.address-icon {
-  font-size: 1.5rem;
-}
-
-.btn-edit-small {
-  padding: 0.375rem 1rem;
-  background: white;
-  border: 1px solid #d1d5db;
-  color: #2563eb;
-  border-radius: 0.375rem;
-  font-size: 0.875rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-
-.btn-edit-small:hover {
-  background: #eff6ff;
-  border-color: #2563eb;
-}
-
-/* 響應式調整 */
-@media (max-width: 768px) {
   .address-header {
     flex-direction: column;
     align-items: flex-start;
@@ -310,5 +557,13 @@
   .btn-edit-small {
     width: 100%;
   }
-}
+
+  .modal-footer {
+    flex-direction: column;
+  }
+
+  .modal-footer .btn-primary,
+  .modal-footer .btn-secondary {
+    width: 100%;
+  }
 }

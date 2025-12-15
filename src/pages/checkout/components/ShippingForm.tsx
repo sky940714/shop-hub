@@ -1,5 +1,5 @@
 // src/pages/checkout/components/ShippingForm.tsx
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Store, Truck, CreditCard, MapPin } from 'lucide-react';
 import './styles/ShippingForm.css';
 
@@ -58,6 +58,26 @@ const ShippingForm: React.FC<ShippingFormProps> = ({
   const handleInfoChange = (field: string, value: string) => {
     setShippingInfo(prev => ({ ...prev, [field]: value }));
   };
+
+// 自取門市列表
+const [pickupStores, setPickupStores] = useState<any[]>([]);
+const [selectedPickupStore, setSelectedPickupStore] = useState<any>(null);
+
+// 載入自取門市
+useEffect(() => {
+  const fetchPickupStores = async () => {
+    try {
+      const res = await fetch('http://45.32.24.240/api/pickup-stores');
+      const data = await res.json();
+      if (data.success) {
+        setPickupStores(data.stores);
+      }
+    } catch (error) {
+      console.error('載入門市失敗:', error);
+    }
+  };
+  fetchPickupStores();
+}, []);
 
   // 選擇超商門市
   const handleSelectStore = async () => {
@@ -192,6 +212,28 @@ const ShippingForm: React.FC<ShippingFormProps> = ({
               <div className="option-price">NT$ 60</div>
             </div>
 
+            {/* 門市自取 */}
+            <div
+              className={`shipping-option ${shippingMethod === 'pickup' ? 'selected' : ''}`}
+              onClick={() => {
+                setShippingMethod('pickup');
+                setSelectedPickupStore(null);
+              }}
+            >
+              <input
+                type="radio"
+                name="shipping"
+                checked={shippingMethod === 'pickup'}
+                readOnly
+              />
+              <MapPin size={24} />
+              <div className="option-info">
+                <div className="option-title">門市自取</div>
+                <div className="option-desc">親臨門市取貨</div>
+              </div>
+              <div className="option-price free">免運費</div>
+            </div>
+
             <div
               className={`shipping-option ${shippingMethod === 'home' ? 'selected' : ''}`}
               onClick={() => setShippingMethod('home')}
@@ -210,6 +252,46 @@ const ShippingForm: React.FC<ShippingFormProps> = ({
               <div className="option-price">NT$ 100</div>
             </div>
           </div>
+
+          {/* 門市自取選擇 */}
+          {shippingMethod === 'pickup' && (
+            <div className="pickup-store-selection">
+              <label className="form-label">選擇自取門市 *</label>
+              {pickupStores.length === 0 ? (
+                <p className="no-stores">目前沒有可選擇的門市</p>
+              ) : (
+                <div className="pickup-store-list">
+                  {pickupStores.map((store) => (
+                    <div
+                      key={store.id}
+                      className={`pickup-store-option ${selectedPickupStore?.id === store.id ? 'selected' : ''}`}
+                      onClick={() => {
+                        setSelectedPickupStore(store);
+                        handleInfoChange('storeId', `pickup-${store.id}`);
+                        handleInfoChange('storeName', store.name);
+                        handleInfoChange('storeAddress', store.address);
+                      }}
+                    >
+                      <div className="store-radio">
+                        <input
+                          type="radio"
+                          name="pickupStore"
+                          checked={selectedPickupStore?.id === store.id}
+                          readOnly
+                        />
+                      </div>
+                      <div className="store-details">
+                        <div className="store-name">{store.name}</div>
+                        <div className="store-address">{store.address}</div>
+                        {store.phone && <div className="store-phone">📞 {store.phone}</div>}
+                        {store.business_hours && <div className="store-hours">🕐 {store.business_hours}</div>}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          )}
 
           {/* 超商選擇 */}
           {shippingMethod === 'cvs' && (
@@ -451,7 +533,13 @@ const ShippingForm: React.FC<ShippingFormProps> = ({
             <div className="confirm-section">
               <h3 className="confirm-title">配送方式</h3>
               <div className="confirm-content">
-                {shippingMethod === 'cvs' ? (
+                {shippingMethod === 'pickup' ? (
+                  <>
+                    <p><strong>配送方式:</strong> 門市自取</p>
+                    <p><strong>門市:</strong> {shippingInfo.storeName}</p>
+                    <p><strong>地址:</strong> {shippingInfo.storeAddress}</p>
+                  </>
+                ) : shippingMethod === 'cvs' ? (
                   <>
                     <p><strong>配送方式:</strong> 超商取貨</p>
                     <p><strong>超商:</strong> {

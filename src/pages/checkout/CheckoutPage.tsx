@@ -62,6 +62,7 @@
     // 取得運費
     function getShippingFee(): number {
         if (!shippingMethod) return 0;
+        if (shippingMethod === 'pickup') return 0;  // 門市自取免運
         if (shippingMethod === 'cvs') return 60;
         if (shippingMethod === 'home') return 100;
         return 0;
@@ -113,6 +114,11 @@
         if (step === 2) {
         if (!shippingMethod) {
             alert('請選擇配送方式');
+            return false;
+        }
+        // 門市自取驗證
+        if (shippingMethod === 'pickup' && !shippingInfo.storeId) {
+            alert('請選擇自取門市');
             return false;
         }
         if (shippingMethod === 'cvs' && !shippingSubType) {

@@ -457,3 +457,76 @@
     padding: 14px;
   }
 }
+
+/* 門市自取樣式 */
+.option-price.free {
+  color: #059669;
+  font-weight: 600;
+}
+
+.pickup-store-selection {
+  margin-top: 1.5rem;
+  padding: 1rem;
+  background: #f9fafb;
+  border-radius: 0.5rem;
+}
+
+.pickup-store-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+
+.pickup-store-option {
+  display: flex;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1rem;
+  background: white;
+  border: 2px solid #e5e7eb;
+  border-radius: 0.5rem;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.pickup-store-option:hover {
+  border-color: #3b82f6;
+}
+
+.pickup-store-option.selected {
+  border-color: #3b82f6;
+  background: #eff6ff;
+}
+
+.store-radio {
+  padding-top: 2px;
+}
+
+.store-details {
+  flex: 1;
+}
+
+.store-name {
+  font-weight: 600;
+  color: #111827;
+  margin-bottom: 0.25rem;
+}
+
+.store-address {
+  color: #6b7280;
+  font-size: 0.875rem;
+  margin-bottom: 0.25rem;
+}
+
+.store-phone,
+.store-hours {
+  color: #6b7280;
+  font-size: 0.8rem;
+}
+
+.no-stores {
+  color: #6b7280;
+  font-style: italic;
+  padding: 1rem 0;
+}
