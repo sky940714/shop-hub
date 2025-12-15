@@ -156,8 +156,9 @@
 .wishlist-product-image {
   width: 120px;
   height: 120px;
-  object-fit: cover;
+  object-fit: contain;
   flex-shrink: 0;
+  background-color: #f9fafb;
 }
 
 .wishlist-product-info {
@@ -286,9 +287,11 @@
   }
 
   .wishlist-product-image {
-    width: 100%;
-    height: 200px;
-  }
+  width: 100%;
+  height: 200px;
+  object-fit: contain;
+  background-color: #f9fafb;
+}
 
   .wishlist-product-info {
     padding: 1rem;
