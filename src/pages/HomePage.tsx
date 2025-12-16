@@ -26,6 +26,16 @@ interface Category {
   productCount: number;
 }
 
+interface HeroBanner {
+  id: number;
+  title: string | null;
+  subtitle: string | null;
+  image_url: string;
+  link_url: string | null;
+  sort_order: number;
+  is_active: boolean;
+}
+
 const HomePage: React.FC = () => {
   const navigate = useNavigate();
   // 狀態管理
@@ -37,11 +47,14 @@ const HomePage: React.FC = () => {
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);  // ← 新增這行
+  const [banners, setBanners] = useState<HeroBanner[]>([]);
+  const [currentBannerIndex, setCurrentBannerIndex] = useState(0);
 
   useEffect(() => {
-    fetchCategories();
+   fetchCategories();
     fetchProducts();
-    fetchWishlist();  // 新增
+    fetchWishlist();
+    fetchBanners();
   }, []);
 
   // ← 新增這個函數
@@ -102,6 +115,30 @@ const HomePage: React.FC = () => {
       console.error('獲取收藏失敗：', error);
     }
   };
+
+  const fetchBanners = async () => {
+    try {
+      const response = await fetch('/api/banners');
+      const data = await response.json();
+      if (data.success) {
+        setBanners(data.banners);
+      }
+    } catch (error) {
+      console.error('讀取輪播圖失敗：', error);
+    }
+  };
+
+  // 輪播圖自動切換
+  useEffect(() => {
+    if (banners.length <= 1) return;
+    
+    const interval = setInterval(() => {
+      setCurrentBannerIndex((prev) => (prev + 1) % banners.length);
+    }, 5000); // 每 5 秒切換
+
+    return () => clearInterval(interval);
+  }, [banners.length]);
+
 
   // ← 刪除整個 getCategoryId 函數
 
@@ -226,11 +263,51 @@ const HomePage: React.FC = () => {
       )}
 
       {/* Hero Section */}
-      <section className="hero">
+      <section 
+        className="hero"
+        style={banners.length > 0 && banners[currentBannerIndex]?.image_url ? {
+          backgroundImage: `linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url(${banners[currentBannerIndex].image_url})`,
+          backgroundSize: 'cover',
+          backgroundPosition: 'center'
+        } : {}}
+      >
         <div className="hero-container">
-          <h2 className="hero-title">發現你的完美商品</h2>
-          <p className="hero-subtitle">精選商品,品質保證,快速配送</p>
-          <button className="hero-button">立即購物</button>
+          <h2 className="hero-title">
+            {banners.length > 0 && banners[currentBannerIndex]?.title 
+              ? banners[currentBannerIndex].title 
+              : '發現你的完美商品'}
+          </h2>
+          <p className="hero-subtitle">
+            {banners.length > 0 && banners[currentBannerIndex]?.subtitle 
+              ? banners[currentBannerIndex].subtitle 
+              : '精選商品,品質保證,快速配送'}
+          </p>
+          <button 
+            className="hero-button"
+            onClick={() => {
+              const linkUrl = banners[currentBannerIndex]?.link_url;
+              if (linkUrl) {
+                navigate(linkUrl);
+              } else {
+                document.getElementById('products')?.scrollIntoView({ behavior: 'smooth' });
+              }
+            }}
+          >
+            立即購物
+          </button>
+          
+          {/* 輪播指示點 */}
+          {banners.length > 1 && (
+            <div className="hero-dots">
+              {banners.map((_, index) => (
+                <button
+                  key={index}
+                  className={`hero-dot ${index === currentBannerIndex ? 'active' : ''}`}
+                  onClick={() => setCurrentBannerIndex(index)}
+                />
+              ))}
+            </div>
+          )}
         </div>
       </section>
 

@@ -700,3 +700,35 @@
     grid-template-columns: repeat(4, 1fr);
   }
 }
+
+/* 輪播指示點 */
+.hero-dots {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.hero-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid white;
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  padding: 0;
+}
+
+.hero-dot:hover {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.hero-dot.active {
+  background: white;
+}
+
+/* Hero 背景過渡效果 */
+.hero {
+  transition: background-image 0.5s ease-in-out;
+}
