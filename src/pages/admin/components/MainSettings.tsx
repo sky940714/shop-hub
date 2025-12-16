@@ -27,7 +27,7 @@ interface PickupStore {
   is_active: boolean;
 }
 
-const API_BASE = 'http://45.32.24.240/api';
+const API_BASE = '/api';
 
 const MainSettings: React.FC = () => {
   const [searchEmail, setSearchEmail] = useState('');

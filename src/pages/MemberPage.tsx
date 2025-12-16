@@ -29,7 +29,7 @@ interface MemberProfile {
 
 const MemberPage: React.FC = () => {
   const navigate = useNavigate();
-  const API_BASE = 'http://45.32.24.240/api';
+  const API_BASE = '/api';
 
   // 會員資料
   const [profile, setProfile] = useState<MemberProfile | null>(null);

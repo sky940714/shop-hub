@@ -26,7 +26,7 @@ const OrderListPage: React.FC = () => {
   const fetchOrders = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://45.32.24.240/api/orders', {
+      const response = await fetch('/api/orders', {
         headers: {
           'Authorization': `Bearer ${token}`,
         },

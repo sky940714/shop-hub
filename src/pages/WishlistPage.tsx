@@ -22,7 +22,7 @@ const WishlistPage: React.FC = () => {
   const [loading, setLoading] = useState<boolean>(true);
   const { addToCart } = useCart(); // 使用全域購物車功能
   const navigate = useNavigate();
-  const API_BASE = 'http://45.32.24.240/api'; // 你的 API 位址
+  const API_BASE = '/api'; // 你的 API 位址
 
   // 1. 獲取收藏清單
   const fetchWishlist = async () => {

@@ -61,7 +61,7 @@ const OrderDetailPage: React.FC = () => {
         return;
       }
 
-      const response = await fetch(`http://45.32.24.240/api/orders/${orderNo}`, {
+      const response = await fetch(`/api/orders/${orderNo}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },

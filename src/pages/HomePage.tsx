@@ -47,7 +47,7 @@ const HomePage: React.FC = () => {
   // ← 新增這個函數
   const fetchCategories = async () => {
     try {
-      const response = await fetch('http://45.32.24.240/api/categories');
+      const response = await fetch('/api/categories');
       const data = await response.json();
 
       if (data.success) {
@@ -60,7 +60,7 @@ const HomePage: React.FC = () => {
 
   const fetchProducts = async () => {
     try {
-      const response = await fetch('http://45.32.24.240/api/products/published');
+      const response = await fetch('/api/products/published');
       const data = await response.json();
 
       if (data.success) {
@@ -88,7 +88,7 @@ const HomePage: React.FC = () => {
     if (!token) return;
 
     try {
-      const response = await fetch('http://45.32.24.240/api/wishlist', {
+      const response = await fetch('/api/wishlist', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await response.json();
@@ -127,7 +127,7 @@ const HomePage: React.FC = () => {
   try {
     if (isWishlisted) {
       // 移除收藏
-      const response = await fetch(`http://45.32.24.240/api/wishlist/${productId}`, {
+      const response = await fetch(`/api/wishlist/${productId}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -138,7 +138,7 @@ const HomePage: React.FC = () => {
       }
     } else {
       // 新增收藏
-      const response = await fetch('http://45.32.24.240/api/wishlist', {
+      const response = await fetch('/api/wishlist', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

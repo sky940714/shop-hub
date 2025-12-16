@@ -60,7 +60,7 @@ const MemberManagement: React.FC = () => {
       if (searchTerm) params.append('search', searchTerm);
       
       const response = await fetch(
-        `http://45.32.24.240/api/members/admin/all?${params}`,
+        `/api/members/admin/all?${params}`,
         {
           headers: {
             'Authorization': `Bearer ${token}`
@@ -90,7 +90,7 @@ const MemberManagement: React.FC = () => {
       
       // 查詢會員資料
       const memberResponse = await fetch(
-        `http://45.32.24.240/api/members/admin/${memberId}`,
+        `/api/members/admin/${memberId}`,
         {
           headers: {
             'Authorization': `Bearer ${token}`
@@ -101,7 +101,7 @@ const MemberManagement: React.FC = () => {
       
       // 查詢訂單列表
       const ordersResponse = await fetch(
-        `http://45.32.24.240/api/members/admin/${memberId}/orders`,
+        `/api/members/admin/${memberId}/orders`,
         {
           headers: {
             'Authorization': `Bearer ${token}`
@@ -112,7 +112,7 @@ const MemberManagement: React.FC = () => {
       
       // 查詢點數歷史
       const historyResponse = await fetch(
-        `http://45.32.24.240/api/members/admin/${memberId}/points-history`,
+        `/api/members/admin/${memberId}/points-history`,
         {
           headers: {
             'Authorization': `Bearer ${token}`
@@ -148,7 +148,7 @@ const MemberManagement: React.FC = () => {
     try {
       const token = localStorage.getItem('token');
       const response = await fetch(
-        `http://45.32.24.240/api/members/admin/${selectedMember.id}/points`,
+        `/api/members/admin/${selectedMember.id}/points`,
         {
           method: 'POST',
           headers: {

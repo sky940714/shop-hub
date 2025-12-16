@@ -53,7 +53,7 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
     }
 
     try {
-      const response = await fetch('http://45.32.24.240/api/cart', {
+      const response = await fetch('/api/cart', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -82,7 +82,7 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
     setLoading(true);
 
     try {
-      const response = await fetch('http://45.32.24.240/api/cart/add', {
+      const response = await fetch('/api/cart/add', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -123,7 +123,7 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
     setLoading(true);
 
     try {
-      const response = await fetch(`http://45.32.24.240/api/cart/remove/${cartItemId}`, {
+      const response = await fetch(`/api/cart/remove/${cartItemId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -162,7 +162,7 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
     setLoading(true);
 
     try {
-      const response = await fetch(`http://45.32.24.240/api/cart/update/${cartItemId}`, {
+      const response = await fetch(`/api/cart/update/${cartItemId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -198,7 +198,7 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
     setLoading(true);
 
     try {
-      const response = await fetch('http://45.32.24.240/api/cart/clear', {
+      const response = await fetch('/api/cart/clear', {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`

@@ -67,7 +67,7 @@ const [selectedPickupStore, setSelectedPickupStore] = useState<any>(null);
 useEffect(() => {
   const fetchPickupStores = async () => {
     try {
-      const res = await fetch('http://45.32.24.240/api/pickup-stores');
+      const res = await fetch('/api/pickup-stores');
       const data = await res.json();
       if (data.success) {
         setPickupStores(data.stores);
@@ -90,7 +90,7 @@ useEffect(() => {
     try {
       // 1. 呼叫後端取得地圖參數 (改用 GET)
       // 注意：這裡的 URL 必須對應你後端 routes 設定的 /api/ecpay/map
-      const response = await fetch(`http://45.32.24.240/api/ecpay/map?logisticsSubType=${shippingSubType}`);
+      const response = await fetch(`/api/ecpay/map?logisticsSubType=${shippingSubType}`);
       
       if (!response.ok) throw new Error('Network response was not ok');
       const params = await response.json();

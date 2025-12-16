@@ -87,7 +87,7 @@ const OrderManagement: React.FC = () => {
       if (statusFilter !== 'all') params.append('status', statusFilter);
       
       const response = await fetch(
-        `http://45.32.24.240/api/orders/admin/all?${params}`,
+        `/api/orders/admin/all?${params}`,
         {
           headers: {
             'Authorization': `Bearer ${token}`
@@ -116,7 +116,7 @@ const OrderManagement: React.FC = () => {
     try {
       const token = localStorage.getItem('token');
       const response = await fetch(
-        `http://45.32.24.240/api/orders/admin/${orderNo}`,
+        `/api/orders/admin/${orderNo}`,
         {
           headers: {
             'Authorization': `Bearer ${token}`
@@ -147,7 +147,7 @@ const OrderManagement: React.FC = () => {
     try {
       const token = localStorage.getItem('token');
       const response = await fetch(
-        `http://45.32.24.240/api/orders/admin/${orderNo}/status`,
+        `/api/orders/admin/${orderNo}/status`,
         {
           method: 'PUT',
           headers: {
@@ -181,7 +181,7 @@ const OrderManagement: React.FC = () => {
     try {
       const token = localStorage.getItem('token');
       const response = await fetch(
-        `http://45.32.24.240/api/orders/admin/${orderNo}`,
+        `/api/orders/admin/${orderNo}`,
         {
           method: 'DELETE',
           headers: {
@@ -210,7 +210,7 @@ const OrderManagement: React.FC = () => {
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://45.32.24.240/api/ecpay/create-shipping', {
+      const response = await fetch('/api/ecpay/create-shipping', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -238,7 +238,7 @@ const OrderManagement: React.FC = () => {
 
   // 2. 列印託運單 (開啟綠界列印頁面)
   const handlePrintShipping = (orderNo: string) => {
-    const url = `http://45.32.24.240/api/ecpay/print-shipping?orderNo=${orderNo}`;
+    const url = `/api/ecpay/print-shipping?orderNo=${orderNo}`;
     window.open(url, '_blank');
   };
 

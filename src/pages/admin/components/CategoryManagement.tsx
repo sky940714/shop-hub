@@ -119,7 +119,7 @@ const sensors = useSensors(
       setLoading(true);
       setError(null);
 
-      const response = await fetch('http://45.32.24.240/api/categories');
+      const response = await fetch('/api/categories');
       const data = await response.json();
 
       if (data.success) {
@@ -178,7 +178,7 @@ const handleDragEnd = async (event: DragEndEvent) => {
         return;
       }
 
-      const response = await fetch('http://45.32.24.240/api/categories/update-order', {
+      const response = await fetch('/api/categories/update-order', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -220,7 +220,7 @@ const handleDragEnd = async (event: DragEndEvent) => {
         return;
       }
 
-      const response = await fetch('http://45.32.24.240/api/categories', {
+      const response = await fetch('/api/categories', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -259,7 +259,7 @@ const handleDragEnd = async (event: DragEndEvent) => {
         return;
       }
 
-      const response = await fetch(`http://45.32.24.240/api/categories/${category.id}`, {
+      const response = await fetch(`/api/categories/${category.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -298,7 +298,7 @@ const handleDragEnd = async (event: DragEndEvent) => {
         return;
       }
 
-      const response = await fetch(`http://45.32.24.240/api/categories/${category.id}`, {
+      const response = await fetch(`/api/categories/${category.id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,

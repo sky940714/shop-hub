@@ -131,7 +131,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ product, onClose, onSave })
   // ⭐ 載入分類列表
   const fetchCategories = async () => {
     try {
-      const response = await fetch('http://45.32.24.240/api/categories');
+      const response = await fetch('/api/categories');
       const data = await response.json();
 
       if (data.success) {
@@ -147,7 +147,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ product, onClose, onSave })
     try {
       const token = localStorage.getItem('token');
       
-      const response = await fetch(`http://45.32.24.240/api/products/${productId}`, {
+      const response = await fetch(`/api/products/${productId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -303,7 +303,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ product, onClose, onSave })
         formData.append('images', file);
       });
 
-      const response = await fetch('http://45.32.24.240/api/upload/images', {
+      const response = await fetch('/api/upload/images', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -355,7 +355,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ product, onClose, onSave })
         return;
       }
 
-      const response = await fetch('http://45.32.24.240/api/upload/image', {
+      const response = await fetch('/api/upload/image', {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
@@ -457,7 +457,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ product, onClose, onSave })
 
       if (product) {
         // 更新商品
-        response = await fetch(`http://45.32.24.240/api/products/${product.id}`, {
+        response = await fetch(`/api/products/${product.id}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -467,7 +467,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ product, onClose, onSave })
         });
       } else {
         // 新增商品
-        response = await fetch('http://45.32.24.240/api/products', {
+        response = await fetch('/api/products', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

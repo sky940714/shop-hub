@@ -191,7 +191,7 @@
     }))
         };
 
-        const response = await fetch('http://45.32.24.240/api/orders/create', {
+        const response = await fetch('/api/orders/create', {
             method: 'POST',
             headers: {
             'Content-Type': 'application/json',
