@@ -1,7 +1,8 @@
 // pages/admin/components/MainSettings.tsx
 import React, { useState, useEffect } from 'react';
-import { Search, MapPin, Store, Plus, Trash2, Edit2 } from 'lucide-react';
+import { Search, MapPin, Store, Plus, Trash2, Edit2, Image } from 'lucide-react';
 import '../styles/MainSettings.css';
+
 
 interface MemberPoints {
   email: string;
@@ -24,6 +25,16 @@ interface PickupStore {
   address: string;
   phone: string | null;
   business_hours: string | null;
+  is_active: boolean;
+}
+
+interface HeroBanner {
+  id: number;
+  title: string | null;
+  subtitle: string | null;
+  image_url: string;
+  link_url: string | null;
+  sort_order: number;
   is_active: boolean;
 }
 
@@ -81,6 +92,20 @@ const MainSettings: React.FC = () => {
     is_active: true
   });
 
+  const [banners, setBanners] = useState<HeroBanner[]>([]);
+  const [bannerLoading, setBannerLoading] = useState(false);
+  const [showBannerModal, setShowBannerModal] = useState(false);
+  const [editingBanner, setEditingBanner] = useState<HeroBanner | null>(null);
+  const [bannerForm, setBannerForm] = useState({
+    title: '',
+    subtitle: '',
+    image_url: '',
+    link_url: '',
+    sort_order: 0,
+    is_active: true
+  });
+  const [uploading, setUploading] = useState(false);
+
   // 載入自取門市列表
   const fetchPickupStores = async () => {
     setPickupLoading(true);
@@ -102,6 +127,7 @@ const MainSettings: React.FC = () => {
 
   useEffect(() => {
     fetchPickupStores();
+    fetchBanners();
   }, []);
 
   // 模擬會員點數資料（之後可替換成 API）
@@ -271,9 +297,221 @@ const MainSettings: React.FC = () => {
     }
   };
 
+  // ============================================
+  // 輪播圖相關函數
+  // ============================================
+
+  // 載入輪播圖
+  const fetchBanners = async () => {
+    setBannerLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${API_BASE}/banners/admin/all`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (data.success) {
+        setBanners(data.banners);
+      }
+    } catch (error) {
+      console.error('載入輪播圖失敗:', error);
+    } finally {
+      setBannerLoading(false);
+    }
+  };
+
+  // 上傳圖片
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const formData = new FormData();
+      formData.append('image', file);
+
+      const res = await fetch(`${API_BASE}/upload/image`, {
+        method: 'POST',
+        headers: { 'Authorization': `Bearer ${token}` },
+        body: formData
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        setBannerForm({ ...bannerForm, image_url: data.imageUrl });
+      } else {
+        window.alert(data.message || '上傳失敗');
+      }
+    } catch (error) {
+      console.error('上傳圖片失敗:', error);
+      window.alert('上傳失敗');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  // 開啟新增輪播圖 Modal
+  const openBannerModal = () => {
+    setBannerForm({
+      title: '',
+      subtitle: '',
+      image_url: '',
+      link_url: '',
+      sort_order: 0,
+      is_active: true
+    });
+    setEditingBanner(null);
+    setShowBannerModal(true);
+  };
+
+  // 開啟編輯輪播圖 Modal
+  const openEditBannerModal = (banner: HeroBanner) => {
+    setBannerForm({
+      title: banner.title || '',
+      subtitle: banner.subtitle || '',
+      image_url: banner.image_url,
+      link_url: banner.link_url || '',
+      sort_order: banner.sort_order,
+      is_active: banner.is_active
+    });
+    setEditingBanner(banner);
+    setShowBannerModal(true);
+  };
+
+  // 關閉輪播圖 Modal
+  const closeBannerModal = () => {
+    setShowBannerModal(false);
+    setEditingBanner(null);
+  };
+
+  // 儲存輪播圖
+  const handleSaveBanner = async () => {
+    if (!bannerForm.image_url) {
+      window.alert('請上傳圖片');
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('token');
+      const url = editingBanner
+        ? `${API_BASE}/banners/admin/${editingBanner.id}`
+        : `${API_BASE}/banners/admin`;
+      const method = editingBanner ? 'PUT' : 'POST';
+
+      const res = await fetch(url, {
+        method,
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(bannerForm)
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        window.alert(editingBanner ? '更新成功！' : '新增成功！');
+        closeBannerModal();
+        fetchBanners();
+      } else {
+        window.alert(data.message || '操作失敗');
+      }
+    } catch (error) {
+      console.error('儲存失敗:', error);
+      window.alert('儲存失敗');
+    }
+  };
+
+  // 刪除輪播圖
+  const handleDeleteBanner = async (id: number) => {
+    if (!window.confirm('確定要刪除此輪播圖嗎？')) return;
+
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${API_BASE}/banners/admin/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        window.alert('已刪除');
+        fetchBanners();
+      }
+    } catch (error) {
+      console.error('刪除失敗:', error);
+    }
+  };
+
+  // 切換輪播圖啟用狀態
+  const handleToggleBanner = async (banner: HeroBanner) => {
+    try {
+      const token = localStorage.getItem('token');
+      await fetch(`${API_BASE}/banners/admin/${banner.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ ...banner, is_active: !banner.is_active })
+      });
+      fetchBanners();
+    } catch (error) {
+      console.error('更新失敗:', error);
+    }
+  };
+
   return (
     <div className="main-settings">
       <h2 className="page-title">主要設定</h2>
+
+      {/* Hero 輪播圖管理 */}
+      <div className="settings-section">
+        <div className="section-header">
+          <h3 className="section-title">
+            <Image className="section-icon" />
+            首頁輪播圖管理
+          </h3>
+          <button className="btn-add" onClick={openBannerModal}>
+            <Plus size={18} />
+            新增輪播圖
+          </button>
+        </div>
+
+        <div className="settings-card">
+          {bannerLoading ? (
+            <div className="loading-text">載入中...</div>
+          ) : banners.length === 0 ? (
+            <div className="empty-text">尚未設定任何輪播圖</div>
+          ) : (
+            <div className="banner-list">
+              {banners.map((banner) => (
+                <div key={banner.id} className={`banner-item ${!banner.is_active ? 'inactive' : ''}`}>
+                  <img src={banner.image_url} alt={banner.title || '輪播圖'} className="banner-preview" />
+                  <div className="banner-info">
+                    <h4>{banner.title || '(無標題)'}</h4>
+                    <p>{banner.subtitle || '(無副標題)'}</p>
+                    <span className={`status-badge ${banner.is_active ? 'active' : 'inactive'}`}>
+                      {banner.is_active ? '啟用中' : '已停用'}
+                    </span>
+                  </div>
+                  <div className="banner-actions">
+                    <button className="btn-toggle" onClick={() => handleToggleBanner(banner)}>
+                      {banner.is_active ? '停用' : '啟用'}
+                    </button>
+                    <button className="btn-edit-icon" onClick={() => openEditBannerModal(banner)}>
+                      <Edit2 size={16} />
+                    </button>
+                    <button className="btn-delete-icon" onClick={() => handleDeleteBanner(banner.id)}>
+                      <Trash2 size={16} />
+                    </button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
+      </div>
 
       {/* 自取門市管理 */}
       <div className="settings-section">
@@ -544,6 +782,109 @@ const MainSettings: React.FC = () => {
               </button>
               <button className="btn-primary" onClick={handleSaveStore}>
                 {editingStore ? '更新' : '新增'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* 輪播圖 Modal */}
+      {showBannerModal && (
+        <div className="modal-overlay" onClick={closeBannerModal}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <h3 className="modal-title">
+              {editingBanner ? '編輯輪播圖' : '新增輪播圖'}
+            </h3>
+
+            <div className="modal-body">
+              <div className="form-group">
+                <label className="form-label">輪播圖片 *</label>
+                {bannerForm.image_url ? (
+                  <div className="image-preview-container">
+                    <img src={bannerForm.image_url} alt="預覽" className="image-preview" />
+                    <button 
+                      className="btn-remove-image"
+                      onClick={() => setBannerForm({ ...bannerForm, image_url: '' })}
+                    >
+                      移除圖片
+                    </button>
+                  </div>
+                ) : (
+                  <div className="upload-area">
+                    <input
+                      type="file"
+                      accept="image/*"
+                      onChange={handleImageUpload}
+                      disabled={uploading}
+                      id="banner-upload"
+                      style={{ display: 'none' }}
+                    />
+                    <label htmlFor="banner-upload" className="upload-label">
+                      {uploading ? '上傳中...' : '點擊上傳圖片（建議尺寸 1920x600）'}
+                    </label>
+                  </div>
+                )}
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">標題</label>
+                <input
+                  type="text"
+                  className="form-input"
+                  placeholder="例如：夏季特賣"
+                  value={bannerForm.title}
+                  onChange={(e) => setBannerForm({ ...bannerForm, title: e.target.value })}
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">副標題</label>
+                <input
+                  type="text"
+                  className="form-input"
+                  placeholder="例如：全館商品 5 折起"
+                  value={bannerForm.subtitle}
+                  onChange={(e) => setBannerForm({ ...bannerForm, subtitle: e.target.value })}
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">連結網址</label>
+                <input
+                  type="text"
+                  className="form-input"
+                  placeholder="例如：/search?category=1"
+                  value={bannerForm.link_url}
+                  onChange={(e) => setBannerForm({ ...bannerForm, link_url: e.target.value })}
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="form-label">排序（數字越小越前面）</label>
+                <input
+                  type="number"
+                  className="form-input"
+                  value={bannerForm.sort_order}
+                  onChange={(e) => setBannerForm({ ...bannerForm, sort_order: parseInt(e.target.value) || 0 })}
+                />
+              </div>
+
+              <div className="form-group">
+                <label className="checkbox-label">
+                  <input
+                    type="checkbox"
+                    checked={bannerForm.is_active}
+                    onChange={(e) => setBannerForm({ ...bannerForm, is_active: e.target.checked })}
+                  />
+                  啟用此輪播圖
+                </label>
+              </div>
+            </div>
+
+            <div className="modal-footer">
+              <button className="btn-secondary" onClick={closeBannerModal}>取消</button>
+              <button className="btn-primary" onClick={handleSaveBanner}>
+                {editingBanner ? '更新' : '新增'}
               </button>
             </div>
           </div>
