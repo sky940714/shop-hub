@@ -68,7 +68,7 @@ class ECPayUtils {
       MerchantID: this.merchantId,
       LogisticsType: 'CVS',
       LogisticsSubType: logisticsSubType || 'UNIMART',
-      ServerReplyURL: `${process.env.SERVER_URL}/api/ecpay/map-callback`,
+      ServerReplyURL: 'https://anxinshophub.com/api/ecpay/map-callback',
       IsCollection: 'N',
       actionUrl: this.getApiUrl('map')
     };
@@ -103,7 +103,7 @@ class ECPayUtils {
       ReceiverCellPhone: order.receiver_phone || '0912345678',
       ReceiverEmail: order.receiver_email || '', 
       ReceiverStoreID: storeID, 
-      ServerReplyURL: `${process.env.SERVER_URL}/api/ecpay/logistics-callback`,
+      ServerReplyURL: 'https://anxinshophub.com/api/ecpay/create-shipping',
     };
 
     // 物流 API 強制使用 MD5
