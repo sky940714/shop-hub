@@ -59,49 +59,71 @@ const ShippingForm: React.FC<ShippingFormProps> = ({
     setShippingInfo(prev => ({ ...prev, [field]: value }));
   };
 
-// 自取門市列表
-const [pickupStores, setPickupStores] = useState<any[]>([]);
-const [selectedPickupStore, setSelectedPickupStore] = useState<any>(null);
+  // 自取門市列表
+  const [pickupStores, setPickupStores] = useState<any[]>([]);
+  const [selectedPickupStore, setSelectedPickupStore] = useState<any>(null);
 
-// 載入自取門市
-useEffect(() => {
-  const fetchPickupStores = async () => {
-    try {
-      const res = await fetch('/api/pickup-stores');
-      const data = await res.json();
-      if (data.success) {
-        setPickupStores(data.stores);
+  // 載入自取門市
+  useEffect(() => {
+    const fetchPickupStores = async () => {
+      try {
+        const res = await fetch('/api/pickup-stores');
+        const data = await res.json();
+        if (data.success) {
+          setPickupStores(data.stores);
+        }
+      } catch (error) {
+        console.error('載入門市失敗:', error);
       }
-    } catch (error) {
-      console.error('載入門市失敗:', error);
-    }
-  };
-  fetchPickupStores();
-}, []);
+    };
+    fetchPickupStores();
+  }, []);
 
-  // 選擇超商門市
+  // ==========================================
+  // [新增] 監聽綠界地圖回傳 (這是之前漏掉的!)
+  // ==========================================
+  useEffect(() => {
+    const handleEcpayMessage = (event: MessageEvent) => {
+      const data = event.data;
+      
+      // 確保資料包含 storeId 才處理 (避免收到 React DevTools 等其他訊息)
+      if (data && data.storeId && data.storeName) {
+        console.log('收到綠界門市資料:', data);
+        
+        // 更新 React 狀態，讓畫面顯示選到的店
+        setShippingInfo(prev => ({
+          ...prev,
+          storeId: data.storeId,
+          storeName: data.storeName,
+          storeAddress: data.storeAddress
+        }));
+      }
+    };
+
+    window.addEventListener('message', handleEcpayMessage);
+    return () => window.removeEventListener('message', handleEcpayMessage);
+  }, [setShippingInfo]);
+
+  // 選擇超商門市 (開啟綠界地圖)
   const handleSelectStore = async () => {
-    // 防呆：確認有選超商類型
     if (!shippingSubType) {
       alert('請先選擇超商類型 (7-11/全家/萊爾富/OK)');
       return;
     }
 
     try {
-      // 1. 呼叫後端取得地圖參數 (改用 GET)
-      // 注意：這裡的 URL 必須對應你後端 routes 設定的 /api/ecpay/map
+      // 使用相對路徑呼叫後端 (Nginx 會自動處理)
       const response = await fetch(`/api/ecpay/map?logisticsSubType=${shippingSubType}`);
       
       if (!response.ok) throw new Error('Network response was not ok');
       const params = await response.json();
 
-      // 2. 建立一個隱藏的表單 (Form)
+      // 建立隱藏表單並送出
       const form = document.createElement('form');
       form.method = 'POST';
-      form.action = params.actionUrl; // 綠界的網址
-      form.target = 'ECPayMapPopup';  // 指定目標視窗名稱
+      form.action = params.actionUrl;
+      form.target = 'ECPayMapPopup';
 
-      // 3. 將後端回傳的參數填入 input
       Object.keys(params).forEach(key => {
         if (key !== 'actionUrl') {
           const input = document.createElement('input');
@@ -112,10 +134,8 @@ useEffect(() => {
         }
       });
 
-      // 必須將 form 加入 document 才能送出
       document.body.appendChild(form);
 
-      // 4. 計算視窗位置並開啟彈跳視窗
       const width = 800;
       const height = 600;
       const left = (window.screen.width - width) / 2;
@@ -127,10 +147,7 @@ useEffect(() => {
         `width=${width},height=${height},left=${left},top=${top},scrollbars=yes,resizable=yes`
       );
       
-      // 5. 送出表單到該視窗
       form.submit();
-      
-      // 6. 清理 DOM
       document.body.removeChild(form);
 
     } catch (error) {
