@@ -1,4 +1,5 @@
 // backend/utils/ecpay.js
+require('dotenv').config(); // <--- 加上這行，強迫讀取 .env
 const crypto = require('crypto');
 
 class ECPayUtils {
