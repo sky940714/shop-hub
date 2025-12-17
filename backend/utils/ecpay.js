@@ -64,9 +64,7 @@ class ECPayUtils {
       LogisticsType: 'CVS',
       LogisticsSubType: logisticsSubType || 'UNIMART',
       
-      // 🔴 修改點 A：把寫死的網址改成動態讀取環境變數
-      // ServerReplyURL: 'https://anxinshophub.com/api/ecpay/map-callback', 
-      ServerReplyURL: `${process.env.SERVER_URL}/api/ecpay/map-callback`,
+      ServerReplyURL: 'https://anxinshophub.com/api/ecpay/map-callback',
 
       IsCollection: 'N',
       actionUrl: this.getApiUrl('map')
@@ -103,9 +101,7 @@ class ECPayUtils {
       ReceiverEmail: order.receiver_email || '', 
       ReceiverStoreID: storeID, 
       
-      // 🔴 修改點 B：把寫死的網址改成動態讀取環境變數
-      // ServerReplyURL: 'https://anxinshophub.com/api/ecpay/logistics-callback',
-      ServerReplyURL: `${process.env.SERVER_URL}/api/ecpay/logistics-callback`,
+      ServerReplyURL: 'https://anxinshophub.com/api/ecpay/logistics-callback',
     };
 
     params.CheckMacValue = this.generateCheckMacValue(params, 'md5');
