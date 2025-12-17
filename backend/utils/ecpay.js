@@ -8,21 +8,18 @@ class ECPayUtils {
     this.hashKey = process.env.ECPAY_HASH_KEY || '5294y06JbISpM5x9';
     this.hashIv = process.env.ECPAY_HASH_IV || 'v77hoKGq4kWxNNIS';
     
-    // 🔴 修正 1：環境判斷邏輯
-    // 強制讀取 .env 的設定，避免因為使用物流測試帳號 (3366217) 而誤判為正式環境
+    // 1. 環境判斷 (維持原樣，這是對的)
     this.isProduction = process.env.ECPAY_ENV === 'production';
   }
 
-  // 輔助：取得正確的 API 網址 (自動切換 正式/測試)
+  // 輔助：取得正確的 API 網址
   getApiUrl(type) {
     if (this.isProduction) {
-      // ✅ 正式環境
       if (type === 'payment') return 'https://payment.ecpay.com.tw/Cashier/AioCheckOut/V5';
       if (type === 'map') return 'https://logistics.ecpay.com.tw/Express/map';
       if (type === 'create') return 'https://logistics.ecpay.com.tw/Express/Create';
       if (type === 'print') return 'https://logistics.ecpay.com.tw/Helper/PrintTradeDocument';
     } else {
-      // 🚧 測試環境
       if (type === 'payment') return 'https://payment-stage.ecpay.com.tw/Cashier/AioCheckOut/V5';
       if (type === 'map') return 'https://logistics-stage.ecpay.com.tw/Express/map';
       if (type === 'create') return 'https://logistics-stage.ecpay.com.tw/Express/Create';
@@ -66,7 +63,11 @@ class ECPayUtils {
       MerchantID: this.merchantId,
       LogisticsType: 'CVS',
       LogisticsSubType: logisticsSubType || 'UNIMART',
-      ServerReplyURL: 'https://anxinshophub.com/api/ecpay/map-callback',
+      
+      // 🔴 修改點 A：把寫死的網址改成動態讀取環境變數
+      // ServerReplyURL: 'https://anxinshophub.com/api/ecpay/map-callback', 
+      ServerReplyURL: `${process.env.SERVER_URL}/api/ecpay/map-callback`,
+
       IsCollection: 'N',
       actionUrl: this.getApiUrl('map')
     };
@@ -80,7 +81,7 @@ class ECPayUtils {
     const collectionAmount = isCollection ? amount : '0';
     const storeID = order.store_id || ''; 
 
-    // ✅ 這段是你加的，非常正確！(過濾特殊符號)
+    // 過濾姓名
     let cleanName = (order.receiver_name || '').replace(/[^\u4e00-\u9fa5a-zA-Z0-9]/g, '');
     if (!cleanName) cleanName = 'Customer';
     if (cleanName.length > 10) cleanName = cleanName.substring(0, 10);
@@ -102,16 +103,16 @@ class ECPayUtils {
       ReceiverEmail: order.receiver_email || '', 
       ReceiverStoreID: storeID, 
       
-      // 🔴 修正 2：改回正確的 Callback 路徑
-      // 不要指向 create-shipping，那會邏輯錯誤
-      ServerReplyURL: 'https://anxinshophub.com/api/ecpay/logistics-callback',
+      // 🔴 修改點 B：把寫死的網址改成動態讀取環境變數
+      // ServerReplyURL: 'https://anxinshophub.com/api/ecpay/logistics-callback',
+      ServerReplyURL: `${process.env.SERVER_URL}/api/ecpay/logistics-callback`,
     };
 
     params.CheckMacValue = this.generateCheckMacValue(params, 'md5');
     return params;
   }
 
-  // 5. 列印 HTML
+  // 5. 列印 HTML (不用改)
   getPrintHtml(allPayLogisticsID) {
     const params = {
       MerchantID: this.merchantId,
@@ -129,7 +130,7 @@ class ECPayUtils {
     `;
   }
 
-  // 6. 加密邏輯
+  // 6. 加密邏輯 (不用改)
   generateCheckMacValue(params, algorithm = 'sha256') {
     const rawParams = { ...params };
     delete rawParams.CheckMacValue;
