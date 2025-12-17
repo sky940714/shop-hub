@@ -3,12 +3,33 @@ const crypto = require('crypto');
 
 class ECPayUtils {
   constructor() {
-    this.merchantId = '2000132';
-    this.hashKey = '5294y06JbISpM5x9';
-    this.hashIv = 'v77hoKGq4kWxNNIS';
+    // 1. 改成讀取 .env 的正式金鑰 (如果沒設定才用測試值)
+    this.merchantId = process.env.ECPAY_MERCHANT_ID || '2000132';
+    this.hashKey = process.env.ECPAY_HASH_KEY || '5294y06JbISpM5x9';
+    this.hashIv = process.env.ECPAY_HASH_IV || 'v77hoKGq4kWxNNIS';
+    
+    // 判斷是否為正式環境 (用 MerchantID 是否為測試帳號來判斷)
+    this.isProduction = this.merchantId !== '2000132';
   }
 
-  // 1. 金流參數 (維持 SHA256)
+  // 輔助：取得正確的 API 網址 (自動切換 正式/測試)
+  getApiUrl(type) {
+    if (this.isProduction) {
+      // ✅ 正式環境 (沒有 -stage)
+      if (type === 'payment') return 'https://payment.ecpay.com.tw/Cashier/AioCheckOut/V5';
+      if (type === 'map') return 'https://logistics.ecpay.com.tw/Express/map';
+      if (type === 'create') return 'https://logistics.ecpay.com.tw/Express/Create';
+      if (type === 'print') return 'https://logistics.ecpay.com.tw/Helper/PrintTradeDocument';
+    } else {
+      // 🚧 測試環境 (有 -stage)
+      if (type === 'payment') return 'https://payment-stage.ecpay.com.tw/Cashier/AioCheckOut/V5';
+      if (type === 'map') return 'https://logistics-stage.ecpay.com.tw/Express/map';
+      if (type === 'create') return 'https://logistics-stage.ecpay.com.tw/Express/Create';
+      if (type === 'print') return 'https://logistics-stage.ecpay.com.tw/Helper/PrintTradeDocument';
+    }
+  }
+
+  // 1. 金流參數
   getParams(order) {
     const tradeDate = this.formatDate(new Date()); 
     const totalAmount = Math.round(order.total).toString();
@@ -21,51 +42,49 @@ class ECPayUtils {
       TotalAmount: totalAmount,
       TradeDesc: 'ShopHub Order',
       ItemName: `訂單編號 ${order.order_no}`,
-      ReturnURL: `${process.env.SERVER_URL || 'http://45.32.24.240'}/api/ecpay/callback`,
-      ClientBackURL: `${process.env.CLIENT_URL || 'http://45.32.24.240'}/order/result`,
+      ReturnURL: `${process.env.SERVER_URL}/api/ecpay/callback`,
+      ClientBackURL: `${process.env.CLIENT_URL}/order/result`,
       ChoosePayment: 'ALL',
       EncryptType: '1',
     };
 
-    // 金流使用 SHA256
     params.CheckMacValue = this.generateCheckMacValue(params, 'sha256');
     
-    return { ...params, actionUrl: 'https://payment-stage.ecpay.com.tw/Cashier/AioCheckOut/V5' };
+    // 使用動態網址
+    return { ...params, actionUrl: this.getApiUrl('payment') };
   }
 
-  // 2. 驗證檢查碼 (金流用 SHA256)
+  // 2. 驗證檢查碼
   verifyCheckMacValue(params) {
     const receivedCheckMacValue = params.CheckMacValue;
     const calculatedCheckMacValue = this.generateCheckMacValue(params, 'sha256');
     return receivedCheckMacValue === calculatedCheckMacValue;
   }
 
-  // 3. 地圖參數 (物流地圖通常不檢查 MacValue，但若要檢查可用 MD5)
+  // 3. 地圖參數
   getMapParams(logisticsSubType) {
     return {
       MerchantID: this.merchantId,
       LogisticsType: 'CVS',
       LogisticsSubType: logisticsSubType || 'UNIMART',
-      ServerReplyURL: `${process.env.SERVER_URL || 'http://45.32.24.240'}/api/ecpay/map-callback`,
+      ServerReplyURL: `${process.env.SERVER_URL}/api/ecpay/map-callback`,
       IsCollection: 'N',
-      actionUrl: 'https://logistics-stage.ecpay.com.tw/Express/map'
+      actionUrl: this.getApiUrl('map')
     };
   }
 
-  // 4. [重點修正] 物流訂單參數
+  // 4. 物流訂單參數
   getLogisticsCreateParams(order) {
     const tradeDate = this.formatDate(new Date());
     const amount = Math.round(order.total).toString();
     const isCollection = order.payment_method === 'cod';
     const collectionAmount = isCollection ? amount : '0';
-    const storeID = order.store_id || '991182'; 
+    const storeID = order.store_id || ''; 
 
     // 過濾姓名
-    let cleanName = (order.receiver_name || '測試收件人').replace(/[^\u4e00-\u9fa5a-zA-Z0-9]/g, '');
+    let cleanName = (order.receiver_name || '').replace(/[^\u4e00-\u9fa5a-zA-Z0-9]/g, '');
     if (!cleanName) cleanName = 'Customer';
     if (cleanName.length > 10) cleanName = cleanName.substring(0, 10);
-
-    console.log('物流訂單姓名:', cleanName);
 
     const params = {
       MerchantID: this.merchantId,
@@ -77,31 +96,30 @@ class ECPayUtils {
       CollectionAmount: collectionAmount, 
       IsCollection: isCollection ? 'Y' : 'N',
       GoodsName: 'ShopHub商品',
-      SenderName: '測試賣家', // 改回中文，避免英文長度問題
-      SenderCellPhone: '0912345678',
+      SenderName: 'ShopHub', // 正式環境建議用英文
+      SenderCellPhone: '0912345678', // 建議改成你的真實電話
       ReceiverName: cleanName,
       ReceiverCellPhone: order.receiver_phone || '0912345678',
       ReceiverEmail: order.receiver_email || '', 
       ReceiverStoreID: storeID, 
-      ServerReplyURL: `${process.env.SERVER_URL || 'http://45.32.24.240'}/api/ecpay/logistics-callback`,
+      ServerReplyURL: `${process.env.SERVER_URL}/api/ecpay/logistics-callback`,
     };
 
-    // ★ 關鍵修正：物流 API 強制使用 MD5
+    // 物流 API 強制使用 MD5
     params.CheckMacValue = this.generateCheckMacValue(params, 'md5');
     return params;
   }
 
-  // 5. 列印 HTML (物流用 MD5)
+  // 5. 列印 HTML
   getPrintHtml(allPayLogisticsID) {
     const params = {
       MerchantID: this.merchantId,
       AllPayLogisticsID: allPayLogisticsID,
     };
-    // ★ 關鍵修正：物流 API 強制使用 MD5
     params.CheckMacValue = this.generateCheckMacValue(params, 'md5');
 
     return `
-      <form id="printForm" action="https://logistics-stage.ecpay.com.tw/Helper/PrintTradeDocument" method="POST">
+      <form id="printForm" action="${this.getApiUrl('print')}" method="POST">
         <input type="hidden" name="MerchantID" value="${params.MerchantID}" />
         <input type="hidden" name="AllPayLogisticsID" value="${params.AllPayLogisticsID}" />
         <input type="hidden" name="CheckMacValue" value="${params.CheckMacValue}" />
@@ -110,7 +128,7 @@ class ECPayUtils {
     `;
   }
 
-  // 6. [核心修正] 加密邏輯：支援 algorithm 參數切換
+  // 6. 加密邏輯
   generateCheckMacValue(params, algorithm = 'sha256') {
     const rawParams = { ...params };
     delete rawParams.CheckMacValue;
@@ -132,7 +150,6 @@ class ECPayUtils {
       .replace(/%29/g, ')')
       .replace(/%20/g, '+');
 
-    // 根據傳入的演算法決定使用 sha256 還是 md5
     return crypto.createHash(algorithm).update(encoded).digest('hex').toUpperCase();
   }
 

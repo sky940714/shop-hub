@@ -146,7 +146,7 @@ const createShippingOrder = async (req, res) => {
     }
 
     const params = ecpayUtils.getLogisticsCreateParams(order);
-    const logisticsUrl = 'https://logistics-stage.ecpay.com.tw/Express/Create';
+    const logisticsUrl = ecpayUtils.getApiUrl('create');
     
     const response = await axios.post(logisticsUrl, qs.stringify(params), {
       headers: { 'Content-Type': 'application/x-www-form-urlencoded' }
