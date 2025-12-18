@@ -1,6 +1,6 @@
 // pages/admin/components/MainSettings.tsx
 import React, { useState, useEffect } from 'react';
-import { Search, MapPin, Store, Plus, Trash2, Edit2, Image } from 'lucide-react';
+import { Search, MapPin, Store, Plus, Trash2, Edit2, Image, Truck } from 'lucide-react';
 import '../styles/MainSettings.css';
 
 
@@ -106,6 +106,9 @@ const MainSettings: React.FC = () => {
   });
   const [uploading, setUploading] = useState(false);
 
+  const [shippingFee, setShippingFee] = useState<number>(100);
+    const [shippingFeeLoading, setShippingFeeLoading] = useState(false);
+
   // 載入自取門市列表
   const fetchPickupStores = async () => {
     setPickupLoading(true);
@@ -125,9 +128,49 @@ const MainSettings: React.FC = () => {
     }
   };
 
+  // 載入運費設定
+  const fetchShippingFee = async () => {
+    try {
+      const res = await fetch(`${API_BASE}/settings/shipping-fee`);
+      const data = await res.json();
+      if (data.success) {
+        setShippingFee(data.fee);
+      }
+    } catch (error) {
+      console.error('載入運費失敗:', error);
+    }
+  };
+
+  // 儲存運費
+  const handleSaveShippingFee = async () => {
+    setShippingFeeLoading(true);
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${API_BASE}/settings/shipping-fee`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({ fee: shippingFee })
+      });
+      const data = await res.json();
+      if (data.success) {
+        window.alert('運費設定已更新！');
+      } else {
+        window.alert(data.message || '更新失敗');
+      }
+    } catch (error) {
+      window.alert('更新失敗');
+    } finally {
+      setShippingFeeLoading(false);
+    }
+  };
+
   useEffect(() => {
     fetchPickupStores();
     fetchBanners();
+    fetchShippingFee();
   }, []);
 
   // 模擬會員點數資料（之後可替換成 API）
@@ -464,6 +507,41 @@ const MainSettings: React.FC = () => {
   return (
     <div className="main-settings">
       <h2 className="page-title">主要設定</h2>
+
+      {/* 宅配運費設定 */}
+      <div className="settings-section">
+        <h3 className="section-title">
+          <Truck className="section-icon" />
+          宅配運費設定
+        </h3>
+        <div className="settings-card">
+          <div className="shipping-fee-form">
+            <div className="form-group">
+              <label className="form-label">宅配運費金額（元）</label>
+              <div className="fee-input-group">
+                <span className="fee-prefix">$</span>
+                <input
+                  type="number"
+                  className="form-input fee-input"
+                  value={shippingFee}
+                  onChange={(e) => setShippingFee(parseInt(e.target.value) || 0)}
+                  min="0"
+                />
+                <button
+                  className="btn-primary"
+                  onClick={handleSaveShippingFee}
+                  disabled={shippingFeeLoading}
+                >
+                  {shippingFeeLoading ? '儲存中...' : '儲存'}
+                </button>
+              </div>
+              <p className="fee-hint">此運費將套用於結帳頁面的宅配選項</p>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Hero 輪播圖管理 */}
 
       {/* Hero 輪播圖管理 */}
       <div className="settings-section">

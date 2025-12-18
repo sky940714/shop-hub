@@ -20,10 +20,11 @@
     }
 
     const CheckoutPage: React.FC = () => {
-    const navigate = useNavigate();
-    const location = useLocation();
-    const { cartItems, clearCart } = useCart();
-    const [ecpayParams, setEcpayParams] = useState<any>(null);
+     const navigate = useNavigate();
+     const location = useLocation();
+     const { cartItems, clearCart } = useCart();
+     const [ecpayParams, setEcpayParams] = useState<any>(null);
+     const [homeDeliveryFee, setHomeDeliveryFee] = useState<number>(100);
 
     // 檢查是否為立即購買模式
     const directBuyState = location.state as { directBuy?: boolean; items?: any[] };
@@ -69,29 +70,27 @@
         return subtotal >= 500 ? 0 : 60;
     }
     
-    // 宅配：滿 1000 免運
     if (shippingMethod === 'home') {
-        return subtotal >= 1000 ? 0 : 100;
-    }
+    return subtotal >= 1000 ? 0 : homeDeliveryFee;
+}
     
     return 0;
 }
 
     // 監聽綠界門市選擇回傳
     useEffect(() => {
-        const handleStoreCallback = (event: MessageEvent) => {
-        if (event.data && event.data.storeId) {
-            setShippingInfo(prev => ({
-            ...prev,
-            storeId: event.data.storeId,
-            storeName: event.data.storeName,
-            storeAddress: event.data.storeAddress,
-            }));
+      const fetchFee = async () => {
+        try {
+          const res = await fetch('/api/settings/shipping-fee');
+          const data = await res.json();
+          if (data.success) {
+            setHomeDeliveryFee(data.fee);
+          }
+        } catch (error) {
+          console.error('載入運費失敗:', error);
         }
-        };
-
-        window.addEventListener('message', handleStoreCallback);
-        return () => window.removeEventListener('message', handleStoreCallback);
+      };
+      fetchFee();
     }, []);
 
     // 如果沒有要結帳的商品

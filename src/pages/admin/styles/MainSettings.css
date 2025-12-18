@@ -672,3 +672,33 @@
 .upload-label:hover {
   color: #3b82f6;
 }
+
+/* 運費設定 */
+.shipping-fee-form {
+  max-width: 400px;
+}
+
+.fee-input-group {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.fee-prefix {
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: #374151;
+}
+
+.fee-input {
+  width: 120px;
+  text-align: right;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.fee-hint {
+  margin-top: 0.5rem;
+  font-size: 0.875rem;
+  color: #6b7280;
+}

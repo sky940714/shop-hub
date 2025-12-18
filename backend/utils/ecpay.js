@@ -9,10 +9,11 @@ class ECPayUtils {
     this.hashKey = 'Uu9VuV2Z8HG3pGEy';        
     this.hashIv = 'LzZh0CKl0FGIvw9Z';         
     
+    // 強制設定為 true (正式環境)
     this.isProduction = true; 
   }
 
-  // 輔助：取得正確的 API 網址 (🔥 已修正：支援 C2C 列印網址)
+  // 輔助：取得正確的 API 網址 (🔥 修正重點：加入 subType 判斷 C2C 網址)
   getApiUrl(type, subType) {
     const stage = this.isProduction ? '' : '-stage';
     const baseUrl = `https://logistics${stage}.ecpay.com.tw`;
@@ -24,7 +25,7 @@ class ECPayUtils {
     if (type === 'map') return `${baseUrl}/Express/map`;
     if (type === 'create') return `${baseUrl}/Express/Create`;
 
-    // 🖨️ 列印網址判斷
+    // 🖨️ 列印網址判斷 (C2C 必須用專屬網址)
     if (type === 'print') {
       if (subType === 'UNIMARTC2C') return `${baseUrl}/Express/PrintUniMartC2COrderInfo`;
       if (subType === 'FAMIC2C') return `${baseUrl}/Express/PrintFAMIC2COrderInfo`;
@@ -87,9 +88,11 @@ class ECPayUtils {
     let storeID = order.store_id || '';
     storeID = storeID.replace(/[^0-9]/g, ''); 
 
+    // 防重複編號
     const randomSuffix = Date.now().toString().slice(-6); 
     const uniqueTradeNo = `${order.order_no}L${randomSuffix}`;
 
+    // 姓名清洗
     let cleanName = (order.receiver_name || '').replace(/[^\u4e00-\u9fa5a-zA-Z0-9]/g, '');
     if (/^[a-zA-Z0-9]+$/.test(cleanName) && cleanName.length < 4) {
         cleanName = cleanName + "Cust"; 
@@ -125,20 +128,22 @@ class ECPayUtils {
     return params;
   }
 
-  // 5. 列印 HTML (🔥 已修正：支援 C2C 參數)
-  getPrintHtml(data) {
-    // 解構需要的資料
+  // 5. 列印 HTML (🔥 修正重點：支援傳入物件並解構驗證碼)
+  getPrintHtml(inputData) {
+    // 防呆：如果 inputData 是字串（舊寫法），自動轉成物件
+    let data = typeof inputData === 'string' ? { AllPayLogisticsID: inputData } : inputData;
+
     const { AllPayLogisticsID, LogisticsSubType, CVSPaymentNo, CVSValidationNo } = data;
     
     const params = {
       MerchantID: this.merchantId,
-      AllPayLogisticsID: AllPayLogisticsID,
+      AllPayLogisticsID: String(AllPayLogisticsID),
     };
 
-    // 如果是 C2C，必須加傳這兩個參數，否則會找不到訂單！
+    // 如果是 C2C，必須加傳這兩個參數
     if (LogisticsSubType && LogisticsSubType.endsWith('C2C')) {
-      if (CVSPaymentNo) params.CVSPaymentNo = CVSPaymentNo;
-      if (CVSValidationNo) params.CVSValidationNo = CVSValidationNo;
+      if (CVSPaymentNo) params.CVSPaymentNo = String(CVSPaymentNo);
+      if (CVSValidationNo) params.CVSValidationNo = String(CVSValidationNo);
     }
 
     params.CheckMacValue = this.generateCheckMacValue(params, 'md5');
