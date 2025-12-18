@@ -9,22 +9,29 @@ class ECPayUtils {
     this.hashKey = 'Uu9VuV2Z8HG3pGEy';        
     this.hashIv = 'LzZh0CKl0FGIvw9Z';         
     
-    // 強制設定為 true (正式環境)
     this.isProduction = true; 
   }
 
-  // 輔助：取得正確的 API 網址
-  getApiUrl(type) {
-    if (this.isProduction) {
-      if (type === 'payment') return 'https://payment.ecpay.com.tw/Cashier/AioCheckOut/V5';
-      if (type === 'map') return 'https://logistics.ecpay.com.tw/Express/map';
-      if (type === 'create') return 'https://logistics.ecpay.com.tw/Express/Create';
-      if (type === 'print') return 'https://logistics.ecpay.com.tw/Helper/PrintTradeDocument';
-    } else {
-      if (type === 'payment') return 'https://payment-stage.ecpay.com.tw/Cashier/AioCheckOut/V5';
-      if (type === 'map') return 'https://logistics-stage.ecpay.com.tw/Express/map';
-      if (type === 'create') return 'https://logistics-stage.ecpay.com.tw/Express/Create';
-      if (type === 'print') return 'https://logistics-stage.ecpay.com.tw/Helper/PrintTradeDocument';
+  // 輔助：取得正確的 API 網址 (🔥 已修正：支援 C2C 列印網址)
+  getApiUrl(type, subType) {
+    const stage = this.isProduction ? '' : '-stage';
+    const baseUrl = `https://logistics${stage}.ecpay.com.tw`;
+
+    if (type === 'payment') return this.isProduction 
+      ? 'https://payment.ecpay.com.tw/Cashier/AioCheckOut/V5'
+      : 'https://payment-stage.ecpay.com.tw/Cashier/AioCheckOut/V5';
+    
+    if (type === 'map') return `${baseUrl}/Express/map`;
+    if (type === 'create') return `${baseUrl}/Express/Create`;
+
+    // 🖨️ 列印網址判斷
+    if (type === 'print') {
+      if (subType === 'UNIMARTC2C') return `${baseUrl}/Express/PrintUniMartC2COrderInfo`;
+      if (subType === 'FAMIC2C') return `${baseUrl}/Express/PrintFAMIC2COrderInfo`;
+      if (subType === 'HILIFEC2C') return `${baseUrl}/Express/PrintHiLifeC2COrderInfo`;
+      if (subType === 'OKMARTC2C') return `${baseUrl}/Express/PrintOKMARTC2COrderInfo`;
+      // B2C 預設
+      return `${baseUrl}/Helper/PrintTradeDocument`;
     }
   }
 
@@ -70,42 +77,33 @@ class ECPayUtils {
     };
   }
 
-  // 4. 物流訂單參數 (🛑 這裡是最重要的修正)
+  // 4. 物流訂單參數
   getLogisticsCreateParams(order) {
     const tradeDate = this.formatDate(new Date());
     const amount = Math.round(order.total).toString();
     const isCollection = order.payment_method === 'cod';
     const collectionAmount = isCollection ? amount : '0';
     
-    // ✅ 修正 1：門市代號清洗 (只留數字)
     let storeID = order.store_id || '';
     storeID = storeID.replace(/[^0-9]/g, ''); 
 
-    // ✅ 修正 2：訂單編號防重複 (加上隨機數)
-    const randomSuffix = Date.now().toString().slice(-6); // 建議改用 6 位數更保險
+    const randomSuffix = Date.now().toString().slice(-6); 
     const uniqueTradeNo = `${order.order_no}L${randomSuffix}`;
 
-    // ✅ 修正 3：姓名長度檢查 (這是你缺少的!)
     let cleanName = (order.receiver_name || '').replace(/[^\u4e00-\u9fa5a-zA-Z0-9]/g, '');
-    
-    // 如果是純英文且少於 4 字，補上 "Cust"
     if (/^[a-zA-Z0-9]+$/.test(cleanName) && cleanName.length < 4) {
         cleanName = cleanName + "Cust"; 
     }
-    // 如果包含中文且少於 2 字 (例如單名 "王")，補上 "先生"
     else if (cleanName.length < 2) {
         cleanName = cleanName + "先生";
     }
-    
-    // 截斷過長的名字 (取前 5 個字最保險，因為中文限制 5 字)
     if (cleanName.length > 5) cleanName = cleanName.substring(0, 5);
 
-    // ✅ 修正 4：手機號碼清洗 (確保無符號)
     const cleanPhone = (order.receiver_phone || '0912345678').replace(/[^0-9]/g, '');
 
     const params = {
       MerchantID: this.merchantId,
-      MerchantTradeNo: uniqueTradeNo, // 使用不重複的編號
+      MerchantTradeNo: uniqueTradeNo,
       MerchantTradeDate: tradeDate,
       LogisticsType: 'CVS',
       LogisticsSubType: order.shipping_sub_type || 'UNIMARTC2C',
@@ -115,8 +113,8 @@ class ECPayUtils {
       GoodsName: 'ShopHub商品',
       SenderName: 'ShopHub', 
       SenderCellPhone: '0912345678', 
-      ReceiverName: cleanName,        // 使用處理過的名字
-      ReceiverCellPhone: cleanPhone,  // 使用處理過的手機
+      ReceiverName: cleanName,
+      ReceiverCellPhone: cleanPhone,
       ReceiverEmail: order.receiver_email || '', 
       ReceiverStoreID: storeID, 
       
@@ -127,19 +125,30 @@ class ECPayUtils {
     return params;
   }
 
-  // 5. 列印 HTML
-  getPrintHtml(allPayLogisticsID) {
+  // 5. 列印 HTML (🔥 已修正：支援 C2C 參數)
+  getPrintHtml(data) {
+    // 解構需要的資料
+    const { AllPayLogisticsID, LogisticsSubType, CVSPaymentNo, CVSValidationNo } = data;
+    
     const params = {
       MerchantID: this.merchantId,
-      AllPayLogisticsID: allPayLogisticsID,
+      AllPayLogisticsID: AllPayLogisticsID,
     };
+
+    // 如果是 C2C，必須加傳這兩個參數，否則會找不到訂單！
+    if (LogisticsSubType && LogisticsSubType.endsWith('C2C')) {
+      if (CVSPaymentNo) params.CVSPaymentNo = CVSPaymentNo;
+      if (CVSValidationNo) params.CVSValidationNo = CVSValidationNo;
+    }
+
     params.CheckMacValue = this.generateCheckMacValue(params, 'md5');
+    
+    // 取得對應的 C2C 網址
+    const printUrl = this.getApiUrl('print', LogisticsSubType);
 
     return `
-      <form id="printForm" action="${this.getApiUrl('print')}" method="POST">
-        <input type="hidden" name="MerchantID" value="${params.MerchantID}" />
-        <input type="hidden" name="AllPayLogisticsID" value="${params.AllPayLogisticsID}" />
-        <input type="hidden" name="CheckMacValue" value="${params.CheckMacValue}" />
+      <form id="printForm" action="${printUrl}" method="POST">
+        ${Object.keys(params).map(key => `<input type="hidden" name="${key}" value="${params[key]}" />`).join('')}
       </form>
       <script>document.getElementById("printForm").submit();</script>
     `;
