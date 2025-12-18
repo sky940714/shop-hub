@@ -50,7 +50,6 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
           <span>小計</span>
           <span>NT$ {subtotal.toLocaleString()}</span>
         </div>
-        // 修改後
         <div className="detail-row">
           <span>運費</span>
           <span>
