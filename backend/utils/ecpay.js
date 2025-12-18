@@ -4,16 +4,20 @@ const crypto = require('crypto');
 
 class ECPayUtils {
   constructor() {
-    this.merchantId = process.env.ECPAY_MERCHANT_ID || '2000132';
-    this.hashKey = process.env.ECPAY_HASH_KEY || '5294y06JbISpM5x9';
-    this.hashIv = process.env.ECPAY_HASH_IV || 'v77hoKGq4kWxNNIS';
+    // 🛑 修正重點：不再依賴 .env，直接填入正式資料 (霸王硬上弓)
+    // 這樣就絕對不可能跑去測試環境了
     
-    // 1. 環境判斷 (維持原樣，這是對的)
-    this.isProduction = process.env.ECPAY_ENV === 'production';
+    this.merchantId = '3389062';              // 你的正式商店代號
+    this.hashKey = 'Uu9VuV2Z8HG3pGEy';        // 你的正式 HashKey
+    this.hashIv = 'LzZh0CKl0FGIvw9Z';         // 你的正式 HashIV
+    
+    // 強制設定為 true (正式環境)
+    this.isProduction = true; 
   }
 
   // 輔助：取得正確的 API 網址
   getApiUrl(type) {
+    // 因為上面強制設為 true，所以這裡一定會跑進上面的 if，絕對不會跑 else
     if (this.isProduction) {
       if (type === 'payment') return 'https://payment.ecpay.com.tw/Cashier/AioCheckOut/V5';
       if (type === 'map') return 'https://logistics.ecpay.com.tw/Express/map';
@@ -40,8 +44,9 @@ class ECPayUtils {
       TotalAmount: totalAmount,
       TradeDesc: 'ShopHub Order',
       ItemName: `訂單編號 ${order.order_no}`,
-      ReturnURL: `${process.env.SERVER_URL}/api/ecpay/callback`,
-      ClientBackURL: `${process.env.CLIENT_URL}/order/result`,
+      // 這裡還是可以用 process.env，因為這時候 .env 通常已經載入好了，或是你也可以手動寫死網址
+      ReturnURL: 'https://anxinshophub.com/api/ecpay/callback',
+      ClientBackURL: 'https://anxinshophub.com/order/result',
       ChoosePayment: 'ALL',
       EncryptType: '1',
     };
@@ -108,7 +113,7 @@ class ECPayUtils {
     return params;
   }
 
-  // 5. 列印 HTML (不用改)
+  // 5. 列印 HTML
   getPrintHtml(allPayLogisticsID) {
     const params = {
       MerchantID: this.merchantId,
@@ -126,7 +131,7 @@ class ECPayUtils {
     `;
   }
 
-  // 6. 加密邏輯 (不用改)
+  // 6. 加密邏輯
   generateCheckMacValue(params, algorithm = 'sha256') {
     const rawParams = { ...params };
     delete rawParams.CheckMacValue;

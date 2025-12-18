@@ -21,4 +21,6 @@ router.post('/map-callback', ecpayController.handleMapCallback);
 router.post('/create-shipping', ecpayController.createShippingOrder); // 產生寄貨單
 router.get('/print-shipping', ecpayController.printShippingLabel);   // 列印託運單
 
+router.post('/logistics-callback', ecpayController.handleLogisticsCallback);
+
 module.exports = router;

@@ -199,11 +199,24 @@ const printShippingLabel = async (req, res) => {
   }
 };
 
+// 這是給 ServerReplyURL 用的，綠界會透過這個網址通知你物流狀態
+const handleLogisticsCallback = (req, res) => {
+  try {
+    console.log('收到物流狀態回調:', req.body);
+    // 綠界要求收到後必須回傳 '1|OK'
+    res.send('1|OK');
+  } catch (error) {
+    console.error(error);
+    res.send('1|OK'); // 就算錯了也回傳 OK 避免綠界一直重試
+  }
+};
+
 module.exports = {
   createPayment,
   handleCallback,
   getMapParams,
   handleMapCallback,
   createShippingOrder,
-  printShippingLabel
+  printShippingLabel,
+  handleLogisticsCallback // 👈 記得匯出這個新函
 };
