@@ -67,7 +67,7 @@ class ECPayUtils {
     return {
       MerchantID: this.merchantId,
       LogisticsType: 'CVS',
-      LogisticsSubType: logisticsSubType || 'UNIMART',
+      LogisticsSubType: logisticsSubType || 'UNIMARTC2C',
       
       ServerReplyURL: 'https://anxinshophub.com/api/ecpay/map-callback',
 
@@ -94,7 +94,7 @@ class ECPayUtils {
       MerchantTradeNo: order.order_no + 'L',
       MerchantTradeDate: tradeDate,
       LogisticsType: 'CVS',
-      LogisticsSubType: order.shipping_sub_type || 'UNIMART',
+      LogisticsSubType: order.shipping_sub_type || 'UNIMARTC2C',
       GoodsAmount: amount,
       CollectionAmount: collectionAmount, 
       IsCollection: isCollection ? 'Y' : 'N',
