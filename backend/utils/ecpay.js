@@ -70,26 +70,38 @@ class ECPayUtils {
     };
   }
 
-  // 4. 物流訂單參數 (🛑 這裡有重大升級)
+  // 4. 物流訂單參數 (🛑 這裡是最重要的修正)
   getLogisticsCreateParams(order) {
     const tradeDate = this.formatDate(new Date());
     const amount = Math.round(order.total).toString();
     const isCollection = order.payment_method === 'cod';
     const collectionAmount = isCollection ? amount : '0';
     
-    // ✅ 升級 1：門市代號清洗 (把 pickup- 去掉，只留數字)
+    // ✅ 修正 1：門市代號清洗 (只留數字)
     let storeID = order.store_id || '';
-    storeID = storeID.replace(/[^0-9]/g, ''); // 只保留數字
+    storeID = storeID.replace(/[^0-9]/g, ''); 
 
-    // ✅ 升級 2：訂單編號防重複 (加上隨機數)
-    // 這樣就算重試 100 次，每次都是唯一的編號，綠界就不會報錯了
-    const randomSuffix = Date.now().toString().slice(-4); 
+    // ✅ 修正 2：訂單編號防重複 (加上隨機數)
+    const randomSuffix = Date.now().toString().slice(-6); // 建議改用 6 位數更保險
     const uniqueTradeNo = `${order.order_no}L${randomSuffix}`;
 
-    // 過濾姓名
+    // ✅ 修正 3：姓名長度檢查 (這是你缺少的!)
     let cleanName = (order.receiver_name || '').replace(/[^\u4e00-\u9fa5a-zA-Z0-9]/g, '');
-    if (!cleanName) cleanName = 'Customer';
-    if (cleanName.length > 10) cleanName = cleanName.substring(0, 10);
+    
+    // 如果是純英文且少於 4 字，補上 "Cust"
+    if (/^[a-zA-Z0-9]+$/.test(cleanName) && cleanName.length < 4) {
+        cleanName = cleanName + "Cust"; 
+    }
+    // 如果包含中文且少於 2 字 (例如單名 "王")，補上 "先生"
+    else if (cleanName.length < 2) {
+        cleanName = cleanName + "先生";
+    }
+    
+    // 截斷過長的名字 (取前 5 個字最保險，因為中文限制 5 字)
+    if (cleanName.length > 5) cleanName = cleanName.substring(0, 5);
+
+    // ✅ 修正 4：手機號碼清洗 (確保無符號)
+    const cleanPhone = (order.receiver_phone || '0912345678').replace(/[^0-9]/g, '');
 
     const params = {
       MerchantID: this.merchantId,
@@ -103,10 +115,10 @@ class ECPayUtils {
       GoodsName: 'ShopHub商品',
       SenderName: 'ShopHub', 
       SenderCellPhone: '0912345678', 
-      ReceiverName: cleanName,
-      ReceiverCellPhone: order.receiver_phone || '0912345678',
+      ReceiverName: cleanName,        // 使用處理過的名字
+      ReceiverCellPhone: cleanPhone,  // 使用處理過的手機
       ReceiverEmail: order.receiver_email || '', 
-      ReceiverStoreID: storeID, // 使用清洗過的門市代號
+      ReceiverStoreID: storeID, 
       
       ServerReplyURL: 'https://anxinshophub.com/api/ecpay/logistics-callback',
     };
