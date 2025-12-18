@@ -195,7 +195,18 @@ const printShippingLabel = async (req, res) => {
       return res.send('<h2>錯誤：此訂單尚未產生寄貨編號，請先執行「建立物流單」</h2>');
     }
 
-    const html = ecpayUtils.getPrintHtml(rows[0].ecpay_logistics_id);
+    const logisticsID = rows[0].ecpay_logistics_id;
+    
+    // 🔍 【除錯追蹤】請加入這段 Log
+    console.log('============== 列印除錯開始 ==============');
+    console.log('1. 訂單編號:', orderNo);
+    console.log('2. 資料庫內的物流 ID:', logisticsID);
+    console.log('3. 使用的商店代號 (MerchantID):', ecpayUtils.merchantId);
+    console.log('4. 是否為正式環境:', ecpayUtils.isProduction);
+    console.log('5. 列印 API 網址:', ecpayUtils.getApiUrl('print'));
+    console.log('==========================================');
+
+    const html = ecpayUtils.getPrintHtml(logisticsID);
     res.send(html);
 
   } catch (error) {
