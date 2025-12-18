@@ -86,8 +86,9 @@ const OrderManagement: React.FC = () => {
       if (searchTerm) params.append('search', searchTerm);
       if (statusFilter !== 'all') params.append('status', statusFilter);
       
+      // ✅ 修正 1: 改為相對路徑，解決 Mixed Content 錯誤
       const response = await fetch(
-        `http://45.32.24.240/api/orders/admin/all?${params}`,
+        `/api/orders/admin/all?${params}`,
         {
           headers: {
             'Authorization': `Bearer ${token}`
@@ -115,8 +116,9 @@ const OrderManagement: React.FC = () => {
   const handleViewDetails = async (orderNo: string) => {
     try {
       const token = localStorage.getItem('token');
+      // ✅ 修正 2: 改為相對路徑
       const response = await fetch(
-        `http://45.32.24.240/api/orders/admin/${orderNo}`,
+        `/api/orders/admin/${orderNo}`,
         {
           headers: {
             'Authorization': `Bearer ${token}`
@@ -146,8 +148,9 @@ const OrderManagement: React.FC = () => {
 
     try {
       const token = localStorage.getItem('token');
+      // ✅ 修正 3: 改為相對路徑
       const response = await fetch(
-        `http://45.32.24.240/api/orders/admin/${orderNo}/status`,
+        `/api/orders/admin/${orderNo}/status`,
         {
           method: 'PUT',
           headers: {
@@ -172,7 +175,7 @@ const OrderManagement: React.FC = () => {
     }
   };
 
-  // 刪除訂單（API 尚未實作，會報錯）
+  // 刪除訂單
   const handleDeleteOrder = async (orderNo: string) => {
     if (!window.confirm(`確定要刪除訂單 ${orderNo} 嗎？此操作無法復原！`)) {
       return;
@@ -180,8 +183,9 @@ const OrderManagement: React.FC = () => {
 
     try {
       const token = localStorage.getItem('token');
+      // ✅ 修正 4: 改為相對路徑
       const response = await fetch(
-        `http://45.32.24.240/api/orders/admin/${orderNo}`,
+        `/api/orders/admin/${orderNo}`,
         {
           method: 'DELETE',
           headers: {
@@ -200,17 +204,18 @@ const OrderManagement: React.FC = () => {
       }
     } catch (error) {
       console.error('刪除訂單失敗:', error);
-      alert('刪除訂單失敗：API 尚未實作');
+      alert('刪除訂單失敗');
     }
   };
 
-// 1. 產生寄貨單 (呼叫後端建立物流訂單)
+  // 1. 產生寄貨單 (呼叫後端建立物流訂單)
   const handleCreateShipping = async (orderNo: string) => {
     if (!window.confirm('確定要產生綠界寄貨單嗎？')) return;
 
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch('http://45.32.24.240/api/ecpay/create-shipping', {
+      // ✅ 修正 5: 改為相對路徑 (重要！)
+      const response = await fetch('/api/ecpay/create-shipping', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -228,7 +233,7 @@ const OrderManagement: React.FC = () => {
         // 也重新載入列表
         fetchOrders(pagination.page);
       } else {
-        alert('產生失敗：' + (data.error || '未知錯誤'));
+        alert('產生失敗：' + (data.error || JSON.stringify(data.details) || '未知錯誤'));
       }
     } catch (error) {
       console.error(error);
@@ -238,7 +243,8 @@ const OrderManagement: React.FC = () => {
 
   // 2. 列印託運單 (開啟綠界列印頁面)
   const handlePrintShipping = (orderNo: string) => {
-    const url = `http://45.32.24.240/api/ecpay/print-shipping?orderNo=${orderNo}`;
+    // ✅ 修正 6: 改為相對路徑
+    const url = `/api/ecpay/print-shipping?orderNo=${orderNo}`;
     window.open(url, '_blank');
   };
 
@@ -549,7 +555,7 @@ const OrderManagement: React.FC = () => {
                       <span className="label">物流操作：</span>
                       <div className="value" style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
                         
-                        {/* 改判斷：如果沒有 logistics_id 才顯示產生按鈕 */}
+                        {/* 如果沒有 logistics_id 才顯示產生按鈕 */}
                         {!selectedOrder.ecpay_logistics_id ? (
                           <button 
                             onClick={() => handleCreateShipping(selectedOrder.order_no)}
