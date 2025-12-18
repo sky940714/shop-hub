@@ -63,6 +63,23 @@ const ShippingForm: React.FC<ShippingFormProps> = ({
   const [pickupStores, setPickupStores] = useState<any[]>([]);
   const [selectedPickupStore, setSelectedPickupStore] = useState<any>(null);
 
+   const [homeDeliveryFee, setHomeDeliveryFee] = useState<number>(100);
+
+   useEffect(() => {
+    const fetchShippingFee = async () => {
+      try {
+        const res = await fetch('/api/settings/shipping-fee');
+        const data = await res.json();
+        if (data.success) {
+          setHomeDeliveryFee(data.fee);
+        }
+      } catch (error) {
+        console.error('載入運費失敗:', error);
+      }
+    };
+    fetchShippingFee();
+  }, []);
+
   // 載入自取門市
   useEffect(() => {
     const fetchPickupStores = async () => {
@@ -266,7 +283,7 @@ const ShippingForm: React.FC<ShippingFormProps> = ({
                 <div className="option-title">宅配到府</div>
                 <div className="option-desc">2-3個工作天送達</div>
               </div>
-              <div className="option-price">NT$ 100</div>
+              <div className="option-price">NT$ {homeDeliveryFee}</div>
             </div>
           </div>
 
