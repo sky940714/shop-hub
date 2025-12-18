@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const pool = require('../config/database');
-const { authenticateToken, isAdmin } = require('../middleware/auth');
+const { protect } = require('../middleware/auth');
 
 // 取得運費設定（公開）
 router.get('/shipping-fee', async (req, res) => {
@@ -17,7 +17,7 @@ router.get('/shipping-fee', async (req, res) => {
 });
 
 // 更新運費設定（需管理員）
-router.put('/shipping-fee', authenticateToken, isAdmin, async (req, res) => {
+router.put('/shipping-fee', protect, async (req, res) => {
   try {
     const { fee } = req.body;
     await pool.query(
