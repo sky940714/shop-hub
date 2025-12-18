@@ -4,12 +4,10 @@ const crypto = require('crypto');
 
 class ECPayUtils {
   constructor() {
-    // 🛑 修正重點：不再依賴 .env，直接填入正式資料 (霸王硬上弓)
-    // 這樣就絕對不可能跑去測試環境了
-    
-    this.merchantId = '3389062';              // 你的正式商店代號
-    this.hashKey = 'Uu9VuV2Z8HG3pGEy';        // 你的正式 HashKey
-    this.hashIv = 'LzZh0CKl0FGIvw9Z';         // 你的正式 HashIV
+    // 🛑 正式環境設定
+    this.merchantId = '3389062';              
+    this.hashKey = 'Uu9VuV2Z8HG3pGEy';        
+    this.hashIv = 'LzZh0CKl0FGIvw9Z';         
     
     // 強制設定為 true (正式環境)
     this.isProduction = true; 
@@ -17,7 +15,6 @@ class ECPayUtils {
 
   // 輔助：取得正確的 API 網址
   getApiUrl(type) {
-    // 因為上面強制設為 true，所以這裡一定會跑進上面的 if，絕對不會跑 else
     if (this.isProduction) {
       if (type === 'payment') return 'https://payment.ecpay.com.tw/Cashier/AioCheckOut/V5';
       if (type === 'map') return 'https://logistics.ecpay.com.tw/Express/map';
@@ -44,7 +41,6 @@ class ECPayUtils {
       TotalAmount: totalAmount,
       TradeDesc: 'ShopHub Order',
       ItemName: `訂單編號 ${order.order_no}`,
-      // 這裡還是可以用 process.env，因為這時候 .env 通常已經載入好了，或是你也可以手動寫死網址
       ReturnURL: 'https://anxinshophub.com/api/ecpay/callback',
       ClientBackURL: 'https://anxinshophub.com/order/result',
       ChoosePayment: 'ALL',
@@ -68,21 +64,27 @@ class ECPayUtils {
       MerchantID: this.merchantId,
       LogisticsType: 'CVS',
       LogisticsSubType: logisticsSubType || 'UNIMARTC2C',
-      
       ServerReplyURL: 'https://anxinshophub.com/api/ecpay/map-callback',
-
       IsCollection: 'N',
       actionUrl: this.getApiUrl('map')
     };
   }
 
-  // 4. 物流訂單參數
+  // 4. 物流訂單參數 (🛑 這裡有重大升級)
   getLogisticsCreateParams(order) {
     const tradeDate = this.formatDate(new Date());
     const amount = Math.round(order.total).toString();
     const isCollection = order.payment_method === 'cod';
     const collectionAmount = isCollection ? amount : '0';
-    const storeID = order.store_id || ''; 
+    
+    // ✅ 升級 1：門市代號清洗 (把 pickup- 去掉，只留數字)
+    let storeID = order.store_id || '';
+    storeID = storeID.replace(/[^0-9]/g, ''); // 只保留數字
+
+    // ✅ 升級 2：訂單編號防重複 (加上隨機數)
+    // 這樣就算重試 100 次，每次都是唯一的編號，綠界就不會報錯了
+    const randomSuffix = Date.now().toString().slice(-4); 
+    const uniqueTradeNo = `${order.order_no}L${randomSuffix}`;
 
     // 過濾姓名
     let cleanName = (order.receiver_name || '').replace(/[^\u4e00-\u9fa5a-zA-Z0-9]/g, '');
@@ -91,7 +93,7 @@ class ECPayUtils {
 
     const params = {
       MerchantID: this.merchantId,
-      MerchantTradeNo: order.order_no + 'L',
+      MerchantTradeNo: uniqueTradeNo, // 使用不重複的編號
       MerchantTradeDate: tradeDate,
       LogisticsType: 'CVS',
       LogisticsSubType: order.shipping_sub_type || 'UNIMARTC2C',
@@ -104,7 +106,7 @@ class ECPayUtils {
       ReceiverName: cleanName,
       ReceiverCellPhone: order.receiver_phone || '0912345678',
       ReceiverEmail: order.receiver_email || '', 
-      ReceiverStoreID: storeID, 
+      ReceiverStoreID: storeID, // 使用清洗過的門市代號
       
       ServerReplyURL: 'https://anxinshophub.com/api/ecpay/logistics-callback',
     };
