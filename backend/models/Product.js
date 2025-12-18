@@ -18,15 +18,19 @@ class Product {
   /**
    * 取得所有商品
    */
-  static async getAll() {
+  // 修改後
+static async getAll() {
   const [rows] = await promisePool.execute(`
     SELECT 
       p.*,
       c.name as category_name,
-      pi.image_url as main_image
+      pi.image_url as main_image,
+      COUNT(pv.id) as variant_count
     FROM products p 
     LEFT JOIN categories c ON p.category_id = c.id 
     LEFT JOIN product_images pi ON p.id = pi.product_id AND pi.is_main = 1
+    LEFT JOIN product_variants pv ON p.id = pv.product_id
+    GROUP BY p.id, c.name, pi.image_url
     ORDER BY p.id DESC
   `);
   return rows;

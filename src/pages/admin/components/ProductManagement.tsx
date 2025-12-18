@@ -10,6 +10,7 @@ interface Product {
   category: string;
   price: number;
   stock: number;
+  variantCount: number;
   image: string;
   description: string;
   status: 'active' | 'inactive';
@@ -38,6 +39,7 @@ const ProductManagement: React.FC = () => {
         category: getCategoryName(product.category_id),
         price: parseFloat(product.price),
         stock: product.stock,
+        variantCount: product.variant_count || 0,
         image: product.image_url || '/placeholder.png',
         description: product.description || '',
         status: product.status === '上架' ? 'active' : 'inactive'
@@ -142,6 +144,7 @@ const getCategoryName = (categoryId: number): string => {
                 <th>分類</th>
                 <th>價格</th>
                 <th>庫存</th>
+                <th>規格</th>
                 <th>狀態</th>
                 <th>操作</th>
               </tr>
@@ -156,6 +159,9 @@ const getCategoryName = (categoryId: number): string => {
                     <span className={product.stock < 20 ? 'stock-low' : 'stock-normal'}>
                       {product.stock}
                     </span>
+                  </td>
+                  <td>
+                    {product.variantCount > 0 ? `${product.variantCount} 種規格` : '無'}
                   </td>
                   <td>
                     <span className={`status-badge ${product.status === 'active' ? 'status-active' : 'status-inactive'}`}>

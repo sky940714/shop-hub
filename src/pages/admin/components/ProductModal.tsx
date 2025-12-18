@@ -29,6 +29,7 @@ interface Product {
   category: string;
   price: number;
   stock: number;
+  variantCount: number;
   image: string;
   description: string;
   status: 'active' | 'inactive';
