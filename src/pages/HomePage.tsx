@@ -287,7 +287,11 @@ const HomePage: React.FC = () => {
             onClick={() => {
               const linkUrl = banners[currentBannerIndex]?.link_url;
               if (linkUrl) {
-                navigate(linkUrl);
+                if (linkUrl.startsWith('http://') || linkUrl.startsWith('https://')) {
+                  window.open(linkUrl, '_blank');
+                } else {
+                  navigate(linkUrl);
+                }
               } else {
                 document.getElementById('products')?.scrollIntoView({ behavior: 'smooth' });
               }
