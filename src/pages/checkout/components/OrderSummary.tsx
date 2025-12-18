@@ -16,6 +16,7 @@ interface OrderSummaryProps {
   subtotal: number;
   shippingFee: number;
   total: number;
+  shippingMethod: string;
 }
 
 const OrderSummary: React.FC<OrderSummaryProps> = ({
@@ -23,6 +24,7 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
   subtotal,
   shippingFee,
   total,
+  shippingMethod,
 }) => {
   return (
     <div className="order-summary">
@@ -48,10 +50,34 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
           <span>小計</span>
           <span>NT$ {subtotal.toLocaleString()}</span>
         </div>
+        // 修改後
         <div className="detail-row">
           <span>運費</span>
-          <span>NT$ {shippingFee.toLocaleString()}</span>
+          <span>
+            {shippingFee === 0 && shippingMethod ? (
+              <span style={{ color: '#10b981' }}>免運費</span>
+            ) : (
+              `NT$ ${shippingFee.toLocaleString()}`
+            )}
+          </span>
         </div>
+
+        {/* 免運提示 */}
+        {shippingMethod === 'cvs' && subtotal < 500 && (
+          <div className="free-shipping-hint">
+            🚚 再買 NT$ {(500 - subtotal).toLocaleString()} 即享超商免運
+          </div>
+        )}
+        {shippingMethod === 'home' && subtotal < 1000 && (
+          <div className="free-shipping-hint">
+            🚚 再買 NT$ {(1000 - subtotal).toLocaleString()} 即享宅配免運
+          </div>
+        )}
+        {shippingFee === 0 && shippingMethod && shippingMethod !== 'pickup' && (
+          <div className="free-shipping-success">
+            ✅ 已享免運優惠
+          </div>
+        )}
         <div className="detail-row total">
           <span>總計</span>
           <span className="total-amount">NT$ {total.toLocaleString()}</span>

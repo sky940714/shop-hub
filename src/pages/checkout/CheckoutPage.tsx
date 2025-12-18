@@ -61,12 +61,21 @@
 
     // 取得運費
     function getShippingFee(): number {
-        if (!shippingMethod) return 0;
-        if (shippingMethod === 'pickup') return 0;  // 門市自取免運
-        if (shippingMethod === 'cvs') return 60;
-        if (shippingMethod === 'home') return 100;
-        return 0;
+    if (!shippingMethod) return 0;
+    if (shippingMethod === 'pickup') return 0;
+    
+    // 超商取貨：滿 500 免運
+    if (shippingMethod === 'cvs') {
+        return subtotal >= 500 ? 0 : 60;
     }
+    
+    // 宅配：滿 1000 免運
+    if (shippingMethod === 'home') {
+        return subtotal >= 1000 ? 0 : 100;
+    }
+    
+    return 0;
+}
 
     // 監聽綠界門市選擇回傳
     useEffect(() => {
@@ -274,6 +283,7 @@
             subtotal={subtotal}
             shippingFee={shippingFee}
             total={total}
+            shippingMethod={shippingMethod}
             />
         </div>
 

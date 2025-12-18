@@ -16,6 +16,7 @@ router.post('/create', protect, async (req, res) => {
     await connection.beginTransaction();
     
     const userId = req.user.id;
+    // 修改後
     const {
       shippingInfo,
       shippingMethod,
@@ -25,10 +26,19 @@ router.post('/create', protect, async (req, res) => {
       companyName,
       taxId,
       subtotal,
-      shippingFee,
-      total,
       items
     } = req.body;
+
+    // 後端重新計算運費（安全性）
+    function calculateShippingFee(method, subtotal) {
+      if (!method || method === 'pickup') return 0;
+      if (method === 'cvs') return subtotal >= 500 ? 0 : 60;
+      if (method === 'home') return subtotal >= 1000 ? 0 : 100;
+      return 0;
+    }
+
+const shippingFee = calculateShippingFee(shippingMethod, subtotal);
+const total = subtotal + shippingFee;
 
     // 產生訂單編號 (格式: ORD20251209001)
     const orderNo = await generateOrderNo(connection);
