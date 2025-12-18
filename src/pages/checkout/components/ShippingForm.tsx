@@ -316,31 +316,34 @@ const ShippingForm: React.FC<ShippingFormProps> = ({
               <label className="form-label">選擇超商 *</label>
               <div className="cvs-options">
                 <button
-                  className={`cvs-btn ${shippingSubType === 'UNIMART' ? 'selected' : ''}`}
-                  onClick={() => setShippingSubType('UNIMART')}
+                  // 這裡改成 UNIMARTC2C
+                  className={`cvs-btn ${shippingSubType === 'UNIMARTC2C' ? 'selected' : ''}`}
+                  onClick={() => setShippingSubType('UNIMARTC2C')}
                 >
                   7-ELEVEN
                 </button>
                 <button
-                  className={`cvs-btn ${shippingSubType === 'FAMI' ? 'selected' : ''}`}
-                  onClick={() => setShippingSubType('FAMI')}
+                  // 這裡改成 FAMIC2C
+                  className={`cvs-btn ${shippingSubType === 'FAMIC2C' ? 'selected' : ''}`}
+                  onClick={() => setShippingSubType('FAMIC2C')}
                 >
                   全家
                 </button>
                 <button
-                  className={`cvs-btn ${shippingSubType === 'HILIFE' ? 'selected' : ''}`}
-                  onClick={() => setShippingSubType('HILIFE')}
+                  // 這裡改成 HILIFEC2C
+                  className={`cvs-btn ${shippingSubType === 'HILIFEC2C' ? 'selected' : ''}`}
+                  onClick={() => setShippingSubType('HILIFEC2C')}
                 >
                   萊爾富
                 </button>
                 <button
-                  className={`cvs-btn ${shippingSubType === 'OKMART' ? 'selected' : ''}`}
-                  onClick={() => setShippingSubType('OKMART')}
+                  // 這裡改成 OKMARTC2C
+                  className={`cvs-btn ${shippingSubType === 'OKMARTC2C' ? 'selected' : ''}`}
+                  onClick={() => setShippingSubType('OKMARTC2C')}
                 >
                   OK超商
                 </button>
               </div>
-
               {shippingSubType && (
                 <div className="store-selector">
                   <button type="button" className="select-store-btn" onClick={handleSelectStore}>
@@ -586,10 +589,10 @@ const ShippingForm: React.FC<ShippingFormProps> = ({
                   <>
                     <p><strong>配送方式:</strong> 超商取貨</p>
                     <p><strong>超商:</strong> {
-                      shippingSubType === 'UNIMART' ? '7-ELEVEN' :
-                      shippingSubType === 'FAMI' ? '全家' :
-                      shippingSubType === 'HILIFE' ? '萊爾富' :
-                      shippingSubType === 'OKMART' ? 'OK超商' : ''
+                      shippingSubType === 'UNIMARTC2C' ? '7-ELEVEN' :
+                      shippingSubType === 'FAMIC2C' ? '全家' :
+                      shippingSubType === 'HILIFEC2C' ? '萊爾富' :
+                      shippingSubType === 'OKMARTC2C' ? 'OK超商' : ''
                     }</p>
                     <p><strong>門市:</strong> {shippingInfo.storeName}</p>
                     <p><strong>地址:</strong> {shippingInfo.storeAddress}</p>
