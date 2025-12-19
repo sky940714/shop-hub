@@ -345,32 +345,8 @@ const HomePage: React.FC = () => {
         </div>
       </section>
 
-      {/* Category Filter - 改這整段 */}
-      <section className="category-section" id="products">
-        <div className="category-container">
-          {/* 全部商品按鈕 */}
-          <button
-            onClick={() => setCurrentCategory('all')}
-            className={`category-button ${currentCategory === 'all' ? 'active' : ''}`}
-          >
-            全部商品
-          </button>
-          
-          {/* 動態分類按鈕 */}
-          {categories.map(category => (
-            <button
-              key={category.id}
-              onClick={() => setCurrentCategory(category.id)}
-              className={`category-button ${currentCategory === category.id ? 'active' : ''}`}
-            >
-              {category.name}
-            </button>
-          ))}
-        </div>
-      </section>
-
       {/* Products Grid */}
-      <section className="products-section">
+       <section className="products-section" id="products">
         <div className="products-grid">
           {filteredProducts.length === 0 ? (
             <div className="empty-products">
