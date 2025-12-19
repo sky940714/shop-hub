@@ -806,3 +806,75 @@
   color: #4b5563;
   font-size: 14px;
 }
+
+/* 商品分類下拉選單 */
+.category-dropdown {
+  position: relative;
+}
+
+.category-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: inherit;
+  color: inherit;
+  padding: 0;
+}
+
+.category-btn:hover {
+  color: #2563eb;
+}
+
+.category-menu {
+  position: absolute;
+  top: 100%;
+  left: 0;
+  background: white;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  min-width: 160px;
+  padding: 8px 0;
+  z-index: 100;
+  margin-top: 8px;
+}
+
+.category-menu-item {
+  display: block;
+  width: 100%;
+  padding: 10px 16px;
+  text-align: left;
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 14px;
+  color: #374151;
+  transition: background 0.2s;
+}
+
+.category-menu-item:hover {
+  background: #f3f4f6;
+  color: #2563eb;
+}
+
+/* 查看更多按鈕 */
+.view-more-container {
+  text-align: center;
+  margin-top: 2rem;
+}
+
+.view-more-btn {
+  padding: 12px 32px;
+  background: white;
+  border: 2px solid #2563eb;
+  color: #2563eb;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.view-more-btn:hover {
+  background: #2563eb;
+  color: white;
+}

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Search, Home, Heart, ShoppingCart, User, X, TrendingUp, Loader } from 'lucide-react';
 import './SearchPage.css'; 
 
@@ -28,9 +28,11 @@ interface DisplayProduct {
 
 const SearchPage: React.FC = () => {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   
   // 狀態管理
   const [searchTerm, setSearchTerm] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('');
   const [allProducts, setAllProducts] = useState<DisplayProduct[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -88,6 +90,15 @@ const SearchPage: React.FC = () => {
     fetchProducts();
   }, []);
 
+  // 讀取 URL 分類參數
+  useEffect(() => {
+    const category = searchParams.get('category');
+    if (category) {
+      setCategoryFilter(category);
+      setSearchTerm(category);
+    }
+  }, [searchParams]);
+
   // 2. 監聽歷史紀錄變化並存入 LocalStorage
   useEffect(() => {
     localStorage.setItem('recentSearches', JSON.stringify(recentSearches));
@@ -95,6 +106,13 @@ const SearchPage: React.FC = () => {
 
   // 3. 即時過濾搜尋結果 (由前端計算，速度極快)
   const searchResults = useMemo(() => {
+    // 如果有分類篩選，優先顯示該分類
+    if (categoryFilter) {
+      return allProducts.filter(product => 
+        product.category === categoryFilter
+      );
+    }
+    
     if (!searchTerm.trim()) return [];
     
     const lowerTerm = searchTerm.toLowerCase();
@@ -103,10 +121,12 @@ const SearchPage: React.FC = () => {
       product.name.toLowerCase().includes(lowerTerm) || 
       product.category.toLowerCase().includes(lowerTerm)
     );
-  }, [searchTerm, allProducts]);
+  }, [searchTerm, categoryFilter, allProducts]);
 
   const handleClearSearch = () => {
     setSearchTerm('');
+    setCategoryFilter('');
+    navigate('/search');
   };
 
   const handleSearch = (keyword: string) => {

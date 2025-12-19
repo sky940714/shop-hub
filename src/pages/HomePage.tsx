@@ -50,6 +50,7 @@ const HomePage: React.FC = () => {
   const [banners, setBanners] = useState<HeroBanner[]>([]);
   const [currentBannerIndex, setCurrentBannerIndex] = useState(0);
   const [isLineModalOpen, setIsLineModalOpen] = useState(false);
+  const [isCategoryOpen, setIsCategoryOpen] = useState(false);
 
   useEffect(() => {
    fetchCategories();
@@ -209,8 +210,32 @@ const HomePage: React.FC = () => {
               <h1>安鑫購物</h1>
             </div>
 
-            <nav className="nav-desktop">
+           <nav className="nav-desktop">
               <Link to="/" className="nav-link">首頁</Link>
+              <div className="category-dropdown">
+                <button 
+                  className="nav-link category-btn"
+                  onClick={() => setIsCategoryOpen(!isCategoryOpen)}
+                >
+                  商品分類 ▾
+                </button>
+                {isCategoryOpen && (
+                  <div className="category-menu">
+                    {categories.map(category => (
+                      <button
+                        key={category.id}
+                        className="category-menu-item"
+                        onClick={() => {
+                          setIsCategoryOpen(false);
+                          navigate(`/search?category=${encodeURIComponent(category.name)}`);
+                        }}
+                      >
+                        {category.name}
+                      </button>
+                    ))}
+                  </div>
+                )}
+              </div>
               <Link to="/search" className="nav-link">搜尋</Link>
               <Link to="/wishlist" className="nav-link">最愛</Link>
               <Link to="/member" className="nav-link">會員</Link>
@@ -352,7 +377,7 @@ const HomePage: React.FC = () => {
               <p>目前沒有商品,請從後台新增商品</p>
             </div>
           ) : (
-            filteredProducts.map(product => (
+            filteredProducts.slice(0, 12).map(product => (
               <div key={product.id} className="product-card">
                 <div
                   className="product-image-container"
@@ -404,6 +429,18 @@ const HomePage: React.FC = () => {
             ))
           )}
         </div>
+
+        {/* 查看更多按鈕 */}
+        {filteredProducts.length > 12 && (
+          <div className="view-more-container">
+            <button 
+              className="view-more-btn"
+              onClick={() => navigate('/search')}
+            >
+              查看更多商品 ({filteredProducts.length - 12}+)
+            </button>
+          </div>
+        )}
       </section>
 
       {/* Shopping Cart Sidebar */}
