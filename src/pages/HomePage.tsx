@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ShoppingCart, Search, Menu, X, Home, Heart, User } from 'lucide-react';
+import { ShoppingCart, Search, Menu, X, Home, Heart, User, MessageCircle } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import './HomePage.css';
 
@@ -49,6 +49,7 @@ const HomePage: React.FC = () => {
   const [categories, setCategories] = useState<Category[]>([]);  // ← 新增這行
   const [banners, setBanners] = useState<HeroBanner[]>([]);
   const [currentBannerIndex, setCurrentBannerIndex] = useState(0);
+  const [isLineModalOpen, setIsLineModalOpen] = useState(false);
 
   useEffect(() => {
    fetchCategories();
@@ -213,6 +214,10 @@ const HomePage: React.FC = () => {
               <Link to="/search" className="nav-link">搜尋</Link>
               <Link to="/wishlist" className="nav-link">最愛</Link>
               <Link to="/member" className="nav-link">會員</Link>
+              <button className="nav-link customer-service-btn" onClick={() => setIsLineModalOpen(true)}>
+                <MessageCircle size={18} />
+                客服
+              </button>
             </nav>
 
             <div className="search-bar">
@@ -469,6 +474,24 @@ const HomePage: React.FC = () => {
         </div>
       )}
 
+      {/* LINE 客服彈窗 */}
+      {isLineModalOpen && (
+        <div className="overlay" onClick={() => setIsLineModalOpen(false)}>
+          <div className="line-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="line-modal-header">
+              <h3>聯絡客服</h3>
+              <button onClick={() => setIsLineModalOpen(false)}>
+                <X size={24} />
+              </button>
+            </div>
+            <div className="line-modal-body">
+              <img src="/images/line_qrcode.png" alt="LINE QRCode" className="line-qrcode" />
+              <p>掃描 QRCode 加入官方 LINE</p>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Footer */}
       <footer className="footer">
         <div className="footer-container">
@@ -498,9 +521,9 @@ const HomePage: React.FC = () => {
             <div className="footer-column" id="contact">
               <h4 className="footer-heading">聯絡資訊</h4>
               <div className="footer-contact">
-                <p>電話: (02) 1234-5678</p>
-                <p>Email: info@shophub.com</p>
-                <p>地址: 台北市信義區信義路五段7號</p>
+                <p>電話: 0989206788</p>
+                <p>Email: stone.ci7@gmail.com</p>
+                <p>地址: 新北市樹林區俊英街81巷25-2號</p>
               </div>
             </div>
           </div>
