@@ -244,41 +244,6 @@
   }
 }
 
-/* Category Section */
-.category-section {
-  max-width: 1280px;
-  margin: 0 auto;
-  padding: 2rem 1rem;
-}
-
-.category-container {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.5rem;
-  justify-content: center;
-}
-
-.category-button {
-  padding: 0.5rem 1rem;
-  border-radius: 9999px;
-  font-size: 0.875rem;
-  font-weight: 500;
-  border: none;
-  cursor: pointer;
-  transition: all 0.2s;
-  background-color: white;
-  color: #374151;
-}
-
-.category-button:hover {
-  background-color: #f3f4f6;
-}
-
-.category-button.active {
-  background-color: #2563eb;
-  color: white;
-}
-
 /* Products Section */
 .products-section {
   max-width: 1280px;
@@ -660,10 +625,41 @@
   color: #9ca3af;
 }
 
+/* 手機版分類按鈕 - 預設隱藏 */
+.mobile-category-btn {
+  display: none;
+}
+
 /* 響應式設計 */
 
 /* 手機版樣式 */
 @media (max-width: 639px) {
+  .header-content {
+    justify-content: center;
+    position: relative;
+  }
+
+  .mobile-category-btn {
+    position: absolute;
+    left: 0.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: none;
+    border: none;
+    color: #374151;
+    cursor: pointer;
+    padding: 0.5rem;
+  }
+
+  .header-actions {
+    display: none;
+  }
+
+  .logo h1 {
+    font-size: 1.25rem;
+  }
+
   .products-grid {
     grid-template-columns: repeat(2, 1fr);
     gap: 0.5rem;

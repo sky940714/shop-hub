@@ -206,6 +206,14 @@ const HomePage: React.FC = () => {
       <header className="header">
         <div className="header-container">
           <div className="header-content">
+            {/* 手機版左側分類按鈕 */}
+            <button 
+              className="mobile-category-btn"
+              onClick={() => setIsCategoryOpen(!isCategoryOpen)}
+            >
+              <Grid size={24} />
+            </button>
+
             <div className="logo">
               <h1>安鑫購物</h1>
             </div>
