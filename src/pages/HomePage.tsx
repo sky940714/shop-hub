@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ShoppingCart, Search, Menu, X, Home, Heart, User, MessageCircle } from 'lucide-react';
+import { ShoppingCart, Search, Menu, X, Home, Heart, User, MessageCircle, Grid } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import './HomePage.css';
 
@@ -545,6 +545,32 @@ const HomePage: React.FC = () => {
           </div>
         </div>
       </footer>
+      {/* 手機版底部導覽列 */}
+      <nav className="mobile-bottom-nav">
+        <Link to="/" className="mobile-nav-item active">
+          <Home size={22} />
+          <span>首頁</span>
+        </Link>
+        <button 
+          className="mobile-nav-item"
+          onClick={() => setIsCategoryOpen(!isCategoryOpen)}
+        >
+          <Grid size={22} />
+          <span>分類</span>
+        </button>
+        <button 
+          className="mobile-nav-item"
+          onClick={() => setIsCartOpen(true)}
+        >
+          <ShoppingCart size={22} />
+          <span>購物車</span>
+          {totalItems > 0 && <span className="cart-badge">{totalItems}</span>}
+        </button>
+        <Link to="/member" className="mobile-nav-item">
+          <User size={22} />
+          <span>會員</span>
+        </Link>
+      </nav>
     </div>
   );
 }
