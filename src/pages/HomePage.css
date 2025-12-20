@@ -26,10 +26,19 @@
   height: 4rem;
 }
 
+/* Logo 樣式優化 */
+.logo {
+  display: flex;
+  align-items: center;
+  cursor: pointer; 
+}
+
 .logo h1 {
   font-size: 1.5rem;
   font-weight: bold;
   color: #111827;
+  margin: 0;
+  line-height: 1;
 }
 
 .nav-desktop {
@@ -280,13 +289,13 @@
 .product-image-container {
   position: relative;
   width: 100%;
-  padding-bottom: 100%;  /* ← 用這個方法創建 1:1 正方形 */
+  padding-bottom: 100%;
   background-color: #ffffff;
   overflow: hidden;
 }
 
 .product-image {
-  position: absolute;  /* ← 關鍵：絕對定位 */
+  position: absolute;
   top: 0;
   left: 0;
   width: 100%;
@@ -625,126 +634,96 @@
   color: #9ca3af;
 }
 
-/* 手機版分類按鈕 - 預設隱藏 */
+/* 手機版分類按鈕 - 預設隱藏 (桌機版用) */
 .mobile-category-btn {
   display: none;
 }
 
 /* 響應式設計 */
 
-/* 手機版樣式 */
+/* --- 手機版樣式 (已經修正為：左分類、中標題、右選單) --- */
 @media (max-width: 639px) {
+  
+  /* 1. 設定 Header 容器為定位基準 */
   .header-content {
-    justify-content: center;
-    position: relative;
-  }
-
-  .mobile-category-btn {
-    position: absolute;
-    left: 0.5rem;
     display: flex;
     align-items: center;
+    justify-content: center; /* 讓內容預設置中 */
+    position: relative;      /* 關鍵：讓內部的 absolute 元素以這裡為邊界 */
+    height: 3.5rem;          /* 手機版 Header 高度稍微調小一點較精緻 */
+  }
+
+  /* 2. 左側：分類按鈕 (絕對定位在左邊) */
+  .mobile-category-btn {
+    display: flex;           /* 讓 icon 垂直置中 */
+    align-items: center;
     justify-content: center;
+    
+    position: absolute;      /* 絕對定位：脫離排版流 */
+    left: 1rem;              /* 距離左邊 1rem */
+    top: 50%;                /* 垂直置中 */
+    transform: translateY(-50%); 
+    
     background: none;
     border: none;
     color: #374151;
-    cursor: pointer;
     padding: 0.5rem;
-  }
-.header-actions {
-    position: absolute;
-    right: 0.5rem;
-    display: none;
+    z-index: 20;             /* 確保按鈕在最上層可點擊 */
   }
 
+  /* 3. 中間：Logo 標題 (絕對定位在正中間) */
   .logo {
-    position: absolute;
-    left: 50%;
-    transform: translateX(-50%);
+    position: absolute;      /* 絕對定位：無視旁邊有無按鈕，強制置中 */
+    left: 50%;               /* 設在容器的一半位置 */
+    top: 50%;                /* 垂直置中 */
+    transform: translate(-50%, -50%); /* 修正偏移，讓中心點對準 */
+    
+    width: auto;             /* 寬度自動 */
+    margin: 0;
+    z-index: 10;
+    
+    /* ★★★ 解決直向排列的關鍵 ★★★ */
+    white-space: nowrap;     /* 強制文字不換行 */
+    display: flex;           /* 確保內部文字水平排列 */
+    align-items: center;
   }
 
   .logo h1 {
-    font-size: 1.25rem;
+    font-size: 1.125rem;     /* 手機版字體稍微調小 */
+    line-height: 1;
+    margin: 0;
   }
 
-  .products-grid {
-    grid-template-columns: repeat(2, 1fr);
+  /* 4. 右側：購物車與選單 (原本被設為 display: none 了，這裡把它開回來並定位) */
+  .header-actions {
+    display: flex;           /* 恢復顯示 */
+    align-items: center;
     gap: 0.5rem;
+    
+    position: absolute;      /* 絕對定位在右邊 */
+    right: 0.5rem;
+    top: 50%;
+    transform: translateY(-50%);
   }
-
-  .product-card {
-    border-radius: 0.25rem;
-  }
-
-  .product-info {
-    padding: 0.5rem;
-  }
-
-  .product-name {
-    font-size: 0.8rem;
-    line-height: 1.2;
-    display: -webkit-box;
-    -webkit-line-clamp: 2;
-     line-clamp: 2;
-    -webkit-box-orient: vertical;
-    overflow: hidden;
-  }
-
-  .product-description {
-    display: none;
-  }
-
+  
+  /* 隱藏桌機版才需要的東西 */
+  .nav-desktop, 
+  .search-bar,
+  .product-description, 
   .product-rating {
     display: none;
   }
 
-  .product-footer {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 0.5rem;
-  }
-
-  .price {
-    font-size: 0.9rem;
-    color: #ef4444;
-  }
-
-  .add-to-cart-button {
-    width: 100%;
-    padding: 0.4rem;
-    font-size: 0.75rem;
-  }
-
-  .hero {
-    padding: 2rem 0;
-  }
-
-  .hero-title {
-    font-size: 1.5rem;
-  }
-
-  .hero-subtitle {
-    font-size: 0.9rem;
-    margin-bottom: 1rem;
-  }
-
-  .hero-button {
-    padding: 0.5rem 1.5rem;
-    font-size: 0.9rem;
-  }
-
-  .products-section {
-    padding: 0 0.5rem 5rem;
-  }
-
-  .view-more-container {
-    margin-bottom: 1rem;
-  }
-
-  .footer {
-    padding-bottom: 5rem;
-  }
+  /* 其他既有的手機版樣式調整 */
+  .hero { padding: 2rem 0; }
+  .products-grid { grid-template-columns: repeat(2, 1fr); gap: 0.5rem; }
+  .product-name { font-size: 0.85rem; }
+  .price { font-size: 0.9rem; }
+  .add-to-cart-button { padding: 0.4rem; font-size: 0.75rem; }
+  .view-more-container { margin-bottom: 1rem; }
+  .footer { padding-bottom: 5rem; }
 }
+/* --- 手機版樣式結束 --- */
 
 @media (min-width: 640px) {
   .products-grid {
@@ -833,8 +812,6 @@
 .customer-service-btn:hover {
   color: #3b82f6;
 }
-
-
 
 /* LINE 客服彈窗 */
 .line-modal {
