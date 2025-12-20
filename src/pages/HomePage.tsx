@@ -553,7 +553,7 @@ const HomePage: React.FC = () => {
           </div>
         </div>
       </footer>
-      {/* 手機版底部導覽列 */}
+     {/* 手機版底部導覽列 */}
       <nav className="mobile-bottom-nav">
         <Link to="/" className="mobile-nav-item active">
           <Home size={22} />
@@ -566,14 +566,14 @@ const HomePage: React.FC = () => {
           <Grid size={22} />
           <span>分類</span>
         </button>
-        <button 
-          className="mobile-nav-item"
-          onClick={() => setIsCartOpen(true)}
-        >
-          <ShoppingCart size={22} />
-          <span>購物車</span>
-          {totalItems > 0 && <span className="cart-badge">{totalItems}</span>}
-        </button>
+        <Link to="/search" className="mobile-nav-item">
+          <Search size={22} />
+          <span>搜尋</span>
+        </Link>
+        <Link to="/wishlist" className="mobile-nav-item">
+          <Heart size={22} />
+          <span>最愛</span>
+        </Link>
         <Link to="/member" className="mobile-nav-item">
           <User size={22} />
           <span>會員</span>
