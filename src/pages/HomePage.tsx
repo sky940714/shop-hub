@@ -300,6 +300,30 @@ const HomePage: React.FC = () => {
         </div>
       )}
 
+      {/* 手機版分類選單 */}
+      {isCategoryOpen && (
+        <div className="mobile-category-menu">
+          <div className="mobile-category-menu-header">
+            <h3>商品分類</h3>
+            <button onClick={() => setIsCategoryOpen(false)}>
+              <X size={24} />
+            </button>
+          </div>
+          {categories.map(category => (
+            <button
+              key={category.id}
+              className="mobile-category-menu-item"
+              onClick={() => {
+                setIsCategoryOpen(false);
+                navigate(`/search?category=${encodeURIComponent(category.name)}`);
+              }}
+            >
+              {category.name}
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* Hero Section */}
       <section 
         className="hero"
