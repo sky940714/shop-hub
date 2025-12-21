@@ -214,10 +214,6 @@ const HomePage: React.FC = () => {
               <Grid size={24} />
             </button>
 
-            <div className="logo">
-              <h1>安鑫購物</h1>
-            </div>
-
            <nav className="nav-desktop">
               <Link to="/" className="nav-link">首頁</Link>
               <div className="category-dropdown">
