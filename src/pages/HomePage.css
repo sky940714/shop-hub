@@ -702,17 +702,18 @@
 
   /* Center: Logo Title */
   .logo {
-    position: static;
-    transform: none;
-    width: auto;
-    margin: 0;
-    z-index: 10;
-    white-space: nowrap;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex: 1;
-    text-align: center;
+   position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: auto;
+  max-width: calc(100% - 120px);
+  margin: 0;
+  z-index: 10;
+  white-space: nowrap;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   }
 
   .logo h1 {
@@ -724,21 +725,22 @@
   /* Right: Actions (Cart, etc.) */
   .header-actions {
     display: flex;
-    align-items: center;
-    gap: 0.5rem;
-    position: absolute;
-    right: 0.5rem;
-    top: 50%;
-    transform: translateY(-50%);
+  align-items: center;
+  gap: 0.5rem;
+  position: absolute;
+  right: 1rem;
+  top: 50%;
+  transform: translateY(-50%);
   }
   
   /* Hide Desktop Elements */
-  .nav-desktop, 
-  .search-bar,
-  .product-description, 
-  .product-rating {
-    display: none;
-  }
+.nav-desktop, 
+.search-bar,
+.product-description, 
+.product-rating,
+.mobile-menu-button {
+  display: none;
+}
 
   /* Mobile Adjustments */
   .hero { padding: 2rem 0; }
@@ -935,6 +937,11 @@
   color: white;
 }
 
+/* Mobile Category Menu - Hidden by default */
+.mobile-category-menu {
+  display: none;
+}
+
 /* Mobile Bottom Navigation */
 .mobile-bottom-nav {
   display: none;
@@ -973,20 +980,20 @@
     width: 22px;
     height: 22px;
   }
-
-  /* Mobile Category Menu (Full Screen) */
-  .mobile-category-menu {
-    position: fixed;
-    top: 4rem;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: white;
-    z-index: 99;
-    overflow-y: auto;
-    padding: 1rem;
-    padding-bottom: 5rem;
-  }
+/* Mobile Category Menu (Full Screen) */
+.mobile-category-menu {
+  display: block;
+  position: fixed;
+  top: 4rem;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: white;
+  z-index: 99;
+  overflow-y: auto;
+  padding: 1rem;
+  padding-bottom: 5rem;
+}
 
   .mobile-category-menu-header {
     display: flex;
