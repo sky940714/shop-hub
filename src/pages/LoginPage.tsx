@@ -6,7 +6,7 @@ import './LoginPage.css';
 
 const LoginPage: React.FC = () => {
   const navigate = useNavigate();
-  const [isAdminMode, setIsAdminMode] = useState(false);
+  // 移除 isAdminMode，只保留註冊模式切換
   const [isRegisterMode, setIsRegisterMode] = useState(false);
   
   // 表單狀態
@@ -25,12 +25,11 @@ const LoginPage: React.FC = () => {
     });
   };
 
+  // 統一登入邏輯：單一入口，自動分流
   const handleLogin = async (e: React.FormEvent): Promise<void> => {
     e.preventDefault();
 
-    if (isAdminMode) {
-      // 管理員登入
-      try {
+    try {
       const response = await fetch('/api/auth/login', {
         method: 'POST',
         headers: {
@@ -45,19 +44,26 @@ const LoginPage: React.FC = () => {
       const data = await response.json();
 
       if (data.success) {
-        // 檢查是否為管理員
+        // 1. 儲存 Token (這是最重要的憑證)
+        localStorage.setItem('token', data.token);
+        
+        // 2. 儲存基本資訊供前端顯示
+        localStorage.setItem('userEmail', data.user.email);
+        localStorage.setItem('userName', data.user.name);
+        localStorage.setItem('userId', data.user.id);
+
+        // 3. 關鍵邏輯：檢查身分並分流
         if (data.user.role === 'admin') {
-          // 儲存登入狀態
-          localStorage.setItem('token', data.token);
-          localStorage.setItem('isAdmin', 'true');
-          localStorage.setItem('userEmail', data.user.email);
-          localStorage.setItem('userName', data.user.name);
-          localStorage.setItem('userId', data.user.id);
-          
-          alert('管理員登入成功！');
-          navigate('/admin');
+          // 如果是管理員
+          localStorage.setItem('isAdmin', 'true'); // 前端標記
+          alert('管理員登入成功！進入後台系統');
+          navigate('/admin'); // 導向後台
         } else {
-          alert('此帳號不是管理員帳號！');
+          // 如果是一般會員
+          localStorage.removeItem('isAdmin'); // 清除管理員標記
+          localStorage.setItem('isLoggedIn', 'true');
+          alert(`登入成功！歡迎 ${data.user.name}`);
+          navigate('/'); // 導向首頁
         }
       } else {
         alert(data.message || '帳號或密碼錯誤！');
@@ -65,41 +71,6 @@ const LoginPage: React.FC = () => {
     } catch (error) {
       console.error('登入錯誤：', error);
       alert('登入失敗，請檢查網路連線或稍後再試');
-    }
-  } else {
-      // 一般會員登入 - 呼叫後端 API
-      try {
-        const response = await fetch('/api/auth/login', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            email: formData.email,
-            password: formData.password
-          })
-        });
-
-        const data = await response.json();
-
-        if (data.success) {
-          // 登入成功
-          localStorage.setItem('token', data.token);
-          localStorage.setItem('isLoggedIn', 'true');
-          localStorage.setItem('userEmail', data.user.email);
-          localStorage.setItem('userName', data.user.name);
-          localStorage.setItem('userId', data.user.id);
-          
-          alert(`登入成功！歡迎 ${data.user.name}`);
-          navigate('/');
-        } else {
-          // 登入失敗
-          alert(data.message || '登入失敗');
-        }
-      } catch (error) {
-        console.error('登入錯誤：', error);
-        alert('登入失敗，請檢查網路連線或稍後再試');
-      }
     }
   };
 
@@ -135,20 +106,17 @@ const LoginPage: React.FC = () => {
       const data = await response.json();
 
       if (data.success) {
-        // 註冊成功
         alert('註冊成功！即將為您登入...');
         
-        // 儲存 token
+        // 註冊成功後自動登入
         localStorage.setItem('token', data.token);
         localStorage.setItem('isLoggedIn', 'true');
         localStorage.setItem('userEmail', data.user.email);
         localStorage.setItem('userName', data.user.name);
         localStorage.setItem('userId', data.user.id);
         
-        // 導向首頁
         navigate('/');
       } else {
-        // 註冊失敗
         alert(data.message || '註冊失敗');
       }
     } catch (error) {
@@ -186,44 +154,17 @@ const LoginPage: React.FC = () => {
         {/* 右側 - 登入表單 */}
         <div className="login-form-container">
           <div className="login-form-wrapper">
-            {/* 切換模式按鈕 */}
-            <div className="mode-switch">
-              <button
-                className={`mode-btn ${!isAdminMode ? 'active' : ''}`}
-                onClick={() => {
-                  setIsAdminMode(false);
-                  setIsRegisterMode(false);
-                  setFormData({ email: '', password: '', name: '', confirmPassword: '' , phone: ''});
-                }}
-              >
-                會員登入
-              </button>
-              <button
-                className={`mode-btn ${isAdminMode ? 'active' : ''}`}
-                onClick={() => {
-                  setIsAdminMode(true);
-                  setIsRegisterMode(false);
-                  setFormData({ email: '', password: '', name: '', confirmPassword: '' , phone: ''});
-                }}
-              >
-                管理員登入
-              </button>
-            </div>
+            
+            {/* 移除原本的 mode-switch 按鈕區塊 */}
 
             <div className="form-header">
               <h2 className="form-title">
-                {isAdminMode 
-                  ? '管理員登入' 
-                  : isRegisterMode 
-                    ? '會員註冊' 
-                    : '會員登入'}
+                {isRegisterMode ? '會員註冊' : '會員登入'}
               </h2>
               <p className="form-description">
-                {isAdminMode 
-                  ? '請使用管理員帳號登入後台系統' 
-                  : isRegisterMode 
-                    ? '建立您的帳號，開始購物體驗' 
-                    : '歡迎回來！請登入您的帳號'}
+                {isRegisterMode 
+                  ? '建立您的帳號，開始購物體驗' 
+                  : '歡迎回來！請登入您的帳號'}
               </p>
             </div>
 
@@ -258,7 +199,7 @@ const LoginPage: React.FC = () => {
                   value={formData.email}
                   onChange={handleInputChange}
                   className="form-input"
-                  placeholder={isAdminMode ? "admin@shophub.com" : "請輸入您的 Email"}
+                  placeholder="請輸入您的 Email"
                   required
                 />
               </div>
@@ -292,7 +233,7 @@ const LoginPage: React.FC = () => {
                   value={formData.password}
                   onChange={handleInputChange}
                   className="form-input"
-                  placeholder={isAdminMode ? "請輸入管理員密碼" : "請輸入密碼"}
+                  placeholder="請輸入密碼"
                   required
                 />
               </div>
@@ -316,7 +257,7 @@ const LoginPage: React.FC = () => {
                 </div>
               )}
 
-              {!isAdminMode && !isRegisterMode && (
+              {!isRegisterMode && (
                 <div className="form-options">
                   <label className="remember-me">
                     <input type="checkbox" />
@@ -327,57 +268,42 @@ const LoginPage: React.FC = () => {
               )}
 
               <button type="submit" className="submit-btn">
-                {isAdminMode 
-                  ? '登入後台' 
-                  : isRegisterMode 
-                    ? '註冊帳號' 
-                    : '登入'}
+                {isRegisterMode ? '註冊帳號' : '登入'}
               </button>
 
-              {/* 一般用戶才顯示註冊切換 */}
-              {!isAdminMode && (
-                <div className="form-footer">
-                  {isRegisterMode ? (
-                    <p>
-                      已有帳號？
-                      <button
-                        type="button"
-                        className="switch-mode-btn"
-                        onClick={() => {
-                          setIsRegisterMode(false);
-                          setFormData({ email: '', password: '', name: '', confirmPassword: '' , phone: '' });
-                        }}
-                      >
-                        立即登入
-                      </button>
-                    </p>
-                  ) : (
-                    <p>
-                      還沒有帳號？
-                      <button
-                        type="button"
-                        className="switch-mode-btn"
-                        onClick={() => {
-                          setIsRegisterMode(true);
-                          setFormData({ email: '', password: '', name: '', confirmPassword: '' ,phone: ''});
-                        }}
-                      >
-                        立即註冊
-                      </button>
-                    </p>
-                  )}
-                </div>
-              )}
-
-              {/* 管理員登入提示 */}
-              {isAdminMode && (
-                <div className="admin-hint">
-                  <p className="hint-text">
-                    <strong>測試帳號：</strong>admin@shophub.com<br />
-                    <strong>測試密碼：</strong>admin123
+              <div className="form-footer">
+                {isRegisterMode ? (
+                  <p>
+                    已有帳號？
+                    <button
+                      type="button"
+                      className="switch-mode-btn"
+                      onClick={() => {
+                        setIsRegisterMode(false);
+                        setFormData({ email: '', password: '', name: '', confirmPassword: '' , phone: '' });
+                      }}
+                    >
+                      立即登入
+                    </button>
                   </p>
-                </div>
-              )}
+                ) : (
+                  <p>
+                    還沒有帳號？
+                    <button
+                      type="button"
+                      className="switch-mode-btn"
+                      onClick={() => {
+                        setIsRegisterMode(true);
+                        setFormData({ email: '', password: '', name: '', confirmPassword: '' ,phone: ''});
+                      }}
+                    >
+                      立即註冊
+                    </button>
+                  </p>
+                )}
+              </div>
+
+              {/* 已經移除原本的 admin-hint 提示區塊 */}
             </form>
 
             <button 
