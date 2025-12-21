@@ -26,7 +26,7 @@
   height: 4rem;
 }
 
-/* Logo 樣式優化 */
+/* Logo */
 .logo {
   display: flex;
   align-items: center;
@@ -41,6 +41,7 @@
   line-height: 1;
 }
 
+/* Desktop Navigation */
 .nav-desktop {
   display: none;
   gap: 2rem;
@@ -56,6 +57,7 @@
   color: #111827;
 }
 
+/* Search Bar */
 .search-bar {
   display: none;
   flex: 1;
@@ -91,6 +93,7 @@
   box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
 }
 
+/* Header Actions */
 .header-actions {
   display: flex;
   align-items: center;
@@ -203,6 +206,7 @@
   background: linear-gradient(to right, #2563eb, #9333ea);
   color: white;
   padding: 5rem 0;
+  transition: background-image 0.5s ease-in-out;
 }
 
 .hero-container {
@@ -240,6 +244,32 @@
 
 .hero-button:hover {
   background-color: #f3f4f6;
+}
+
+.hero-dots {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 20px;
+}
+
+.hero-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  border: 2px solid white;
+  background: transparent;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  padding: 0;
+}
+
+.hero-dot:hover {
+  background: rgba(255, 255, 255, 0.5);
+}
+
+.hero-dot.active {
+  background: white;
 }
 
 @keyframes fadeIn {
@@ -349,7 +379,6 @@
   color: #4b5563;
   margin-bottom: 0.5rem;
   display: -webkit-box;
-  -webkit-box-orient: vertical;
   -webkit-box-orient: vertical;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -634,79 +663,76 @@
   color: #9ca3af;
 }
 
-/* 手機版分類按鈕 - 預設隱藏 (桌機版用) */
+/* Mobile Category Button - Hidden on Desktop */
 .mobile-category-btn {
   display: none;
 }
 
-/* 響應式設計 */
+/* =========================================
+   Responsive Design
+   ========================================= */
 
-/* --- 手機版樣式 (已經修正為：左分類、中標題、右選單) --- */
+/* Mobile Layout (< 640px) */
 @media (max-width: 639px) {
   
-  /* 1. 設定 Header 容器為定位基準 */
+  /* Header Container Positioning */
   .header-content {
     display: flex;
     align-items: center;
-    justify-content: center; /* 讓內容預設置中 */
-    position: relative;      /* 關鍵：讓內部的 absolute 元素以這裡為邊界 */
-    height: 3.5rem;          /* 手機版 Header 高度稍微調小一點較精緻 */
+    justify-content: center;
+    position: relative;
+    height: 3.5rem;
   }
 
-  /* 2. 左側：分類按鈕 (絕對定位在左邊) */
+  /* Left: Category Button */
   .mobile-category-btn {
-    display: flex;           /* 讓 icon 垂直置中 */
+    display: flex;
     align-items: center;
     justify-content: center;
-    
-    position: absolute;      /* 絕對定位：脫離排版流 */
-    left: 1rem;              /* 距離左邊 1rem */
-    top: 50%;                /* 垂直置中 */
-    transform: translateY(-50%); 
-    
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
     background: none;
     border: none;
     color: #374151;
     padding: 0.5rem;
-    z-index: 20;             /* 確保按鈕在最上層可點擊 */
+    z-index: 20;
   }
 
-  /* 3. 中間：Logo 標題 (絕對定位在正中間) */
+  /* Center: Logo Title */
   .logo {
-    position: absolute;      /* 絕對定位：無視旁邊有無按鈕，強制置中 */
-    left: 50%;               /* 設在容器的一半位置 */
-    top: 50%;                /* 垂直置中 */
-    transform: translate(-50%, -50%); /* 修正偏移，讓中心點對準 */
-    
-    width: auto;             /* 寬度自動 */
+    position: static;
+    transform: none;
+    width: auto;
     margin: 0;
     z-index: 10;
-    
-    /* ★★★ 解決直向排列的關鍵 ★★★ */
-    white-space: nowrap;     /* 強制文字不換行 */
-    display: flex;           /* 確保內部文字水平排列 */
+    white-space: nowrap;
+    display: flex;
     align-items: center;
+    justify-content: center;
+    flex: 1;
+    text-align: center;
   }
 
   .logo h1 {
-    font-size: 1.125rem;     /* 手機版字體稍微調小 */
+    font-size: 1.125rem;
     line-height: 1;
     margin: 0;
   }
 
-  /* 4. 右側：購物車與選單 (原本被設為 display: none 了，這裡把它開回來並定位) */
+  /* Right: Actions (Cart, etc.) */
   .header-actions {
-    display: flex;           /* 恢復顯示 */
+    display: flex;
     align-items: center;
     gap: 0.5rem;
-    
-    position: absolute;      /* 絕對定位在右邊 */
+    position: absolute;
     right: 0.5rem;
     top: 50%;
     transform: translateY(-50%);
   }
   
-  /* 隱藏桌機版才需要的東西 */
+  /* Hide Desktop Elements */
   .nav-desktop, 
   .search-bar,
   .product-description, 
@@ -714,7 +740,7 @@
     display: none;
   }
 
-  /* 其他既有的手機版樣式調整 */
+  /* Mobile Adjustments */
   .hero { padding: 2rem 0; }
   .products-grid { grid-template-columns: repeat(2, 1fr); gap: 0.5rem; }
   .product-name { font-size: 0.85rem; }
@@ -723,8 +749,8 @@
   .view-more-container { margin-bottom: 1rem; }
   .footer { padding-bottom: 5rem; }
 }
-/* --- 手機版樣式結束 --- */
 
+/* Tablet & Desktop Breakpoints */
 @media (min-width: 640px) {
   .products-grid {
     grid-template-columns: repeat(2, 1fr);
@@ -765,39 +791,7 @@
   }
 }
 
-/* 輪播指示點 */
-.hero-dots {
-  display: flex;
-  justify-content: center;
-  gap: 10px;
-  margin-top: 20px;
-}
-
-.hero-dot {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  border: 2px solid white;
-  background: transparent;
-  cursor: pointer;
-  transition: all 0.3s ease;
-  padding: 0;
-}
-
-.hero-dot:hover {
-  background: rgba(255, 255, 255, 0.5);
-}
-
-.hero-dot.active {
-  background: white;
-}
-
-/* Hero 背景過渡效果 */
-.hero {
-  transition: background-image 0.5s ease-in-out;
-}
-
-/* 客服按鈕 */
+/* Additional UI Components */
 .customer-service-btn {
   display: flex;
   align-items: center;
@@ -813,7 +807,7 @@
   color: #3b82f6;
 }
 
-/* LINE 客服彈窗 */
+/* LINE Modal */
 .line-modal {
   position: fixed;
   top: 50%;
@@ -869,7 +863,7 @@
   font-size: 14px;
 }
 
-/* 商品分類下拉選單 */
+/* Category Dropdown */
 .category-dropdown {
   position: relative;
 }
@@ -918,7 +912,7 @@
   color: #2563eb;
 }
 
-/* 查看更多按鈕 */
+/* View More Button */
 .view-more-container {
   text-align: center;
   margin-top: 2rem;
@@ -941,7 +935,7 @@
   color: white;
 }
 
-/* 手機版底部導覽列 */
+/* Mobile Bottom Navigation */
 .mobile-bottom-nav {
   display: none;
 }
@@ -980,7 +974,7 @@
     height: 22px;
   }
 
-  /* 手機版分類選單 */
+  /* Mobile Category Menu (Full Screen) */
   .mobile-category-menu {
     position: fixed;
     top: 4rem;
