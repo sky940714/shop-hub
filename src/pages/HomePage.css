@@ -26,6 +26,21 @@
   height: 4rem;
 }
 
+/* Logo */
+.logo {
+  display: flex;
+  align-items: center;
+  cursor: pointer;
+}
+
+.logo h1 {
+  font-size: 1.5rem;
+  font-weight: bold;
+  color: #111827;
+  margin: 0;
+  line-height: 1;
+}
+
 /* Desktop Navigation */
 .nav-desktop {
   display: none;
@@ -659,6 +674,25 @@
 
 /* Mobile Layout (< 640px) */
 @media (max-width: 639px) {
+
+  /* Center: Logo Title */
+.logo {
+  position: absolute;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: auto;
+  max-width: calc(100% - 120px);
+  margin: 0;
+  z-index: 10;
+  white-space: nowrap;
+}
+
+.logo h1 {
+  font-size: 1.125rem;
+  line-height: 1;
+  margin: 0;
+}
   
   /* Header Container Positioning */
   .header-content {
@@ -683,12 +717,6 @@
     color: #374151;
     padding: 0.5rem;
     z-index: 20;
-  }
-
-  .logo h1 {
-    font-size: 1.125rem;
-    line-height: 1;
-    margin: 0;
   }
 
   /* Right: Actions (Cart, etc.) */
