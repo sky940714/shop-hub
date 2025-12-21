@@ -588,8 +588,9 @@ const HomePage: React.FC = () => {
           className="mobile-nav-item"
           onClick={() => setIsCategoryOpen(!isCategoryOpen)}
         >
-          <Grid size={22} />
-          <span>分類</span>
+           <ShoppingCart size={22} />
+          <span>購物車</span>
+          {totalItems > 0 && <span className="mobile-cart-badge">{totalItems}</span>}
         </button>
         <Link to="/search" className="mobile-nav-item">
           <Search size={22} />
