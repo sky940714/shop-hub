@@ -679,7 +679,7 @@
 .logo {
   position: absolute;
   right: 1rem;
-  left: auto;
+  left: 9rem;
   top: 50%;
   transform: translateY(-50%);
   width: auto;
