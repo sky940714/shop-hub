@@ -223,42 +223,6 @@
   cursor: not-allowed;
 }
 
-/* Bottom Navigation */
-.bottom-nav {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background: white;
-  border-top: 1px solid #e5e7eb;
-  padding: 0.75rem 1rem;
-  display: flex;
-  justify-content: space-around;
-  box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.05);
-  z-index: 50;
-}
-
-.nav-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.25rem;
-  color: #6b7280;
-  text-decoration: none;
-  cursor: pointer;
-  transition: color 0.2s;
-  padding: 0.5rem;
-  font-size: 0.75rem;
-}
-
-.nav-item:hover {
-  color: #2563eb;
-}
-
-.nav-item.active {
-  color: #2563eb;
-}
-
 /* 響應式設計 - 平板以上 */
 @media (min-width: 768px) {
   .wishlist-page {
@@ -295,14 +259,6 @@
 
   .wishlist-product-info {
     padding: 1rem;
-  }
-
-  .bottom-nav {
-    position: static;
-    max-width: 1200px;
-    margin: 2rem auto 0;
-    border-radius: 1rem;
-    border: 1px solid #e5e7eb;
   }
 }
 

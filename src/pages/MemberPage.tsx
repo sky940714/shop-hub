@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { User, Package, FileText, MessageSquare, LogOut, ChevronRight, Home, Heart, ShoppingCart, Search } from 'lucide-react';
+import { User, Package, FileText, MessageSquare, LogOut, ChevronRight } from 'lucide-react';
+import BottomNav from '../components/BottomNav';
 import './MemberPage.css';
 
 interface OrderItem {
@@ -40,6 +41,7 @@ const MemberPage: React.FC = () => {
   const [showOrderModal, setShowOrderModal] = useState(false);
   const [showBasicInfoModal, setShowBasicInfoModal] = useState(false);
   const [showCarrierModal, setShowCarrierModal] = useState(false);
+  const [showServiceModal, setShowServiceModal] = useState(false);
 
   // 表單狀態
   const [editName, setEditName] = useState('');
@@ -174,10 +176,7 @@ const MemberPage: React.FC = () => {
   };
 
   const handleCustomerService = () => {
-    const message = prompt('請輸入您的問題或建議:');
-    if (message && message.trim()) {
-      alert('感謝您的留言,客服人員會在24小時內回覆您!');
-    }
+    setShowServiceModal(true);
   };
 
   const handleMemberGuide = () => {
@@ -278,29 +277,7 @@ const MemberPage: React.FC = () => {
         </section>
       </div>
 
-      {/* Bottom Navigation */}
-      <nav className="bottom-nav">
-        <Link to="/" className="nav-item">
-          <Home size={24} />
-          <span>首頁</span>
-        </Link>
-        <Link to="/wishlist" className="nav-item">
-          <Heart size={24} />
-          <span>最愛</span>
-        </Link>
-        <Link to="/cart" className="nav-item">
-          <ShoppingCart size={24} />
-          <span>購物車</span>
-        </Link>
-        <Link to="/search" className="nav-item">
-          <Search size={24} />
-          <span>搜尋</span>
-        </Link>
-        <Link to="/member" className="nav-item active">
-          <User size={24} />
-          <span>會員</span>
-        </Link>
-      </nav>
+      <BottomNav activePage="member" />
 
       {/* Order Modal */}
       {showOrderModal && (
@@ -407,6 +384,39 @@ const MemberPage: React.FC = () => {
                 />
               </div>
               <button className="form-submit" onClick={handleUpdateCarrier}>設定載具</button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Service Modal */}
+      {showServiceModal && (
+        <div className="modal-overlay" onClick={() => setShowServiceModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>聯絡客服</h2>
+              <button onClick={() => setShowServiceModal(false)} className="modal-close">×</button>
+            </div>
+            <div className="modal-body">
+              <div className="service-item">
+                <h4>📧 Email 聯絡</h4>
+                <p>stone.ci7@gmail.com</p>
+                <a href="mailto:stone.ci7@gmail.com" className="service-btn">
+                  發送郵件
+                </a>
+              </div>
+              <div className="service-item">
+                <h4>💬 LINE 官方帳號</h4>
+                <p>請至首頁掃描 QRCode 加入官方 LINE</p>
+                <button 
+                  className="service-btn"
+                  onClick={() => {
+                    setShowServiceModal(false);
+                    navigate('/');
+                  }}
+                >
+                  前往首頁
+                </button>
+              </div>
             </div>
           </div>
         </div>

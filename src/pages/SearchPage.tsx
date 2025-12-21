@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { Search, Home, Heart, ShoppingCart, User, X, TrendingUp, Loader } from 'lucide-react';
+import { Search, X, TrendingUp, Loader } from 'lucide-react';
+import BottomNav from '../components/BottomNav';
 import './SearchPage.css'; 
 
 // 定義後端回傳的資料格式
@@ -280,30 +281,7 @@ const SearchPage: React.FC = () => {
           </div>
         )}
       </div>
-
-      {/* Bottom Navigation */}
-      <nav className="bottom-nav">
-        <Link to="/" className="nav-item">
-          <Home size={24} />
-          <span>首頁</span>
-        </Link>
-        <Link to="/wishlist" className="nav-item">
-          <Heart size={24} />
-          <span>最愛</span>
-        </Link>
-        <Link to="/cart" className="nav-item">
-          <ShoppingCart size={24} />
-          <span>購物車</span>
-        </Link>
-        <Link to="/search" className="nav-item active">
-          <Search size={24} />
-          <span>搜尋</span>
-        </Link>
-        <Link to="/member" className="nav-item">
-          <User size={24} />
-          <span>會員</span>
-        </Link>
-      </nav>
+      <BottomNav activePage="search" />
     </div>
   );
 };

@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { ShoppingCart, Search, Menu, X, Home, Heart, User, MessageCircle, Grid } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import './HomePage.css';
+import BottomNav from '../components/BottomNav';
 
 interface Product {
   id: number;
@@ -207,17 +208,25 @@ const HomePage: React.FC = () => {
         <div className="header-container">
           <div className="header-content">
             {/* 手機版左側分類按鈕 */}
+            {/* 手機版左側分類按鈕 */}
             <button 
               className="mobile-category-btn"
               onClick={() => setIsCategoryOpen(!isCategoryOpen)}
             >
               <Grid size={24} />
             </button>
-
             {/* Logo */}
               <div className="logo">
                 <h1>安鑫購物</h1>
               </div>
+
+               {/* 手機版右側客服按鈕 */}
+            <button 
+              className="mobile-service-btn"
+              onClick={() => setIsLineModalOpen(true)}
+            >
+              <MessageCircle size={24} />
+            </button>
 
            <nav className="nav-desktop">
               <Link to="/" className="nav-link">首頁</Link>
@@ -543,26 +552,10 @@ const HomePage: React.FC = () => {
         <div className="footer-container">
           <div className="footer-grid">
             <div className="footer-column">
-              <h3 className="footer-title">ShopHub</h3>
+              <h3 className="footer-title">安鑫購物</h3>
               <p className="footer-text">提供最優質的商品與服務,打造完美的購物體驗。</p>
-            </div>
-            <div className="footer-column">
-              <h4 className="footer-heading">快速連結</h4>
-              <ul className="footer-links">
-                <li><a href="#about">關於我們</a></li>
-                <li><a href="#products">商品目錄</a></li>
-                <li><a href="#contact">配送資訊</a></li>
-                <li><a href="#contact">退換貨政策</a></li>
-              </ul>
-            </div>
-            <div className="footer-column">
-              <h4 className="footer-heading">客戶服務</h4>
-              <ul className="footer-links">
-                <li><a href="#contact">聯絡我們</a></li>
-                <li><a href="#contact">常見問題</a></li>
-                <li><a href="#contact">訂單查詢</a></li>
-                <li><Link to="/member">會員中心</Link></li>
-              </ul>
+
+
             </div>
             <div className="footer-column" id="contact">
               <h4 className="footer-heading">聯絡資訊</h4>
@@ -578,33 +571,7 @@ const HomePage: React.FC = () => {
           </div>
         </div>
       </footer>
-     {/* 手機版底部導覽列 */}
-      <nav className="mobile-bottom-nav">
-        <Link to="/" className="mobile-nav-item active">
-          <Home size={22} />
-          <span>首頁</span>
-        </Link>
-        <button 
-          className="mobile-nav-item"
-          onClick={() => setIsCategoryOpen(!isCategoryOpen)}
-        >
-           <ShoppingCart size={22} />
-          <span>購物車</span>
-          {totalItems > 0 && <span className="mobile-cart-badge">{totalItems}</span>}
-        </button>
-        <Link to="/search" className="mobile-nav-item">
-          <Search size={22} />
-          <span>搜尋</span>
-        </Link>
-        <Link to="/wishlist" className="mobile-nav-item">
-          <Heart size={22} />
-          <span>最愛</span>
-        </Link>
-        <Link to="/member" className="mobile-nav-item">
-          <User size={22} />
-          <span>會員</span>
-        </Link>
-      </nav>
+      <BottomNav activePage="home" />
     </div>
   );
 }

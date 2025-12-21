@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Heart, Home, ShoppingCart, Search, User, Trash2, Loader } from 'lucide-react';
+import { Heart, Trash2, Loader } from 'lucide-react';
+import BottomNav from '../components/BottomNav';
 import './WishlistPage.css';
 // 引入你提供的 CartContext
 import { useCart } from '../context/CartContext';
@@ -180,30 +181,7 @@ const WishlistPage: React.FC = () => {
           </>
         )}
       </div>
-
-      {/* Bottom Navigation */}
-      <nav className="bottom-nav">
-        <Link to="/" className="nav-item">
-          <Home size={24} />
-          <span>首頁</span>
-        </Link>
-        <Link to="/wishlist" className="nav-item active">
-          <Heart size={24} />
-          <span>最愛</span>
-        </Link>
-        <Link to="/cart" className="nav-item">
-          <ShoppingCart size={24} />
-          <span>購物車</span>
-        </Link>
-        <Link to="/search" className="nav-item">
-          <Search size={24} />
-          <span>搜尋</span>
-        </Link>
-        <Link to="/member" className="nav-item">
-          <User size={24} />
-          <span>會員</span>
-        </Link>
-      </nav>
+      <BottomNav activePage="wishlist" />
     </div>
   );
 };

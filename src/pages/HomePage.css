@@ -668,12 +668,17 @@
   display: none;
 }
 
+/* Mobile Service Button - Hidden on Desktop */
+.mobile-service-btn {
+  display: none;
+}
+
 /* =========================================
    Responsive Design
    ========================================= */
 
 /* Mobile Layout (< 640px) */
-@media (max-width: 639px) {
+@media (max-width: 767px) {
 
 /* Right: Logo Title */
 .logo {
@@ -719,6 +724,22 @@
     z-index: 20;
   }
 
+  /* Right: Service Button */
+  .mobile-service-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: absolute;
+    left:  20rem;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    color: #374151;
+    padding: 0.5rem;
+    z-index: 20;
+  }
+
   /* Right: Actions (Cart, etc.) */
   .header-actions {
     display: flex;
@@ -736,7 +757,8 @@
 .product-description, 
 .product-rating,
 .mobile-menu-button,
-.cart-button {
+.cart-button,
+.header-actions {
   display: none;
 }
 
@@ -935,67 +957,6 @@
   color: white;
 }
 
-/* Mobile Category Menu - Hidden by default */
-.mobile-category-menu {
-  display: none;
-}
-
-/* Mobile Bottom Navigation */
-.mobile-bottom-nav {
-  display: none;
-}
-
-@media (max-width: 767px) {
-  .mobile-bottom-nav {
-    display: flex;
-    position: fixed;
-    bottom: 0;
-    left: 0;
-    right: 0;
-    background: white;
-    box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.1);
-    z-index: 100;
-    padding: 0.5rem 0;
-    padding-bottom: calc(0.5rem + env(safe-area-inset-bottom));
-  }
-
-  .mobile-nav-item {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 0.25rem;
-  text-decoration: none;
-  color: #6b7280;
-  font-size: 0.7rem;
-  padding: 0.25rem 0;
-  background: none;
-  border: none;
-  cursor: pointer;
-  position: relative;
-}
-
-.mobile-cart-badge {
-  position: absolute;
-  top: 0;
-  right: 50%;
-  transform: translateX(16px);
-  background-color: #ef4444;
-  color: white;
-  font-size: 0.65rem;
-  min-width: 1rem;
-  height: 1rem;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 9999px;
-  padding: 0 4px;
-}
-
-  .mobile-nav-item svg {
-    width: 22px;
-    height: 22px;
-  }
 /* Mobile Category Menu (Full Screen) */
 .mobile-category-menu {
   display: block;
@@ -1039,8 +1000,7 @@
     color: #374151;
   }
 
-  .mobile-category-menu-item:hover {
-    background: #f9fafb;
-    color: #2563eb;
-  }
+.mobile-category-menu-item:hover {
+  background: #f9fafb;
+  color: #2563eb;
 }

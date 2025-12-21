@@ -10,6 +10,7 @@ import LoginPage from './pages/LoginPage';
 import AdminLayout from './pages/admin/AdminLayout';
 import ProtectedRoute from './components/ProtectedRoute';
 import ProductDetailPage from './pages/ProductDetailPage';
+import CartPage from './pages/CartPage';
 
 // 結帳相關頁面 - 新增
 import CheckoutPage from './pages/checkout/CheckoutPage';
@@ -57,6 +58,14 @@ function App() {
               </ProtectedRoute>
             }
           />
+          <Route
+            path="/cart"
+            element={
+              <ProtectedRoute>
+                <CartPage />
+              </ProtectedRoute>
+              }
+            />
 
           {/* 結帳相關路由 - 需要登入 - 新增區塊 */}
           <Route
