@@ -675,14 +675,14 @@
 /* Mobile Layout (< 640px) */
 @media (max-width: 639px) {
 
-  /* Center: Logo Title */
+/* Right: Logo Title */
 .logo {
   position: absolute;
-  left: 50%;
+  right: 1rem;
+  left: auto;
   top: 50%;
-  transform: translate(-50%, -50%);
+  transform: translateY(-50%);
   width: auto;
-  max-width: calc(100% - 120px);
   margin: 0;
   z-index: 10;
   white-space: nowrap;
