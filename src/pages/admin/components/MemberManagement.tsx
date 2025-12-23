@@ -50,6 +50,10 @@ const MemberManagement: React.FC = () => {
   const [pointsAmount, setPointsAmount] = useState('');
   const [pointsDescription, setPointsDescription] = useState('');
 
+  // 刪除確認
+const [showDeleteModal, setShowDeleteModal] = useState(false);
+const [memberToDelete, setMemberToDelete] = useState<Member | null>(null);
+
   // 載入會員列表
   const fetchMembers = async () => {
     try {
@@ -181,6 +185,38 @@ const MemberManagement: React.FC = () => {
     }
   };
 
+  // 刪除會員
+  const handleDeleteMember = async () => {
+    if (!memberToDelete) return;
+    
+    try {
+      const token = localStorage.getItem('token');
+      const response = await fetch(
+        `/api/members/admin/${memberToDelete.id}`,
+        {
+          method: 'DELETE',
+          headers: {
+            'Authorization': `Bearer ${token}`
+          }
+        }
+      );
+
+      const data = await response.json();
+      
+      if (data.success) {
+        alert(data.message);
+        setShowDeleteModal(false);
+        setMemberToDelete(null);
+        fetchMembers();
+      } else {
+        alert(data.message || '刪除會員失敗');
+      }
+    } catch (error) {
+      console.error('刪除會員失敗:', error);
+      alert('刪除會員失敗');
+    }
+  };
+
   // 快速調整點數
   const quickAdjustPoints = (amount: number) => {
     setPointsAmount(amount.toString());
@@ -305,12 +341,21 @@ const MemberManagement: React.FC = () => {
                       <td>{member.total_orders}</td>
                       <td className="member-spent">{formatPrice(member.total_spent)}</td>
                       <td>{formatDate(member.join_date)}</td>
-                      <td className="actions">
+                        <td className="actions">
                         <button 
                           onClick={() => handleViewDetails(member.id)}
                           className="btn-detail"
                         >
                           詳情
+                        </button>
+                        <button 
+                          onClick={() => {
+                            setMemberToDelete(member);
+                            setShowDeleteModal(true);
+                          }}
+                          className="btn-delete"
+                        >
+                          刪除
                         </button>
                       </td>
                     </tr>
@@ -517,6 +562,46 @@ const MemberManagement: React.FC = () => {
                 onClick={handleAdjustPoints}
               >
                 確認調整
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* 刪除確認彈窗 */}
+      {showDeleteModal && memberToDelete && (
+        <div className="modal-overlay" onClick={() => setShowDeleteModal(false)}>
+          <div className="modal-content small" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>確認刪除</h3>
+              <button 
+                className="close-btn" 
+                onClick={() => setShowDeleteModal(false)}
+              >
+                ✕
+              </button>
+            </div>
+
+            <div className="modal-body">
+              <p className="delete-warning">
+                確定要刪除會員「<strong>{memberToDelete.name}</strong>」嗎？
+              </p>
+              <p className="delete-note">
+                刪除後會員將無法登入，但訂單記錄會保留。
+              </p>
+            </div>
+
+            <div className="modal-footer">
+              <button 
+                className="btn-cancel" 
+                onClick={() => setShowDeleteModal(false)}
+              >
+                取消
+              </button>
+              <button 
+                className="btn-danger" 
+                onClick={handleDeleteMember}
+              >
+                確認刪除
               </button>
             </div>
           </div>
