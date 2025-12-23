@@ -380,3 +380,18 @@
     grid-template-columns: repeat(4, 1fr);
   }
 }
+
+/* 針對手機版的修正 (加在 SearchPage.css 最下面) */
+@media (max-width: 767px) {
+  /* 強制容器保持正方形，防止高度塌陷 */
+  .product-image-container {
+    aspect-ratio: 1 / 1; 
+    width: 100%;
+    /* 確保容器有高度，圖片的 height: 100% 才能生效 */
+  }
+
+  /* 如果需要，也可以微調手機版圖片的填滿模式 */
+  .product-image {
+    object-fit: contain; /* 或 cover，視您的需求而定 */
+  }
+}
