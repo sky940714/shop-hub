@@ -104,16 +104,16 @@ static async getAll() {
       [status, id]
     );
   }
-
-  /**
+/**
    * 依分類取得商品
    */
   static async getByCategory(categoryId) {
     const [rows] = await promisePool.execute(`
       SELECT p.*, c.name as category_name 
       FROM products p 
-      LEFT JOIN categories c ON p.category_id = c.id 
-      WHERE p.category_id = ? AND p.status = '上架'
+      JOIN product_category_relation pcr ON p.id = pcr.product_id
+      JOIN categories c ON pcr.category_id = c.id
+      WHERE pcr.category_id = ? AND p.status = '上架'
       ORDER BY p.id DESC
     `, [categoryId]);
     return rows;
