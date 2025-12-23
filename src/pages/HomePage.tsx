@@ -144,15 +144,28 @@ const HomePage: React.FC = () => {
 
   // 當購物車開啟時，鎖定背景頁面的捲軸
   useEffect(() => {
+    // 同時選取 html 和 body 標籤，確保所有瀏覽器都能鎖住
+    const html = document.documentElement;
+    const body = document.body;
+
     if (isCartOpen) {
-      document.body.style.overflow = 'hidden'; // 鎖住網頁捲軸
+      // 1. 強制鎖定
+      html.style.overflow = 'hidden';
+      body.style.overflow = 'hidden';
+      // 2. (選用) 為了防止滾動條消失導致畫面右移，可以加一點 padding
+      // body.style.paddingRight = '17px'; 
     } else {
-      document.body.style.overflow = 'unset';  // 釋放網頁捲軸
+      // 1. 解除鎖定 (使用空字串 '' 會移除 inline style，回復到 CSS 檔案的設定)
+      html.style.overflow = '';
+      body.style.overflow = '';
+      // body.style.paddingRight = '';
     }
 
-    // 組件卸載時確保捲軸恢復，避免卡死
+    // 組件卸載時確保捲軸恢復
     return () => {
-      document.body.style.overflow = 'unset';
+      html.style.overflow = '';
+      body.style.overflow = '';
+      // body.style.paddingRight = '';
     };
   }, [isCartOpen]);
 

@@ -1021,3 +1021,22 @@
   background: #f9fafb;
   color: #2563eb;
 }
+
+/* 客製化購物車內部的捲軸樣式 (Chrome, Safari, Edge) */
+.cart-items::-webkit-scrollbar {
+  width: 8px; /* 比預設瀏覽器捲軸細 */
+}
+
+.cart-items::-webkit-scrollbar-track {
+  background: #f1f1f1; /* 軌道顏色 */
+  border-radius: 4px;
+}
+
+.cart-items::-webkit-scrollbar-thumb {
+  background: #c1c1c1; /* 滑塊顏色 (淺灰色) */
+  border-radius: 4px;
+}
+
+.cart-items::-webkit-scrollbar-thumb:hover {
+  background: #a8a8a8; /* 滑鼠移上去時變深 */
+}
