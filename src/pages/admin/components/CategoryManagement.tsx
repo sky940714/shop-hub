@@ -39,7 +39,6 @@ interface Product {
   price: number;
   stock: number;
   status: string;
-  image_url?: string;
 }
 
 // 可拖拽的分類卡片組件
@@ -370,6 +369,18 @@ const handleDragEnd = async (event: DragEndEvent) => {
     setCategoryProducts([]);
   };
 
+  // 控制背景滾動
+  useEffect(() => {
+    if (showProductModal) {
+      document.body.style.overflow = 'hidden';
+    } else {
+      document.body.style.overflow = '';
+    }
+    return () => {
+      document.body.style.overflow = '';
+    };
+  }, [showProductModal]);
+
   // 載入中
   if (loading) {
     return (
@@ -493,7 +504,6 @@ const handleDragEnd = async (event: DragEndEvent) => {
               ) : (
                 <div className="product-list">
                   <div className="product-list-header">
-                    <span>商品圖片</span>
                     <span>商品名稱</span>
                     <span>價格</span>
                     <span>庫存</span>
@@ -501,13 +511,6 @@ const handleDragEnd = async (event: DragEndEvent) => {
                   </div>
                   {categoryProducts.map((product) => (
                     <div key={product.id} className="product-item">
-                      <div className="product-image">
-                        {product.image_url ? (
-                          <img src={product.image_url} alt={product.name} />
-                        ) : (
-                          <div className="no-image">無圖片</div>
-                        )}
-                      </div>
                       <div className="product-name">{product.name}</div>
                       <div className="product-price">NT$ {Number(product.price).toLocaleString()}</div>
                       <div className="product-stock">{product.stock}</div>
