@@ -1,6 +1,6 @@
 // src/pages/checkout/components/ShippingForm.tsx
 import React, { useState, useEffect } from 'react';
-import { Store, Truck, CreditCard, MapPin } from 'lucide-react';
+import { Store, Truck, CreditCard, MapPin, Banknote } from 'lucide-react'; // 新增 Banknote
 import './styles/ShippingForm.css';
 
 interface ShippingInfo {
@@ -97,7 +97,7 @@ const ShippingForm: React.FC<ShippingFormProps> = ({
   }, []);
 
   // ==========================================
-  // [新增] 監聽綠界地圖回傳 (這是之前漏掉的!)
+  // 監聽綠界地圖回傳
   // ==========================================
   useEffect(() => {
     const handleEcpayMessage = (event: MessageEvent) => {
@@ -333,28 +333,24 @@ const ShippingForm: React.FC<ShippingFormProps> = ({
               <label className="form-label">選擇超商 *</label>
               <div className="cvs-options">
                 <button
-                  // 這裡改成 UNIMARTC2C
                   className={`cvs-btn ${shippingSubType === 'UNIMARTC2C' ? 'selected' : ''}`}
                   onClick={() => setShippingSubType('UNIMARTC2C')}
                 >
                   7-ELEVEN
                 </button>
                 <button
-                  // 這裡改成 FAMIC2C
                   className={`cvs-btn ${shippingSubType === 'FAMIC2C' ? 'selected' : ''}`}
                   onClick={() => setShippingSubType('FAMIC2C')}
                 >
                   全家
                 </button>
                 <button
-                  // 這裡改成 HILIFEC2C
                   className={`cvs-btn ${shippingSubType === 'HILIFEC2C' ? 'selected' : ''}`}
                   onClick={() => setShippingSubType('HILIFEC2C')}
                 >
                   萊爾富
                 </button>
                 <button
-                  // 這裡改成 OKMARTC2C
                   className={`cvs-btn ${shippingSubType === 'OKMARTC2C' ? 'selected' : ''}`}
                   onClick={() => setShippingSubType('OKMARTC2C')}
                 >
@@ -449,8 +445,32 @@ const ShippingForm: React.FC<ShippingFormProps> = ({
               </div>
             )}
 
-            {/* 線上付款方式 - 超商取貨和宅配才顯示 */}
-            {shippingMethod !== 'pickup' && (
+            {/* ================================================= */}
+            {/* [新增] 宅配貨到付款 - 只有宅配才顯示             */}
+            {/* ================================================= */}
+            {shippingMethod === 'home' && (
+              <div
+                className={`payment-option ${paymentMethod === 'cod' ? 'selected' : ''}`}
+                onClick={() => setPaymentMethod('cod')}
+              >
+                <input
+                  type="radio"
+                  name="payment"
+                  checked={paymentMethod === 'cod'}
+                  readOnly
+                />
+                <Banknote size={24} />
+                <div className="option-info">
+                  <div className="option-title">宅配貨到付款</div>
+                  <div className="option-desc">商品送達時支付現金</div>
+                </div>
+              </div>
+            )}
+
+            {/* ================================================= */}
+            {/* 線上付款方式 - 只有 "非自取" 且 "非宅配" 才顯示     */}
+            {/* ================================================= */}
+            {shippingMethod !== 'pickup' && shippingMethod !== 'home' && (
               <>
                 <div
                   className={`payment-option ${paymentMethod === 'Credit' ? 'selected' : ''}`}
@@ -627,7 +647,7 @@ const ShippingForm: React.FC<ShippingFormProps> = ({
               <h3 className="confirm-title">付款方式</h3>
               <div className="confirm-content">
                 <p>
-                  {paymentMethod === 'cod' && '超商取貨付款'}
+                  {paymentMethod === 'cod' && (shippingMethod === 'home' ? '宅配貨到付款' : '超商取貨付款')}
                   {paymentMethod === 'store_pay' && '到店付款'}
                   {paymentMethod === 'Credit' && '信用卡'}
                   {paymentMethod === 'ATM' && 'ATM 虛擬帳號'}
