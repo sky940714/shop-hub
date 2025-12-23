@@ -1,3 +1,5 @@
+/* src/styles/HomePage.css */
+
 /* HomePage 專用樣式 */
 .home-page {
   min-height: 100vh;
@@ -433,19 +435,23 @@
   background-color: #1d4ed8;
 }
 
-/* Cart Sidebar */
+/* ========================================================
+   Cart Sidebar - 已優化 (解決滾動與高度問題)
+   ======================================================== */
 .cart-sidebar {
   position: fixed;
   right: 0;
   top: 0;
   height: 100%;
+  max-height: 100vh; /* 強制最大高度為視窗高度 */
   width: 24rem;
   max-width: 90vw;
   background-color: white;
   display: flex;
-  flex-direction: column;
+  flex-direction: column; /* 垂直排列：頭 - 身 - 尾 */
   animation: slideInRight 0.3s ease-out;
   z-index: 100;
+  box-shadow: -4px 0 15px rgba(0, 0, 0, 0.1);
 }
 
 .cart-header {
@@ -454,11 +460,14 @@
   justify-content: space-between;
   padding: 1.5rem;
   border-bottom: 1px solid #e5e7eb;
+  flex-shrink: 0; /* 防止空間不足時被壓縮 */
+  background-color: white;
 }
 
 .cart-header h2 {
   font-size: 1.25rem;
   font-weight: 600;
+  margin: 0;
 }
 
 .cart-header button {
@@ -466,12 +475,17 @@
   border: none;
   cursor: pointer;
   color: #374151;
+  display: flex;
+  align-items: center;
 }
 
+/* 商品列表區塊 - 唯一可滾動區域 */
 .cart-items {
-  flex: 1;
-  overflow-y: auto;
+  flex: 1; /* 自動填滿剩餘空間 */
+  overflow-y: auto; /* 內容超出時顯示卷軸 */
+  min-height: 0; /* 重要：防止 flex 子元素無視高度限制 */
   padding: 1.5rem;
+  overscroll-behavior: contain; /* 防止滾動到底部時觸發背景頁面滾動 */
 }
 
 .empty-cart {
@@ -556,6 +570,9 @@
 .cart-footer {
   border-top: 1px solid #e5e7eb;
   padding: 1.5rem;
+  background-color: white;
+  flex-shrink: 0; /* 防止空間不足時被壓縮 */
+  box-shadow: 0 -4px 6px -1px rgba(0, 0, 0, 0.05);
 }
 
 .cart-total {
@@ -680,24 +697,24 @@
 /* Mobile Layout (< 640px) */
 @media (max-width: 767px) {
 
-/* Right: Logo Title */
-.logo {
-  position: absolute;
-  right: 1rem;
-  left: 9rem;
-  top: 50%;
-  transform: translateY(-50%);
-  width: auto;
-  margin: 0;
-  z-index: 10;
-  white-space: nowrap;
-}
+  /* Right: Logo Title */
+  .logo {
+    position: absolute;
+    right: 1rem;
+    left: 9rem;
+    top: 50%;
+    transform: translateY(-50%);
+    width: auto;
+    margin: 0;
+    z-index: 10;
+    white-space: nowrap;
+  }
 
-.logo h1 {
-  font-size: 1.125rem;
-  line-height: 1;
-  margin: 0;
-}
+  .logo h1 {
+    font-size: 1.125rem;
+    line-height: 1;
+    margin: 0;
+  }
   
   /* Header Container Positioning */
   .header-content {
@@ -743,24 +760,24 @@
   /* Right: Actions (Cart, etc.) */
   .header-actions {
     display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  position: absolute;
-  right: 1rem;
-  top: 50%;
-  transform: translateY(-50%);
+    align-items: center;
+    gap: 0.5rem;
+    position: absolute;
+    right: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
   }
   
-/* Hide Desktop Elements */
-.nav-desktop, 
-.search-bar,
-.product-description, 
-.product-rating,
-.mobile-menu-button,
-.cart-button,
-.header-actions {
-  display: none;
-}
+  /* Hide Desktop Elements */
+  .nav-desktop, 
+  .search-bar,
+  .product-description, 
+  .product-rating,
+  .mobile-menu-button,
+  .cart-button,
+  .header-actions {
+    display: none;
+  }
 
   /* Mobile Adjustments */
   .hero { padding: 2rem 0; }
@@ -972,33 +989,33 @@
   padding-bottom: 5rem;
 }
 
-  .mobile-category-menu-header {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    padding-bottom: 1rem;
-    border-bottom: 1px solid #e5e7eb;
-    margin-bottom: 1rem;
-  }
+.mobile-category-menu-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid #e5e7eb;
+  margin-bottom: 1rem;
+}
 
-  .mobile-category-menu-header h3 {
-    margin: 0;
-    font-size: 1.125rem;
-    font-weight: 600;
-  }
+.mobile-category-menu-header h3 {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+}
 
-  .mobile-category-menu-item {
-    display: block;
-    width: 100%;
-    padding: 1rem;
-    text-align: left;
-    background: none;
-    border: none;
-    border-bottom: 1px solid #f3f4f6;
-    cursor: pointer;
-    font-size: 1rem;
-    color: #374151;
-  }
+.mobile-category-menu-item {
+  display: block;
+  width: 100%;
+  padding: 1rem;
+  text-align: left;
+  background: none;
+  border: none;
+  border-bottom: 1px solid #f3f4f6;
+  cursor: pointer;
+  font-size: 1rem;
+  color: #374151;
+}
 
 .mobile-category-menu-item:hover {
   background: #f9fafb;
