@@ -1,6 +1,8 @@
 // pages/admin/components/CategoryManagement.tsx
 import React, { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2, GripVertical, Eye, X, Package } from 'lucide-react';
+import { Plus, Edit2, Trash2, GripVertical, Eye} from 'lucide-react';
+import CategoryProductModal from './CategoryProductModal';
+
 import {
   DndContext,
   closestCenter,
@@ -369,18 +371,6 @@ const handleDragEnd = async (event: DragEndEvent) => {
     setCategoryProducts([]);
   };
 
-  // 控制背景滾動
-  useEffect(() => {
-    if (showProductModal) {
-      document.body.style.overflow = 'hidden';
-    } else {
-      document.body.style.overflow = '';
-    }
-    return () => {
-      document.body.style.overflow = '';
-    };
-  }, [showProductModal]);
-
   // 載入中
   if (loading) {
     return (
@@ -479,59 +469,14 @@ const handleDragEnd = async (event: DragEndEvent) => {
         )}
       </div>
 
-      {/* 商品列表 Modal */}
-      {showProductModal && (
-        <div className="modal-overlay" onClick={closeProductModal}>
-          <div className="modal-content product-modal" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h3 className="modal-title">
-                <Package className="modal-title-icon" />
-                {selectedCategory?.name} - 商品列表
-              </h3>
-              <button className="modal-close" onClick={closeProductModal}>
-                <X size={20} />
-              </button>
-            </div>
-
-            <div className="modal-body">
-              {productsLoading ? (
-                <div className="loading-state">載入中...</div>
-              ) : categoryProducts.length === 0 ? (
-                <div className="empty-state">
-                  <Package size={48} className="empty-icon" />
-                  <p>此分類尚無商品</p>
-                </div>
-              ) : (
-                <div className="product-list">
-                  <div className="product-list-header">
-                    <span>商品名稱</span>
-                    <span>價格</span>
-                    <span>庫存</span>
-                    <span>狀態</span>
-                  </div>
-                  {categoryProducts.map((product) => (
-                    <div key={product.id} className="product-item">
-                      <div className="product-name">{product.name}</div>
-                      <div className="product-price">NT$ {Number(product.price).toLocaleString()}</div>
-                      <div className="product-stock">{product.stock}</div>
-                      <div className={`product-status ${product.status === '上架' ? 'active' : 'inactive'}`}>
-                        {product.status}
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            <div className="modal-footer">
-              <span className="product-count">共 {categoryProducts.length} 件商品</span>
-              <button className="btn-secondary" onClick={closeProductModal}>
-                關閉
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+      {/* ⭐ 替換成新的組件 */}
+      <CategoryProductModal 
+        isOpen={showProductModal}
+        onClose={closeProductModal}
+        category={selectedCategory}
+        products={categoryProducts}
+        loading={productsLoading}
+      />
     </div>
   );
 };

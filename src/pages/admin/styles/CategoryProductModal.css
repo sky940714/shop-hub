@@ -1,0 +1,217 @@
+/* pages/admin/styles/CategoryProductModal.css */
+
+/* 遮罩層 */
+.product-modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background-color: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+  backdrop-filter: blur(2px);
+  animation: pmFadeIn 0.2s ease-out;
+}
+
+/* 彈窗主體 - 關鍵滾動修正 */
+.product-modal-content {
+  background: white;
+  border-radius: 12px;
+  width: 100%;
+  max-width: 900px;
+  max-height: 85vh; /* 限制最大高度 */
+  height: auto;     /* 高度自適應 */
+  display: flex;
+  flex-direction: column; /* 垂直排列 Header/Body/Footer */
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  overflow: hidden; /* 確保圓角完整 */
+  animation: pmSlideUp 0.3s ease-out;
+}
+
+/* 標題區 */
+.product-modal-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 24px;
+  border-bottom: 1px solid #e5e7eb;
+  background: #fff;
+  flex-shrink: 0; /* 防止被壓縮 */
+}
+
+.product-modal-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-size: 18px;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0;
+}
+
+.modal-title-icon {
+  color: #3b82f6;
+}
+
+.product-modal-close {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 8px;
+  background-color: #f3f4f6;
+  color: #6b7280;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.product-modal-close:hover {
+  background-color: #e5e7eb;
+  color: #1f2937;
+}
+
+/* 內容區 - 滾動核心 */
+.product-modal-body {
+  flex: 1;            /* 佔據剩餘空間 */
+  min-height: 0;      /* Flexbox 滾動修復 */
+  overflow-y: auto;   /* 垂直滾動 */
+  padding: 20px 24px;
+  overscroll-behavior: contain;
+}
+
+/* 自定義滾動條 */
+.product-modal-body::-webkit-scrollbar {
+  width: 8px;
+}
+.product-modal-body::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+.product-modal-body::-webkit-scrollbar-thumb {
+  background: #cbd5e1;
+  border-radius: 4px;
+}
+.product-modal-body::-webkit-scrollbar-thumb:hover {
+  background: #94a3b8;
+}
+
+/* 列表樣式 */
+.pm-list {
+  border: 1px solid #e5e7eb;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.pm-list-header {
+  display: grid;
+  grid-template-columns: 1fr 100px 80px 80px;
+  gap: 12px;
+  padding: 12px 16px;
+  background-color: #f3f4f6;
+  font-size: 13px;
+  font-weight: 600;
+  color: #374151;
+  position: sticky; /* 表頭固定 */
+  top: 0;
+}
+
+.pm-item {
+  display: grid;
+  grid-template-columns: 1fr 100px 80px 80px;
+  gap: 12px;
+  padding: 12px 16px;
+  border-top: 1px solid #e5e7eb;
+  align-items: center;
+}
+
+.pm-item:hover {
+  background-color: #f9fafb;
+}
+
+.pm-name {
+  font-size: 14px;
+  color: #1f2937;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pm-price {
+  font-size: 14px;
+  font-weight: 600;
+  color: #059669;
+}
+
+.pm-stock {
+  font-size: 14px;
+  color: #6b7280;
+  text-align: center;
+}
+
+/* 狀態標籤 */
+.pm-status {
+  font-size: 12px;
+  padding: 4px 8px;
+  border-radius: 4px;
+  text-align: center;
+}
+.pm-status.active { background-color: #d1fae5; color: #059669; }
+.pm-status.inactive { background-color: #fee2e2; color: #dc2626; }
+
+/* 空狀態與載入 */
+.pm-loading-state,
+.pm-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 60px 20px;
+  color: #6b7280;
+}
+.pm-empty-icon { color: #d1d5db; margin-bottom: 16px; }
+
+/* 底部區域 */
+.product-modal-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 24px;
+  border-top: 1px solid #e5e7eb;
+  background-color: #f9fafb;
+  flex-shrink: 0;
+}
+
+.pm-count { font-size: 14px; color: #6b7280; }
+
+.pm-btn-secondary {
+  padding: 10px 20px;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  background-color: white;
+  color: #374151;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.pm-btn-secondary:hover {
+  background-color: #f3f4f6;
+  border-color: #9ca3af;
+}
+
+/* 動畫 */
+@keyframes pmFadeIn { from { opacity: 0; } to { opacity: 1; } }
+@keyframes pmSlideUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+
+/* RWD */
+@media (max-width: 768px) {
+  .pm-list-header { display: none; }
+  .pm-item { grid-template-columns: 1fr; gap: 4px; }
+  .pm-name { white-space: normal; font-weight: 600; }
+  .pm-stock, .pm-status { display: none; }
+}
