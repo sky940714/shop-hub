@@ -30,14 +30,24 @@ router.post('/create', protect, async (req, res) => {
     } = req.body;
 
     // 後端重新計算運費（安全性）
-    function calculateShippingFee(method, subtotal) {
-      if (!method || method === 'pickup') return 0;
-      if (method === 'cvs') return subtotal >= 500 ? 0 : 60;
-      if (method === 'home') return subtotal >= 1000 ? 0 : 100;
-      return 0;
-    }
+    // 從資料庫讀取宅配運費設定
+let homeDeliveryFee = 100; // 預設值
+const [feeSettings] = await connection.query(
+  `SELECT setting_value FROM settings WHERE setting_key = 'home_delivery_fee'`
+);
+if (feeSettings.length > 0) {
+  homeDeliveryFee = parseInt(feeSettings[0].setting_value) || 100;
+}
 
-const shippingFee = calculateShippingFee(shippingMethod, subtotal);
+// 計算運費
+function calculateShippingFee(method, subtotal, homeFee) {
+  if (!method || method === 'pickup') return 0;
+  if (method === 'cvs') return subtotal >= 500 ? 0 : 60;
+  if (method === 'home') return subtotal >= 1000 ? 0 : homeFee;
+  return 0;
+}
+
+const shippingFee = calculateShippingFee(shippingMethod, subtotal, homeDeliveryFee);
 const total = subtotal + shippingFee;
 
     // 產生訂單編號 (格式: ORD20251209001)
