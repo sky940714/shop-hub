@@ -1,16 +1,19 @@
-// pages/admin/AdminLayout.tsx
+// src/pages/admin/AdminLayout.tsx
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ShoppingCart, Package, Users, BarChart3, LogOut , Settings } from 'lucide-react';
+// 新增 RefreshCcw 圖示
+import { ShoppingCart, Package, Users, BarChart3, LogOut, Settings, RefreshCcw } from 'lucide-react';
 import Dashboard from './components/Dashboard';
 import ProductManagement from './components/ProductManagement';
 import OrderManagement from './components/OrderManagement';
+import ReturnManagement from './components/ReturnManagement'; // [新增] 引入退貨管理元件
 import MemberManagement from './components/MemberManagement';
 import CategoryManagement from './components/CategoryManagement';
 import MainSettings from './components/MainSettings';  
 import './styles/AdminLayout.css';
 
-type TabType = 'dashboard' | 'products' | 'orders' | 'members' | 'categories'| 'settings';
+// [修改] 加入 'returns' 型別
+type TabType = 'dashboard' | 'products' | 'orders' | 'returns' | 'members' | 'categories' | 'settings';
 
 const AdminLayout: React.FC = () => {
   const navigate = useNavigate();
@@ -18,13 +21,10 @@ const AdminLayout: React.FC = () => {
 
   const handleLogout = () => {
     if (window.confirm('確定要登出嗎？')) {
-      // 清除所有登入狀態
       localStorage.removeItem('isAdmin');
       localStorage.removeItem('isLoggedIn');
       localStorage.removeItem('userEmail');
       localStorage.removeItem('userName');
-      
-      // 導向登入頁
       navigate('/login');
     }
   };
@@ -37,6 +37,8 @@ const AdminLayout: React.FC = () => {
         return <ProductManagement />;
       case 'orders':
         return <OrderManagement />;
+      case 'returns': // [新增] 退貨管理頁面
+        return <ReturnManagement />;
       case 'members':
         return <MemberManagement />;
       case 'categories':
@@ -94,6 +96,16 @@ const AdminLayout: React.FC = () => {
                 <ShoppingCart className="nav-icon" />
                 訂單管理
               </button>
+              
+              {/* [新增] 退貨管理按鈕 */}
+              <button
+                onClick={() => setActiveTab('returns')}
+                className={`nav-item ${activeTab === 'returns' ? 'active' : ''}`}
+              >
+                <RefreshCcw className="nav-icon" />
+                退貨管理
+              </button>
+
               <button
                 onClick={() => setActiveTab('members')}
                 className={`nav-item ${activeTab === 'members' ? 'active' : ''}`}
@@ -111,10 +123,10 @@ const AdminLayout: React.FC = () => {
               <button
                 onClick={() => setActiveTab('settings')}
                 className={`nav-item ${activeTab === 'settings' ? 'active' : ''}`}
-            >
+              >
                 <Settings className="nav-icon" />
                 主要設定
-                </button>
+              </button>
             </nav>
           </aside>
 
