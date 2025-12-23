@@ -406,6 +406,8 @@ const OrderManagement: React.FC = () => {
                             <option value="shipped">已出貨</option>
                             <option value="completed">已完成</option>
                             <option value="cancelled">已取消</option>
+                            <option value="return_requested">退貨處理中</option>
+                            <option value="refunded">已退款</option>
                           </select>
                         </td>
                         <td className="actions">

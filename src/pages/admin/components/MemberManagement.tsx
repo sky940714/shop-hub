@@ -252,7 +252,9 @@ const [memberToDelete, setMemberToDelete] = useState<Member | null>(null);
       'paid': '已付款',
       'shipped': '已出貨',
       'completed': '已完成',
-      'cancelled': '已取消'
+      'cancelled': '已取消',
+      'return_requested': '退貨處理中', 
+      'refunded': '已退款'              
     };
     return statusMap[status] || status;
   };
@@ -264,7 +266,9 @@ const [memberToDelete, setMemberToDelete] = useState<Member | null>(null);
       'paid': '#2196f3',
       'shipped': '#9c27b0',
       'completed': '#4caf50',
-      'cancelled': '#f44336'
+      'cancelled': '#f44336',
+      'return_requested': '#e91e63', 
+      'refunded': '#795548'          
     };
     return colorMap[status] || '#666';
   };
