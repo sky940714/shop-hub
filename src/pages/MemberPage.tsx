@@ -1,7 +1,7 @@
 // src/pages/MemberPage.tsx
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { User, Package, FileText, MessageSquare, LogOut, ChevronRight, RefreshCcw } from 'lucide-react'; // 新增 RefreshCcw Icon
+import { User, Package, FileText, MessageSquare, LogOut, ChevronRight, RefreshCcw, ChevronLeft } from 'lucide-react';
 import BottomNav from '../components/BottomNav';
 import './MemberPage.css';
 
@@ -257,10 +257,37 @@ const MemberPage: React.FC = () => {
   return (
     <div className="member-page">
       {/* Header */}
+     {/* Header (已修改：加入返回按鈕與回首頁功能) */}
       <header className="member-header">
-        <div className="member-header-content">
-          <h1 className="member-logo">安鑫購物</h1>
-          <p className="member-subtitle">會員專區</p>
+        <div className="member-header-content" style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+          
+          {/* 新增：返回上一頁按鈕 */}
+          <button 
+            onClick={() => navigate(-1)} 
+            style={{ 
+              background: 'transparent', 
+              border: 'none', 
+              color: 'white', 
+              cursor: 'pointer', 
+              padding: 0,
+              display: 'flex',
+              alignItems: 'center'
+            }}
+          >
+            <ChevronLeft size={32} />
+          </button>
+
+          <div>
+            {/* 修改：點擊 Logo 回首頁 */}
+            <h1 
+              className="member-logo" 
+              onClick={() => navigate('/')}
+              style={{ cursor: 'pointer', display: 'inline-block' }}
+            >
+              安鑫購物
+            </h1>
+            <p className="member-subtitle">會員專區</p>
+          </div>
         </div>
       </header>
 
