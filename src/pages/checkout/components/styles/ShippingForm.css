@@ -410,54 +410,6 @@
   box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
 }
 
-/* 響應式設計 */
-@media (max-width: 768px) {
-  .section-title {
-    font-size: 20px;
-  }
-
-  .cvs-options {
-    grid-template-columns: repeat(2, 1fr);
-  }
-
-  .shipping-option,
-  .payment-option {
-    padding: 16px;
-  }
-
-  .option-title {
-    font-size: 14px;
-  }
-
-  .option-desc {
-    font-size: 12px;
-  }
-
-  .option-price {
-    font-size: 16px;
-  }
-
-  .form-actions {
-    flex-direction: column;
-  }
-
-  .btn-prev,
-  .btn-next,
-  .btn-submit {
-    width: 100%;
-  }
-}
-
-@media (max-width: 480px) {
-  .cvs-options {
-    grid-template-columns: 1fr;
-  }
-
-  .cvs-btn {
-    padding: 14px;
-  }
-}
-
 /* 門市自取樣式 */
 .option-price.free {
   color: #059669;
@@ -529,4 +481,82 @@
   color: #6b7280;
   font-style: italic;
   padding: 1rem 0;
+}
+
+/* 響應式設計 */
+@media (max-width: 768px) {
+  .section-title {
+    font-size: 20px;
+  }
+
+  .cvs-options {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .shipping-option,
+  .payment-option {
+    padding: 16px;
+  }
+
+  .option-title {
+    font-size: 14px;
+  }
+
+  .option-desc {
+    font-size: 12px;
+  }
+
+  .option-price {
+    font-size: 16px;
+  }
+
+  .form-actions {
+    flex-direction: column;
+  }
+
+  .btn-prev,
+  .btn-next,
+  .btn-submit {
+    width: 100%;
+  }
+
+  .form-input {
+    padding: 10px 12px;
+    font-size: 16px;
+  }
+
+  .radio-label {
+    padding: 10px 12px;
+  }
+
+  .cvs-selection {
+    padding: 15px;
+  }
+
+  .invoice-section {
+    margin-top: 24px;
+    padding-top: 20px;
+  }
+
+  .subsection-title {
+    font-size: 16px;
+  }
+
+  .company-invoice {
+    padding: 15px;
+  }
+
+  .pickup-store-option {
+    padding: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .cvs-options {
+    grid-template-columns: 1fr;
+  }
+
+  .cvs-btn {
+    padding: 14px;
+  }
 }
