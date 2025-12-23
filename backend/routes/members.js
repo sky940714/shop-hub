@@ -245,30 +245,6 @@ router.post('/admin/:id/points', protect, async (req, res) => {
 });
 
 // ========================================
-// 前台會員 API
-// ========================================
-
-// 6. 取得登入會員資料
-// GET /api/members/profile
-router.get('/profile', protect, async (req, res) => {
-  try {
-    const [members] = await promisePool.query(`
-    SELECT id, name, email, phone, points, date as join_date, carrier_code
-    FROM members WHERE id = ?
-    `, [req.user.id]);
-
-    if (members.length === 0) {
-      return res.status(404).json({ success: false, message: '找不到會員' });
-    }
-
-    res.json({ success: true, member: members[0] });
-  } catch (error) {
-    console.error('取得會員資料失敗:', error);
-    res.status(500).json({ success: false, message: '取得會員資料失敗' });
-  }
-});
-
-// ========================================
 // 6. 刪除會員（軟刪除）（後台）
 // DELETE /api/members/admin/:id
 // ========================================
@@ -306,6 +282,30 @@ router.delete('/admin/:id', protect, async (req, res) => {
       success: false,
       message: '刪除會員失敗'
     });
+  }
+});
+
+// ========================================
+// 前台會員 API
+// ========================================
+
+// 6. 取得登入會員資料
+// GET /api/members/profile
+router.get('/profile', protect, async (req, res) => {
+  try {
+    const [members] = await promisePool.query(`
+    SELECT id, name, email, phone, points, date as join_date, carrier_code
+    FROM members WHERE id = ?
+    `, [req.user.id]);
+
+    if (members.length === 0) {
+      return res.status(404).json({ success: false, message: '找不到會員' });
+    }
+
+    res.json({ success: true, member: members[0] });
+  } catch (error) {
+    console.error('取得會員資料失敗:', error);
+    res.status(500).json({ success: false, message: '取得會員資料失敗' });
   }
 });
 
