@@ -40,11 +40,10 @@ interface HeroBanner {
 const HomePage: React.FC = () => {
   const navigate = useNavigate();
   // 狀態管理
-  const { cartCount, cartItems, addToCart, removeFromCart, updateQuantity } = useCart();
+  const { cartCount, addToCart } = useCart();
   const [wishlist, setWishlist] = useState<number[]>([]);
   const [currentCategory, setCurrentCategory] = useState<number | 'all'>('all');  // ← 改這裡
   const [searchTerm, setSearchTerm] = useState<string>('');
-  const [isCartOpen, setIsCartOpen] = useState<boolean>(false);
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
   const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);  // ← 新增這行
@@ -142,33 +141,6 @@ const HomePage: React.FC = () => {
     return () => clearInterval(interval);
   }, [banners.length]);
 
-  // 當購物車開啟時，鎖定背景頁面的捲軸
-  useEffect(() => {
-    // 同時選取 html 和 body 標籤，確保所有瀏覽器都能鎖住
-    const html = document.documentElement;
-    const body = document.body;
-
-        if (isCartOpen) {
-      html.style.overflow = 'hidden';
-      body.style.overflow = 'hidden';
-      body.style.position = 'fixed';
-      body.style.width = '100%';
-    } else {
-      html.style.overflow = '';
-      body.style.overflow = '';
-      body.style.position = '';
-      body.style.width = '';
-    }
-
-    // 組件卸載時確保捲軸恢復
-    return () => {
-      html.style.overflow = '';
-      body.style.overflow = '';
-      body.style.position = '';
-      body.style.width = '';
-    };
-  }, [isCartOpen]);
-
   // ← 刪除整個 getCategoryId 函數
 
   // ← 刪除整個 categories 陣列
@@ -225,7 +197,6 @@ const HomePage: React.FC = () => {
 };
 
   const totalItems = cartCount;
-  const totalPrice = cartItems.reduce((sum, item) => sum + item.price * item.quantity, 0);
 
   return (
     <div className="home-page">
@@ -303,10 +274,10 @@ const HomePage: React.FC = () => {
             </div>
 
             <div className="header-actions">
-              <button onClick={() => setIsCartOpen(true)} className="cart-button">
-                <ShoppingCart size={24} />
-                {totalItems > 0 && <span className="cart-badge">{totalItems}</span>}
-              </button>
+            <button onClick={() => navigate('/cart')} className="cart-button">
+              <ShoppingCart size={24} />
+              {totalItems > 0 && <span className="cart-badge">{totalItems}</span>}
+            </button>
 
               <button onClick={() => setIsMobileMenuOpen(true)} className="mobile-menu-button">
                 <Menu size={24} />
@@ -486,74 +457,6 @@ const HomePage: React.FC = () => {
           </div>
         )}
       </section>
-
-      {/* Shopping Cart Sidebar */}
-      {isCartOpen && (
-        <div className="overlay" onClick={() => setIsCartOpen(false)}>
-          <div className="cart-sidebar" onClick={(e) => e.stopPropagation()}>
-            <div className="cart-header">
-              <h2>購物車 ({totalItems})</h2>
-              <button onClick={() => setIsCartOpen(false)}>
-                <X size={24} />
-              </button>
-            </div>
-
-            <div className="cart-items">
-              {cartItems.length === 0 ? (
-                <p className="empty-cart">購物車是空的</p>
-              ) : (
-                <div className="cart-items-list">
-                  {cartItems.map(item => (
-                    <div key={item.cart_item_id} className="cart-item">
-                      <img src={item.image_url} alt={item.name} className="cart-item-image" />
-                      <div className="cart-item-info">
-                        <h4 className="cart-item-name">{item.name}</h4>
-                        <p className="cart-item-price">NT$ {item.price.toLocaleString()}</p>
-                        <div className="quantity-controls">
-                          <button
-                            onClick={() => updateQuantity(item.cart_item_id, item.quantity - 1)}
-                            className="quantity-button"
-                          >
-                            -
-                          </button>
-                          <span className="quantity">{item.quantity}</span>
-                          <button
-                            onClick={() => updateQuantity(item.cart_item_id, item.quantity + 1)}
-                            className="quantity-button"
-                          >
-                            +
-                          </button>
-                        </div>
-                      </div>
-                      <button onClick={() => removeFromCart(item.cart_item_id)} className="remove-button">
-                        <X size={20} />
-                      </button>
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-
-            {cartItems.length > 0 && (
-              <div className="cart-footer">
-                <div className="cart-total">
-                  <span className="total-label">總計:</span>
-                  <span className="total-price">NT$ {totalPrice.toLocaleString()}</span>
-                </div>
-                <button 
-                  className="checkout-button"
-                  onClick={() => {
-                    setIsCartOpen(false);
-                    navigate('/checkout');
-                  }}
-                >
-                  結帳
-                </button>
-              </div>
-            )}
-          </div>
-        </div>
-      )}
 
       {/* LINE 客服彈窗 */}
       {isLineModalOpen && (
