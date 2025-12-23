@@ -148,24 +148,24 @@ const HomePage: React.FC = () => {
     const html = document.documentElement;
     const body = document.body;
 
-    if (isCartOpen) {
-      // 1. 強制鎖定
+        if (isCartOpen) {
       html.style.overflow = 'hidden';
       body.style.overflow = 'hidden';
-      // 2. (選用) 為了防止滾動條消失導致畫面右移，可以加一點 padding
-      // body.style.paddingRight = '17px'; 
+      body.style.position = 'fixed';
+      body.style.width = '100%';
     } else {
-      // 1. 解除鎖定 (使用空字串 '' 會移除 inline style，回復到 CSS 檔案的設定)
       html.style.overflow = '';
       body.style.overflow = '';
-      // body.style.paddingRight = '';
+      body.style.position = '';
+      body.style.width = '';
     }
 
     // 組件卸載時確保捲軸恢復
     return () => {
       html.style.overflow = '';
       body.style.overflow = '';
-      // body.style.paddingRight = '';
+      body.style.position = '';
+      body.style.width = '';
     };
   }, [isCartOpen]);
 
