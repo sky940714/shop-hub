@@ -142,6 +142,19 @@ const HomePage: React.FC = () => {
     return () => clearInterval(interval);
   }, [banners.length]);
 
+  // 當購物車開啟時，鎖定背景頁面的捲軸
+  useEffect(() => {
+    if (isCartOpen) {
+      document.body.style.overflow = 'hidden'; // 鎖住網頁捲軸
+    } else {
+      document.body.style.overflow = 'unset';  // 釋放網頁捲軸
+    }
+
+    // 組件卸載時確保捲軸恢復，避免卡死
+    return () => {
+      document.body.style.overflow = 'unset';
+    };
+  }, [isCartOpen]);
 
   // ← 刪除整個 getCategoryId 函數
 
