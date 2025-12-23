@@ -1,6 +1,6 @@
 // pages/admin/components/CategoryManagement.tsx
 import React, { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2, GripVertical } from 'lucide-react';
+import { Plus, Edit2, Trash2, GripVertical, Eye, X, Package } from 'lucide-react';
 import {
   DndContext,
   closestCenter,
@@ -33,12 +33,22 @@ interface Category {
   created_at: string;
 }
 
+interface Product {
+  id: number;
+  name: string;
+  price: number;
+  stock: number;
+  status: string;
+  image_url?: string;
+}
+
 // 可拖拽的分類卡片組件
 const SortableCategory: React.FC<{
   category: Category;
   onEdit: (category: Category) => void;
   onDelete: (category: Category) => void;
-}> = ({ category, onEdit, onDelete }) => {
+  onView: (category: Category) => void;
+}> = ({ category, onEdit, onDelete, onView }) => {
   const {
     attributes,
     listeners,
@@ -70,6 +80,13 @@ const SortableCategory: React.FC<{
         </div>
         <div className="category-actions">
           <button
+            className="btn-icon-view"
+            onClick={() => onView(category)}
+            title="查看商品"
+          >
+            <Eye className="icon" />
+          </button>
+          <button
             className="btn-icon-edit"
             onClick={() => onEdit(category)}
             title="編輯"
@@ -95,6 +112,10 @@ const CategoryManagement: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [activeId, setActiveId] = useState<number | null>(null);
+  const [showProductModal, setShowProductModal] = useState(false);
+  const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
+  const [categoryProducts, setCategoryProducts] = useState<Product[]>([]);
+  const [productsLoading, setProductsLoading] = useState(false);
 
   // 設定拖拽感應器
 const sensors = useSensors(
@@ -319,6 +340,36 @@ const handleDragEnd = async (event: DragEndEvent) => {
     }
   };
 
+  // 查看分類商品
+  const handleViewCategory = async (category: Category) => {
+    setSelectedCategory(category);
+    setShowProductModal(true);
+    setProductsLoading(true);
+
+    try {
+      const response = await fetch(`/api/products/category/${category.id}`);
+      const data = await response.json();
+
+      if (data.success) {
+        setCategoryProducts(data.products || []);
+      } else {
+        setCategoryProducts([]);
+      }
+    } catch (error) {
+      console.error('取得分類商品失敗:', error);
+      setCategoryProducts([]);
+    } finally {
+      setProductsLoading(false);
+    }
+  };
+
+  // 關閉商品 Modal
+  const closeProductModal = () => {
+    setShowProductModal(false);
+    setSelectedCategory(null);
+    setCategoryProducts([]);
+  };
+
   // 載入中
   if (loading) {
     return (
@@ -390,6 +441,7 @@ const handleDragEnd = async (event: DragEndEvent) => {
         category={category}
         onEdit={handleEditCategory}
         onDelete={handleDeleteCategory}
+        onView={handleViewCategory} 
       />
     ))}
   </SortableContext>
@@ -415,6 +467,68 @@ const handleDragEnd = async (event: DragEndEvent) => {
 </DndContext>
         )}
       </div>
+
+      {/* 商品列表 Modal */}
+      {showProductModal && (
+        <div className="modal-overlay" onClick={closeProductModal}>
+          <div className="modal-content product-modal" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3 className="modal-title">
+                <Package className="modal-title-icon" />
+                {selectedCategory?.name} - 商品列表
+              </h3>
+              <button className="modal-close" onClick={closeProductModal}>
+                <X size={20} />
+              </button>
+            </div>
+
+            <div className="modal-body">
+              {productsLoading ? (
+                <div className="loading-state">載入中...</div>
+              ) : categoryProducts.length === 0 ? (
+                <div className="empty-state">
+                  <Package size={48} className="empty-icon" />
+                  <p>此分類尚無商品</p>
+                </div>
+              ) : (
+                <div className="product-list">
+                  <div className="product-list-header">
+                    <span>商品圖片</span>
+                    <span>商品名稱</span>
+                    <span>價格</span>
+                    <span>庫存</span>
+                    <span>狀態</span>
+                  </div>
+                  {categoryProducts.map((product) => (
+                    <div key={product.id} className="product-item">
+                      <div className="product-image">
+                        {product.image_url ? (
+                          <img src={product.image_url} alt={product.name} />
+                        ) : (
+                          <div className="no-image">無圖片</div>
+                        )}
+                      </div>
+                      <div className="product-name">{product.name}</div>
+                      <div className="product-price">NT$ {Number(product.price).toLocaleString()}</div>
+                      <div className="product-stock">{product.stock}</div>
+                      <div className={`product-status ${product.status === '上架' ? 'active' : 'inactive'}`}>
+                        {product.status}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+
+            <div className="modal-footer">
+              <span className="product-count">共 {categoryProducts.length} 件商品</span>
+              <button className="btn-secondary" onClick={closeProductModal}>
+                關閉
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };
