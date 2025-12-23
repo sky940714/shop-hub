@@ -442,6 +442,7 @@
   position: fixed;
   right: 0;
   top: 0;
+  bottom: 0; /* 重要：強制填滿高度 */
   height: 100%;
   max-height: 100vh; /* 強制最大高度為視窗高度 */
   width: 24rem;
@@ -787,6 +788,9 @@
   .add-to-cart-button { padding: 0.4rem; font-size: 0.75rem; }
   .view-more-container { margin-bottom: 1rem; }
   .footer { padding-bottom: 5rem; }
+  
+  /* 注意：這裡不要放入滾動條樣式，否則只有手機會生效 
+  */
 }
 
 /* Tablet & Desktop Breakpoints */
