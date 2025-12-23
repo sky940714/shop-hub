@@ -11,7 +11,7 @@ interface BackendProduct {
   price: number;
   description?: string;
   stock: number;
-  category_name: string | null;
+  category_names: string | null;
   main_image: string | null;
   created_at?: string;
 }
@@ -70,13 +70,12 @@ const SearchPage: React.FC = () => {
             id: p.id,
             name: p.name,
             price: p.price,
-            originalPrice: undefined, // 後端目前無此欄位
-            // 處理圖片路徑：如果後端沒圖，顯示預設圖；如果有圖但不是完整網址，補上開頭
+            originalPrice: undefined, 
             image: p.main_image 
               ? (p.main_image.startsWith('http') ? p.main_image : `/uploads/${p.main_image}`)
               : 'https://placehold.co/300x300?text=No+Image', 
-            category: p.category_name || '未分類',
-            rating: 5.0, // 暫時給予預設評分
+            category: p.category_names || '未分類',
+            rating: 5.0, 
           }));
           setAllProducts(mappedProducts);
         }
@@ -107,17 +106,21 @@ const SearchPage: React.FC = () => {
 
   // 3. 即時過濾搜尋結果 (由前端計算，速度極快)
   const searchResults = useMemo(() => {
-    // 如果有分類篩選，優先顯示該分類
+    // 如果有分類篩選
     if (categoryFilter) {
-      return allProducts.filter(product => 
-        product.category === categoryFilter
-      );
+      return allProducts.filter(product => {
+        // 【修正重點】將 "A,B,C" 切割成陣列，檢查是否包含目前的篩選值
+        // 這樣商品不管有幾個分類，只要包含當前選的，就會顯示
+        if (!product.category) return false;
+        const categories = product.category.split(','); 
+        return categories.includes(categoryFilter);
+      });
     }
     
     if (!searchTerm.trim()) return [];
     
     const lowerTerm = searchTerm.toLowerCase();
-    // 搜尋 名稱 或 分類
+    // 搜尋邏輯保持不變 (文字搜尋包含即可)
     return allProducts.filter(product => 
       product.name.toLowerCase().includes(lowerTerm) || 
       product.category.toLowerCase().includes(lowerTerm)

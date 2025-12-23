@@ -54,24 +54,27 @@ static async getAll() {
   
   return product;
 }
-
-  /**
-   * 取得上架中的商品
+/**
+   * 取得上架中的商品 (修正版：支援多分類顯示)
    */
   static async getPublished() {
-  const [rows] = await promisePool.execute(`
-    SELECT 
-      p.*,
-      c.name as category_name,
-      pi.image_url as main_image
-    FROM products p 
-    LEFT JOIN categories c ON p.category_id = c.id 
-    LEFT JOIN product_images pi ON p.id = pi.product_id AND pi.is_main = 1
-    WHERE p.status = '上架'
-    ORDER BY p.id DESC
-  `);
-  return rows;
-}
+    const [rows] = await promisePool.execute(`
+      SELECT 
+        p.*,
+        -- 關鍵修改 1：把所有關聯的分類名稱串起來 (例如: "居家生活,所有商品")
+        GROUP_CONCAT(DISTINCT c.name) as category_names,
+        pi.image_url as main_image
+      FROM products p 
+      -- 關鍵修改 2：加入中間表關聯，確保抓到所有設定的分類
+      JOIN product_category_relation pcr ON p.id = pcr.product_id
+      JOIN categories c ON pcr.category_id = c.id
+      LEFT JOIN product_images pi ON p.id = pi.product_id AND pi.is_main = 1
+      WHERE p.status = '上架'
+      GROUP BY p.id  -- 因為一對多，必須分組
+      ORDER BY p.id DESC
+    `);
+    return rows;
+  }
 
   /**
    * 更新商品
