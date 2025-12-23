@@ -1,6 +1,6 @@
 const express = require('express');
 const router = express.Router();
-const pool = require('../config/database');
+const { promisePool: pool } = require('../config/database');
 const { protect } = require('../middleware/auth');
 
 // 取得運費設定（公開）
