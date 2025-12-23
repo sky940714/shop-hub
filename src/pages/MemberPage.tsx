@@ -1,6 +1,7 @@
+// src/pages/MemberPage.tsx
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { User, Package, FileText, MessageSquare, LogOut, ChevronRight } from 'lucide-react';
+import { User, Package, FileText, MessageSquare, LogOut, ChevronRight, RefreshCcw } from 'lucide-react'; // 新增 RefreshCcw Icon
 import BottomNav from '../components/BottomNav';
 import './MemberPage.css';
 
@@ -13,7 +14,7 @@ interface OrderItem {
 interface Order {
   id: number;
   order_no: string;
-  status: 'pending' | 'paid' | 'shipped' | 'completed' | 'cancelled';
+  status: 'pending' | 'paid' | 'shipped' | 'completed' | 'cancelled' | 'return_requested'; // 新增 return_requested
   items: OrderItem[];
   total: number;
   created_at: string;
@@ -42,6 +43,17 @@ const MemberPage: React.FC = () => {
   const [showBasicInfoModal, setShowBasicInfoModal] = useState(false);
   const [showCarrierModal, setShowCarrierModal] = useState(false);
   const [showServiceModal, setShowServiceModal] = useState(false);
+  
+  // ==========================================
+  // [新增] 退貨 Modal 與 表單狀態
+  // ==========================================
+  const [showReturnModal, setShowReturnModal] = useState(false);
+  const [selectedOrderNo, setSelectedOrderNo] = useState<string>('');
+  const [returnForm, setReturnForm] = useState({
+    reason: '',
+    bankCode: '',
+    bankAccount: ''
+  });
 
   // 表單狀態
   const [editName, setEditName] = useState('');
@@ -94,7 +106,7 @@ const MemberPage: React.FC = () => {
     }
   };
 
-  // 訂單統計（方案 B：4 種）
+  // 訂單統計
   const orderCounts = {
     unpaid: orders.filter(o => o.status === 'pending').length,
     pending: orders.filter(o => o.status === 'paid').length,
@@ -102,16 +114,65 @@ const MemberPage: React.FC = () => {
     completed: orders.filter(o => o.status === 'completed').length
   };
 
-  // 狀態轉換中文
+  // 狀態轉換中文 (新增退貨狀態)
   const getStatusText = (status: string) => {
     const map: Record<string, string> = {
       pending: '待付款',
       paid: '待出貨',
       shipped: '已出貨',
       completed: '已完成',
-      cancelled: '已取消'
+      cancelled: '已取消',
+      return_requested: '退貨處理中' // 新增顯示
     };
     return map[status] || status;
+  };
+
+  // ==========================================
+  // [新增] 開啟退貨視窗
+  // ==========================================
+  const handleOpenReturn = (orderNo: string) => {
+    setSelectedOrderNo(orderNo);
+    setReturnForm({ reason: '', bankCode: '', bankAccount: '' });
+    setShowOrderModal(false); // 關閉訂單列表
+    setShowReturnModal(true); // 開啟退貨填寫
+  };
+
+  // ==========================================
+  // [新增] 提交退貨申請
+  // ==========================================
+  const handleSubmitReturn = async () => {
+    if (!returnForm.reason || !returnForm.bankCode || !returnForm.bankAccount) {
+      alert('請填寫完整退貨資訊 (原因、銀行代碼、帳號)');
+      return;
+    }
+
+    try {
+      const token = localStorage.getItem('token');
+      const res = await fetch(`${API_BASE}/returns/apply`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          orderNo: selectedOrderNo,
+          ...returnForm
+        })
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        alert('退貨申請已提交');
+        setShowReturnModal(false);
+        fetchOrders(); // 重新整理訂單狀態
+        setShowOrderModal(true); // 回到訂單列表
+      } else {
+        alert(data.message || '申請失敗');
+      }
+    } catch (error) {
+      console.error('退貨申請錯誤:', error);
+      alert('系統錯誤，請稍後再試');
+    }
   };
 
   // 更新基本資料
@@ -307,10 +368,95 @@ const MemberPage: React.FC = () => {
                         {getStatusText(order.status)}
                       </span>
                       <p className="order-total">NT$ {order.total.toLocaleString()}</p>
+                      
+                      {/* [新增] 只有 "已完成" 的訂單才顯示申請退貨按鈕 */}
+                      {order.status === 'completed' && (
+                        <button 
+                          className="return-btn"
+                          style={{
+                            marginTop: '8px',
+                            padding: '4px 8px',
+                            fontSize: '12px',
+                            color: '#e53e3e',
+                            border: '1px solid #e53e3e',
+                            borderRadius: '4px',
+                            background: 'white',
+                            cursor: 'pointer'
+                          }}
+                          onClick={() => handleOpenReturn(order.order_no)}
+                        >
+                          申請退貨
+                        </button>
+                      )}
                     </div>
                   </div>
                 ))
               )}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* [新增] Return Modal */}
+      {showReturnModal && (
+        <div className="modal-overlay" onClick={() => {
+          setShowReturnModal(false);
+          setShowOrderModal(true); // 點擊背景關閉時回到訂單列表
+        }}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>申請退貨 ({selectedOrderNo})</h2>
+              <button onClick={() => {
+                setShowReturnModal(false);
+                setShowOrderModal(true);
+              }} className="modal-close">×</button>
+            </div>
+            <div className="modal-body">
+              <p style={{fontSize: '14px', color: '#666', marginBottom: '15px'}}>
+                請填寫退貨原因及退款帳戶資訊。審核通過後，我們會通知您將商品寄回。
+              </p>
+              
+              <div className="form-group">
+                <label>退貨原因 *</label>
+                <textarea 
+                  className="form-input" 
+                  placeholder="請說明商品問題..."
+                  rows={3}
+                  value={returnForm.reason}
+                  onChange={(e) => setReturnForm({...returnForm, reason: e.target.value})}
+                />
+              </div>
+
+              <div className="form-group">
+                <label>退款銀行代碼 *</label>
+                <input 
+                  type="text"
+                  className="form-input" 
+                  placeholder="例如: 822 (中國信託)"
+                  value={returnForm.bankCode}
+                  onChange={(e) => setReturnForm({...returnForm, bankCode: e.target.value})}
+                  maxLength={3}
+                />
+              </div>
+
+              <div className="form-group">
+                <label>退款銀行帳號 *</label>
+                <input 
+                  type="text"
+                  className="form-input" 
+                  placeholder="請輸入帳號"
+                  value={returnForm.bankAccount}
+                  onChange={(e) => setReturnForm({...returnForm, bankAccount: e.target.value})}
+                />
+              </div>
+
+              <button 
+                className="form-submit" 
+                onClick={handleSubmitReturn}
+                style={{ backgroundColor: '#e53e3e' }}
+              >
+                確認送出退貨申請
+              </button>
             </div>
           </div>
         </div>

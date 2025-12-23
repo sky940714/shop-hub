@@ -17,6 +17,7 @@ const ecpayRoutes = require('./routes/ecpayRoutes');
 const pickupStoresRoutes = require('./routes/pickup-stores');
 const bannerRoutes = require('./routes/bannerRoutes');
 const settingsRoutes = require('./routes/settingsRoutes');
+const returnRoutes = require('./routes/returns'); // ← 新增這行
 
 const app = express();
 const PORT = process.env.PORT || 5001;
@@ -72,6 +73,7 @@ app.use('/api/ecpay', ecpayRoutes);
 app.use('/api/pickup-stores', pickupStoresRoutes);
 app.use('/api/banners', bannerRoutes);
 app.use('/api/settings', settingsRoutes);
+app.use('/api/returns', returnRoutes); // ← 新增這行
 
 // ==========================================
 // 404 處理（必須放在所有路由之後）
