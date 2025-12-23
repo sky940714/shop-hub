@@ -4,7 +4,7 @@ const { promisePool } = require('../config/database');
 
 class Product {
   /**
-   * 建立新商品
+   * 建立新商品e04
    */
   static async create({ name, description, price, stock, category_id, status = '草稿' }) {
     const [result] = await promisePool.execute(
@@ -16,7 +16,7 @@ class Product {
   }
 
   /**
-   * 取得所有商品
+   * 取得所有商品eo4
    */
   // 修改後
 static async getAll() {
