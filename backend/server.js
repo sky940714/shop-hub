@@ -1,6 +1,7 @@
 // backend/server.js
 const express = require('express');
 const cors = require('cors');
+const path = require('path');
 require('dotenv').config();
 
 const { testConnection } = require('./config/database');
@@ -35,8 +36,8 @@ app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
 
-// 設定靜態檔案路徑
-app.use('/uploads', express.static('public/uploads'));
+// 設定靜態檔案路徑 (使用絕對路徑，避免找不到檔案)
+app.use('/uploads', express.static(path.join(__dirname, 'public/uploads')));
 
 // ==========================================
 // 基本路由
