@@ -122,24 +122,48 @@ const ShippingForm: React.FC<ShippingFormProps> = ({
   }, [setShippingInfo]);
 
   // 選擇超商門市 (開啟綠界地圖)
+  // src/pages/checkout/components/ShippingForm.tsx
+
   const handleSelectStore = async () => {
     if (!shippingSubType) {
       alert('請先選擇超商類型 (7-11/全家/萊爾富/OK)');
       return;
     }
 
+    // ✅ 修改 1：點擊當下立刻開啟空白視窗 (避開攔截)
+    // 設定視窗大小與位置
+    const width = 800;
+    const height = 600;
+    const left = (window.screen.width - width) / 2;
+    const top = (window.screen.height - height) / 2;
+    
+    const mapWindow = window.open(
+      '', 
+      'ECPayMapPopup', // 注意：名稱必須與下方 form.target 一致
+      `width=${width},height=${height},left=${left},top=${top},scrollbars=yes,resizable=yes`
+    );
+
+    // 防呆：如果還是被擋住
+    if (!mapWindow) {
+      alert('瀏覽器阻擋了彈跳視窗，請允許本網站顯示視窗後再試一次。');
+      return;
+    }
+
+    // 可以在新視窗顯示載入中
+    mapWindow.document.write('<h3 style="text-align:center; margin-top: 100px;">正在連線至物流地圖...</h3>');
+
     try {
-      // 使用相對路徑呼叫後端 (Nginx 會自動處理)
+      // ✅ 修改 2：視窗開啟後，才去後端抓資料
       const response = await fetch(`/api/ecpay/map?logisticsSubType=${shippingSubType}`);
       
       if (!response.ok) throw new Error('Network response was not ok');
       const params = await response.json();
 
-      // 建立隱藏表單並送出
+      // 建立表單
       const form = document.createElement('form');
       form.method = 'POST';
       form.action = params.actionUrl;
-      form.target = 'ECPayMapPopup';
+      form.target = 'ECPayMapPopup'; // ✅ 修改 3：表單目標指向剛剛開啟的視窗
 
       Object.keys(params).forEach(key => {
         if (key !== 'actionUrl') {
@@ -152,24 +176,16 @@ const ShippingForm: React.FC<ShippingFormProps> = ({
       });
 
       document.body.appendChild(form);
-
-      const width = 800;
-      const height = 600;
-      const left = (window.screen.width - width) / 2;
-      const top = (window.screen.height - height) / 2;
       
-      window.open(
-        '', 
-        'ECPayMapPopup', 
-        `width=${width},height=${height},left=${left},top=${top},scrollbars=yes,resizable=yes`
-      );
-      
+      // ✅ 修改 4：送出表單 (地圖會顯示在剛剛那個視窗裡)
       form.submit();
       document.body.removeChild(form);
 
     } catch (error) {
       console.error('開啟門市地圖失敗:', error);
       alert('開啟門市地圖失敗，請稍後再試');
+      // 如果失敗了，把剛剛開的空白視窗關掉
+      mapWindow.close();
     }
   };
 
