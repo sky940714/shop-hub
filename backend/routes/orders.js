@@ -400,7 +400,7 @@ router.put('/admin/:orderNo/status', protect, async (req, res) => {
       UPDATE orders SET status = ? WHERE order_no = ?
     `, [status, orderNo]);
 
-    // ✅ 新增：當狀態改為 completed 且之前不是 completed 時，自動加點數
+    // ✅ 當狀態改為 completed 且之前不是 completed 時，自動加點數
     if (status === 'completed' && oldStatus !== 'completed') {
       // 計算點數：每100元1點（只算商品金額，不含運費）
       const points = Math.floor(order.subtotal / 100);
@@ -416,6 +416,42 @@ router.put('/admin/:orderNo/status', protect, async (req, res) => {
           INSERT INTO point_transactions (member_id, order_no, points, type, description)
           VALUES (?, ?, ?, 'earn', ?)
         `, [order.user_id, orderNo, points, `訂單完成獲得 ${points} 點`]);
+      }
+    }
+
+    // ✅ 當訂單取消時，扣回已發放的點數
+    if (status === 'cancelled' && oldStatus !== 'cancelled') {
+      // 查詢該訂單曾發放的點數總和
+      const [earnedPoints] = await connection.query(`
+        SELECT COALESCE(SUM(points), 0) as total_earned 
+        FROM point_transactions 
+        WHERE order_no = ? AND type = 'earn'
+      `, [orderNo]);
+      
+      const pointsToDeduct = earnedPoints[0].total_earned || 0;
+      
+      if (pointsToDeduct > 0) {
+        // 查詢會員當前點數
+        const [memberInfo] = await connection.query(`
+          SELECT points FROM members WHERE id = ?
+        `, [order.user_id]);
+        
+        const currentPoints = memberInfo[0]?.points || 0;
+        // 實際扣除的點數（不能讓餘額變成負數）
+        const actualDeduct = Math.min(pointsToDeduct, currentPoints);
+        
+        if (actualDeduct > 0) {
+          // 扣回會員點數
+          await connection.query(`
+            UPDATE members SET points = points - ? WHERE id = ?
+          `, [actualDeduct, order.user_id]);
+          
+          // 記錄點數扣回交易
+          await connection.query(`
+            INSERT INTO point_transactions (member_id, order_no, points, type, description)
+            VALUES (?, ?, ?, 'deduct', ?)
+          `, [order.user_id, orderNo, -actualDeduct, `訂單取消扣回 ${actualDeduct} 點`]);
+        }
       }
     }
     
