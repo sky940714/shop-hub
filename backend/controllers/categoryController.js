@@ -15,9 +15,9 @@ exports.getAllCategories = async (req, res) => {
         c.level,
         c.is_active,
         c.created_at,
-        COUNT(p.id) as productCount
+        COUNT(pcr.product_id) as productCount
       FROM categories c
-      LEFT JOIN products p ON c.id = p.category_id
+      LEFT JOIN product_category_relation pcr ON c.id = pcr.category_id
       WHERE c.is_active = 1
       GROUP BY c.id
       ORDER BY c.sort_order ASC
@@ -52,9 +52,9 @@ exports.getCategoryById = async (req, res) => {
         c.level,
         c.is_active,
         c.created_at,
-        COUNT(p.id) as productCount
+        COUNT(pcr.product_id) as productCount
       FROM categories c
-      LEFT JOIN products p ON c.id = p.category_id
+      LEFT JOIN product_category_relation pcr ON c.id = pcr.category_id
       WHERE c.id = ?
       GROUP BY c.id
     `, [id]);
@@ -228,9 +228,9 @@ exports.deleteCategory = async (req, res) => {
       });
     }
 
-    // 檢查是否有商品使用此分類
+   // 檢查是否有商品使用此分類
     const [products] = await promisePool.query(
-      'SELECT COUNT(*) as count FROM products WHERE category_id = ?',
+      'SELECT COUNT(*) as count FROM product_category_relation WHERE category_id = ?',
       [id]
     );
 
