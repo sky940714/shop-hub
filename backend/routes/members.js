@@ -384,4 +384,159 @@ router.put('/carrier', protect, async (req, res) => {
   }
 });
 
+// ========================================
+// 收件地址管理 API
+// ========================================
+
+// 10. 取得會員所有收件地址
+// GET /api/members/addresses
+router.get('/addresses', protect, async (req, res) => {
+  try {
+    const [addresses] = await promisePool.query(`
+      SELECT id, recipient_name, phone, zip_code, full_address, is_default, created_at
+      FROM shipping_addresses
+      WHERE user_id = ?
+      ORDER BY is_default DESC, created_at DESC
+    `, [req.user.id]);
+
+    res.json({ success: true, addresses });
+  } catch (error) {
+    console.error('取得收件地址失敗:', error);
+    res.status(500).json({ success: false, message: '取得收件地址失敗' });
+  }
+});
+
+// 11. 新增收件地址
+// POST /api/members/addresses
+router.post('/addresses', protect, async (req, res) => {
+  const connection = await promisePool.getConnection();
+  
+  try {
+    await connection.beginTransaction();
+    
+    const { recipient_name, phone, zip_code, full_address, is_default } = req.body;
+
+    // 驗證必填欄位
+    if (!recipient_name || !phone || !full_address) {
+      return res.status(400).json({ success: false, message: '請填寫完整資訊' });
+    }
+
+    // 如果設為預設，先把其他地址的預設取消
+    if (is_default) {
+      await connection.query(
+        'UPDATE shipping_addresses SET is_default = 0 WHERE user_id = ?',
+        [req.user.id]
+      );
+    }
+
+    // 新增地址
+    const [result] = await connection.query(`
+      INSERT INTO shipping_addresses (user_id, recipient_name, phone, zip_code, full_address, is_default)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `, [req.user.id, recipient_name, phone, zip_code || '', full_address, is_default ? 1 : 0]);
+
+    await connection.commit();
+
+    res.json({ success: true, message: '地址新增成功', addressId: result.insertId });
+  } catch (error) {
+    await connection.rollback();
+    console.error('新增地址失敗:', error);
+    res.status(500).json({ success: false, message: '新增地址失敗' });
+  } finally {
+    connection.release();
+  }
+});
+
+// 12. 更新收件地址
+// PUT /api/members/addresses/:id
+router.put('/addresses/:id', protect, async (req, res) => {
+  const connection = await promisePool.getConnection();
+  
+  try {
+    await connection.beginTransaction();
+    
+    const { id } = req.params;
+    const { recipient_name, phone, zip_code, full_address, is_default } = req.body;
+
+    // 驗證地址是否屬於該會員
+    const [existing] = await connection.query(
+      'SELECT id FROM shipping_addresses WHERE id = ? AND user_id = ?',
+      [id, req.user.id]
+    );
+
+    if (existing.length === 0) {
+      return res.status(404).json({ success: false, message: '找不到此地址' });
+    }
+
+    // 如果設為預設，先把其他地址的預設取消
+    if (is_default) {
+      await connection.query(
+        'UPDATE shipping_addresses SET is_default = 0 WHERE user_id = ?',
+        [req.user.id]
+      );
+    }
+
+    // 更新地址
+    await connection.query(`
+      UPDATE shipping_addresses 
+      SET recipient_name = ?, phone = ?, zip_code = ?, full_address = ?, is_default = ?
+      WHERE id = ? AND user_id = ?
+    `, [recipient_name, phone, zip_code || '', full_address, is_default ? 1 : 0, id, req.user.id]);
+
+    await connection.commit();
+
+    res.json({ success: true, message: '地址更新成功' });
+  } catch (error) {
+    await connection.rollback();
+    console.error('更新地址失敗:', error);
+    res.status(500).json({ success: false, message: '更新地址失敗' });
+  } finally {
+    connection.release();
+  }
+});
+
+// 13. 刪除收件地址
+// DELETE /api/members/addresses/:id
+router.delete('/addresses/:id', protect, async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // 驗證並刪除
+    const [result] = await promisePool.query(
+      'DELETE FROM shipping_addresses WHERE id = ? AND user_id = ?',
+      [id, req.user.id]
+    );
+
+    if (result.affectedRows === 0) {
+      return res.status(404).json({ success: false, message: '找不到此地址' });
+    }
+
+    res.json({ success: true, message: '地址刪除成功' });
+  } catch (error) {
+    console.error('刪除地址失敗:', error);
+    res.status(500).json({ success: false, message: '刪除地址失敗' });
+  }
+});
+
+// 14. 取得預設收件地址
+// GET /api/members/addresses/default
+router.get('/addresses/default', protect, async (req, res) => {
+  try {
+    const [addresses] = await promisePool.query(`
+      SELECT id, recipient_name, phone, zip_code, full_address
+      FROM shipping_addresses
+      WHERE user_id = ? AND is_default = 1
+      LIMIT 1
+    `, [req.user.id]);
+
+    res.json({ 
+      success: true, 
+      address: addresses.length > 0 ? addresses[0] : null 
+    });
+  } catch (error) {
+    console.error('取得預設地址失敗:', error);
+    res.status(500).json({ success: false, message: '取得預設地址失敗' });
+  }
+});
+
 module.exports = router;

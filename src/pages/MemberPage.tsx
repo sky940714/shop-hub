@@ -29,6 +29,15 @@ interface MemberProfile {
   carrier_code: string | null;
 }
 
+interface ShippingAddress {
+  id: number;
+  recipient_name: string;
+  phone: string;
+  zip_code: string;
+  full_address: string;
+  is_default: number;
+}
+
 const MemberPage: React.FC = () => {
   const navigate = useNavigate();
   const API_BASE = '/api';
@@ -43,6 +52,19 @@ const MemberPage: React.FC = () => {
   const [showBasicInfoModal, setShowBasicInfoModal] = useState(false);
   const [showCarrierModal, setShowCarrierModal] = useState(false);
   const [showServiceModal, setShowServiceModal] = useState(false);
+
+  // 收件地址相關
+  const [showAddressModal, setShowAddressModal] = useState(false);
+  const [showAddressFormModal, setShowAddressFormModal] = useState(false);
+  const [addresses, setAddresses] = useState<ShippingAddress[]>([]);
+  const [editingAddress, setEditingAddress] = useState<ShippingAddress | null>(null);
+  const [addressForm, setAddressForm] = useState({
+    recipient_name: '',
+    phone: '',
+    zip_code: '',
+    full_address: '',
+    is_default: false
+  });
   
   // ==========================================
   // [新增] 退貨 Modal 與 表單狀態
@@ -69,6 +91,7 @@ const MemberPage: React.FC = () => {
     }
     fetchProfile();
     fetchOrders();
+    fetchAddresses();
   }, [navigate]);
 
   const fetchProfile = async () => {
@@ -103,6 +126,22 @@ const MemberPage: React.FC = () => {
       }
     } catch (error) {
       console.error('取得訂單失敗:', error);
+    }
+  };
+
+  // 載入收件地址
+  const fetchAddresses = async () => {
+    const token = localStorage.getItem('token');
+    try {
+      const res = await fetch(`${API_BASE}/members/addresses`, {
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await res.json();
+      if (data.success) {
+        setAddresses(data.addresses);
+      }
+    } catch (error) {
+      console.error('取得收件地址失敗:', error);
     }
   };
 
@@ -225,6 +264,93 @@ const MemberPage: React.FC = () => {
     }
   };
 
+  // 開啟新增地址表單
+  const handleOpenAddAddress = () => {
+    setEditingAddress(null);
+    setAddressForm({
+      recipient_name: '',
+      phone: '',
+      zip_code: '',
+      full_address: '',
+      is_default: false
+    });
+    setShowAddressModal(false);
+    setShowAddressFormModal(true);
+  };
+
+  // 開啟編輯地址表單
+  const handleOpenEditAddress = (address: ShippingAddress) => {
+    setEditingAddress(address);
+    setAddressForm({
+      recipient_name: address.recipient_name,
+      phone: address.phone,
+      zip_code: address.zip_code,
+      full_address: address.full_address,
+      is_default: address.is_default === 1
+    });
+    setShowAddressModal(false);
+    setShowAddressFormModal(true);
+  };
+
+  // 儲存地址（新增或更新）
+  const handleSaveAddress = async () => {
+    if (!addressForm.recipient_name || !addressForm.phone || !addressForm.full_address) {
+      alert('請填寫完整資訊');
+      return;
+    }
+
+    const token = localStorage.getItem('token');
+    try {
+      const url = editingAddress 
+        ? `${API_BASE}/members/addresses/${editingAddress.id}`
+        : `${API_BASE}/members/addresses`;
+      
+      const res = await fetch(url, {
+        method: editingAddress ? 'PUT' : 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify(addressForm)
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        alert(editingAddress ? '地址更新成功' : '地址新增成功');
+        setShowAddressFormModal(false);
+        setShowAddressModal(true);
+        fetchAddresses();
+      } else {
+        alert(data.message || '操作失敗');
+      }
+    } catch (error) {
+      alert('操作失敗');
+    }
+  };
+
+  // 刪除地址
+  const handleDeleteAddress = async (id: number) => {
+    if (!window.confirm('確定要刪除此地址嗎？')) return;
+
+    const token = localStorage.getItem('token');
+    try {
+      const res = await fetch(`${API_BASE}/members/addresses/${id}`, {
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+
+      const data = await res.json();
+      if (data.success) {
+        alert('地址已刪除');
+        fetchAddresses();
+      } else {
+        alert(data.message || '刪除失敗');
+      }
+    } catch (error) {
+      alert('刪除失敗');
+    }
+  };
+
   const handleLogout = () => {
     if (window.confirm('確定要登出嗎?')) {
       localStorage.removeItem('token');
@@ -344,6 +470,11 @@ const MemberPage: React.FC = () => {
             <button className="menu-item" onClick={() => setShowCarrierModal(true)}>
               <Package size={22} />
               <span>手機條碼載具</span>
+              <ChevronRight size={22} className="menu-arrow" />
+            </button>
+            <button className="menu-item" onClick={() => setShowAddressModal(true)}>
+              <Package size={22} />
+              <span>收件地址管理</span>
               <ChevronRight size={22} className="menu-arrow" />
             </button>
             <button className="menu-item" onClick={handleMemberGuide}>
@@ -557,6 +688,144 @@ const MemberPage: React.FC = () => {
                 />
               </div>
               <button className="form-submit" onClick={handleUpdateCarrier}>設定載具</button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Address List Modal */}
+      {showAddressModal && (
+        <div className="modal-overlay" onClick={() => setShowAddressModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>收件地址管理</h2>
+              <button onClick={() => setShowAddressModal(false)} className="modal-close">×</button>
+            </div>
+            <div className="modal-body">
+              {addresses.length === 0 ? (
+                <p style={{ textAlign: 'center', color: '#666' }}>尚未設定收件地址</p>
+              ) : (
+                addresses.map(addr => (
+                  <div key={addr.id} style={{
+                    padding: '12px',
+                    border: '1px solid #e0e0e0',
+                    borderRadius: '8px',
+                    marginBottom: '10px',
+                    backgroundColor: addr.is_default ? '#f0f9ff' : '#fff'
+                  }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                      <div>
+                        <p style={{ fontWeight: 'bold', marginBottom: '4px' }}>
+                          {addr.recipient_name} {addr.phone}
+                          {addr.is_default === 1 && (
+                            <span style={{ 
+                              marginLeft: '8px', 
+                              fontSize: '12px', 
+                              color: '#3b82f6',
+                              backgroundColor: '#e0f2fe',
+                              padding: '2px 6px',
+                              borderRadius: '4px'
+                            }}>預設</span>
+                          )}
+                        </p>
+                        <p style={{ fontSize: '14px', color: '#666' }}>
+                          {addr.zip_code} {addr.full_address}
+                        </p>
+                      </div>
+                      <div style={{ display: 'flex', gap: '8px' }}>
+                        <button 
+                          onClick={() => handleOpenEditAddress(addr)}
+                          style={{ padding: '4px 8px', fontSize: '12px', cursor: 'pointer' }}
+                        >編輯</button>
+                        <button 
+                          onClick={() => handleDeleteAddress(addr.id)}
+                          style={{ padding: '4px 8px', fontSize: '12px', color: '#e53e3e', cursor: 'pointer' }}
+                        >刪除</button>
+                      </div>
+                    </div>
+                  </div>
+                ))
+              )}
+              <button 
+                className="form-submit" 
+                onClick={handleOpenAddAddress}
+                style={{ marginTop: '15px' }}
+              >
+                新增收件地址
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Address Form Modal */}
+      {showAddressFormModal && (
+        <div className="modal-overlay" onClick={() => {
+          setShowAddressFormModal(false);
+          setShowAddressModal(true);
+        }}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>{editingAddress ? '編輯地址' : '新增地址'}</h2>
+              <button onClick={() => {
+                setShowAddressFormModal(false);
+                setShowAddressModal(true);
+              }} className="modal-close">×</button>
+            </div>
+            <div className="modal-body">
+              <div className="form-group">
+                <label>收件人姓名 *</label>
+                <input 
+                  type="text"
+                  className="form-input"
+                  value={addressForm.recipient_name}
+                  onChange={(e) => setAddressForm({...addressForm, recipient_name: e.target.value})}
+                  placeholder="請輸入姓名"
+                />
+              </div>
+              <div className="form-group">
+                <label>手機號碼 *</label>
+                <input 
+                  type="tel"
+                  className="form-input"
+                  value={addressForm.phone}
+                  onChange={(e) => setAddressForm({...addressForm, phone: e.target.value})}
+                  placeholder="09XXXXXXXX"
+                />
+              </div>
+              <div className="form-group">
+                <label>郵遞區號</label>
+                <input 
+                  type="text"
+                  className="form-input"
+                  value={addressForm.zip_code}
+                  onChange={(e) => setAddressForm({...addressForm, zip_code: e.target.value})}
+                  placeholder="例如：100"
+                  maxLength={5}
+                />
+              </div>
+              <div className="form-group">
+                <label>詳細地址 *</label>
+                <input 
+                  type="text"
+                  className="form-input"
+                  value={addressForm.full_address}
+                  onChange={(e) => setAddressForm({...addressForm, full_address: e.target.value})}
+                  placeholder="請輸入完整地址（含縣市區）"
+                />
+              </div>
+              <div className="form-group">
+                <label style={{ display: 'flex', alignItems: 'center', gap: '8px', cursor: 'pointer' }}>
+                  <input 
+                    type="checkbox"
+                    checked={addressForm.is_default}
+                    onChange={(e) => setAddressForm({...addressForm, is_default: e.target.checked})}
+                  />
+                  設為預設地址
+                </label>
+              </div>
+              <button className="form-submit" onClick={handleSaveAddress}>
+                {editingAddress ? '更新地址' : '新增地址'}
+              </button>
             </div>
           </div>
         </div>

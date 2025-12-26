@@ -93,6 +93,43 @@
       fetchFee();
     }, []);
 
+    // 載入會員資料和預設地址
+    useEffect(() => {
+      const fetchDefaultInfo = async () => {
+        const token = localStorage.getItem('token');
+        if (!token) return;
+
+        try {
+          // 取得會員資料（Email）
+          const profileRes = await fetch('/api/members/profile', {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          const profileData = await profileRes.json();
+
+          // 取得預設地址
+          const addressRes = await fetch('/api/members/addresses/default', {
+            headers: { 'Authorization': `Bearer ${token}` }
+          });
+          const addressData = await addressRes.json();
+
+          // 帶入表單
+          if (profileData.success || addressData.success) {
+            setShippingInfo(prev => ({
+              ...prev,
+              email: profileData.member?.email || prev.email,
+              name: addressData.address?.recipient_name || prev.name,
+              phone: addressData.address?.phone || prev.phone,
+              address: addressData.address?.full_address || prev.address
+            }));
+          }
+        } catch (error) {
+          console.error('載入預設資訊失敗:', error);
+        }
+      };
+
+      fetchDefaultInfo();
+    }, []);
+
     // 如果沒有要結帳的商品
     useEffect(() => {
     if (checkoutItems.length === 0) {
