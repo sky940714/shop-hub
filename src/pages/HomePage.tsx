@@ -37,6 +37,11 @@ interface HeroBanner {
   is_active: boolean;
 }
 
+interface CategoryProducts {
+  category: Category;
+  products: Product[];
+}
+
 const HomePage: React.FC = () => {
   const navigate = useNavigate();
   // 狀態管理
@@ -51,6 +56,7 @@ const HomePage: React.FC = () => {
   const [currentBannerIndex, setCurrentBannerIndex] = useState(0);
   const [isLineModalOpen, setIsLineModalOpen] = useState(false);
   const [isCategoryOpen, setIsCategoryOpen] = useState(false);
+  const [categoryProductsList, setCategoryProductsList] = useState<CategoryProducts[]>([]);
 
   useEffect(() => {
    fetchCategories();
@@ -59,7 +65,6 @@ const HomePage: React.FC = () => {
     fetchBanners();
   }, []);
 
-  // ← 新增這個函數
   const fetchCategories = async () => {
     try {
       const response = await fetch('/api/categories');
@@ -67,6 +72,38 @@ const HomePage: React.FC = () => {
 
       if (data.success) {
         setCategories(data.categories);
+        
+        // 取前4個分類的商品
+        const top4Categories = data.categories.slice(0, 4);
+        const categoryProductsData: CategoryProducts[] = [];
+
+        for (const category of top4Categories) {
+          try {
+            const productRes = await fetch(`/api/products/category/${category.id}`);
+            const productData = await productRes.json();
+            
+            if (productData.success) {
+              categoryProductsData.push({
+                category: category,
+                products: productData.products.slice(0, 8).map((product: any) => ({
+                  id: product.id,
+                  name: product.name,
+                  price: parseFloat(product.price),
+                  originalPrice: null,
+                  image: product.main_image || 'https://via.placeholder.com/400',
+                  category_id: product.category_id,
+                  rating: 4.5,
+                  reviews: 0,
+                  description: product.description || '暫無描述'
+                }))
+              });
+            }
+          } catch (err) {
+            console.error(`讀取分類 ${category.name} 商品失敗:`, err);
+          }
+        }
+
+        setCategoryProductsList(categoryProductsData);
       }
     } catch (error) {
       console.error('讀取分類失敗：', error);
@@ -384,78 +421,92 @@ const HomePage: React.FC = () => {
         </div>
       </section>
 
-      {/* Products Grid */}
-       <section className="products-section" id="products">
-        <div className="products-grid">
-          {filteredProducts.length === 0 ? (
-            <div className="empty-products">
-              <p>目前沒有商品,請從後台新增商品</p>
-            </div>
-          ) : (
-            filteredProducts.slice(0, 12).map(product => (
-              <div key={product.id} className="product-card">
-                <div
-                  className="product-image-container"
-                  onClick={() => navigate(`/product/${product.id}`)}
-                  style={{ cursor: 'pointer' }}
-                >
-                  <img src={product.image} alt={product.name} className="product-image" />
-                  <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      toggleWishlist(product.id);
-                    }}
-                    className={`wishlist-button ${wishlist.includes(product.id) ? 'active' : ''}`}
-                  >
-                    ❤
-                  </button>
-                  {product.originalPrice && <div className="sale-badge">特價</div>}
-                </div>
-
-                <div className="product-info">
-                  <h3
-                    className="product-name"
-                    onClick={() => navigate(`/product/${product.id}`)}
-                    style={{ cursor: 'pointer' }}
-                  >
-                    {product.name}
-                  </h3>
-                  <p className="product-description">{product.description}</p>
-
-                  <div className="product-rating">
-                    <span>⭐ {product.rating} ({product.reviews})</span>
-                  </div>
-
-                  <div className="product-footer">
-                    <div className="price-container">
-                      <span className="price">NT$ {product.price.toLocaleString()}</span>
-                      {product.originalPrice && (
-                        <span className="original-price">
-                          NT$ {product.originalPrice.toLocaleString()}
-                        </span>
-                      )}
-                    </div>
-                    <button onClick={() => addToCart(product.id, 1)} className="add-to-cart-button">
-                      加入購物車
-                    </button>
-                  </div>
-                </div>
-              </div>
-            ))
-          )}
-        </div>
-
-        {/* 查看更多按鈕 */}
-        {filteredProducts.length > 12 && (
-          <div className="view-more-container">
-            <button 
-              className="view-more-btn"
-              onClick={() => navigate('/search')}
-            >
-              查看更多商品 ({filteredProducts.length - 12}+)
-            </button>
+      {/* Products by Category */}
+      <section className="products-section" id="products">
+        {categoryProductsList.length === 0 ? (
+          <div className="empty-products">
+            <p>目前沒有商品，請從後台新增商品</p>
           </div>
+        ) : (
+          categoryProductsList.map(({ category, products }) => (
+            <div key={category.id} className="category-section">
+              {/* 分類標題 */}
+              <div className="category-header">
+                <h2 className="category-title">{category.name}</h2>
+                <button 
+                  className="category-more-btn"
+                  onClick={() => navigate(`/search?category=${encodeURIComponent(category.name)}`)}
+                >
+                  查看更多 →
+                </button>
+              </div>
+
+              {/* 商品網格 */}
+              <div className="products-grid">
+                {products.map(product => (
+                  <div key={product.id} className="product-card">
+                    <div
+                      className="product-image-container"
+                      onClick={() => navigate(`/product/${product.id}`)}
+                      style={{ cursor: 'pointer' }}
+                    >
+                      <img src={product.image} alt={product.name} className="product-image" />
+                      <button
+                        onClick={(e) => {
+                          e.stopPropagation();
+                          toggleWishlist(product.id);
+                        }}
+                        className={`wishlist-button ${wishlist.includes(product.id) ? 'active' : ''}`}
+                      >
+                        ❤
+                      </button>
+                      {product.originalPrice && <div className="sale-badge">特價</div>}
+                    </div>
+
+                    <div className="product-info">
+                      <h3
+                        className="product-name"
+                        onClick={() => navigate(`/product/${product.id}`)}
+                        style={{ cursor: 'pointer' }}
+                      >
+                        {product.name}
+                      </h3>
+                      <p className="product-description">{product.description}</p>
+
+                      <div className="product-rating">
+                        <span>⭐ {product.rating} ({product.reviews})</span>
+                      </div>
+
+                      <div className="product-footer">
+                        <div className="price-container">
+                          <span className="price">NT$ {product.price.toLocaleString()}</span>
+                          {product.originalPrice && (
+                            <span className="original-price">
+                              NT$ {product.originalPrice.toLocaleString()}
+                            </span>
+                          )}
+                        </div>
+                        <button onClick={() => addToCart(product.id, 1)} className="add-to-cart-button">
+                          加入購物車
+                        </button>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          ))
         )}
+
+        {/* 最底部查看更多 */}
+        <div className="view-more-container">
+          <button 
+            className="view-more-btn"
+            onClick={() => navigate('/search')}
+          >
+            查看更多商品
+          </button>
+        </div>
       </section>
 
       {/* LINE 客服彈窗 */}

@@ -1045,3 +1045,59 @@
 .cart-items::-webkit-scrollbar-thumb:hover {
   background: #a8a8a8; /* 滑鼠移上去時變深 */
 }
+
+/* ========================================
+   分類區塊樣式
+   ======================================== */
+.category-section {
+  margin-bottom: 40px;
+}
+
+.category-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 16px;
+  padding: 0 10px;
+}
+
+.category-title {
+  font-size: 20px;
+  font-weight: bold;
+  color: #333;
+  margin: 0;
+}
+
+.category-more-btn {
+  background: none;
+  border: none;
+  color: #3b82f6;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 4px 8px;
+  transition: color 0.2s;
+}
+
+.category-more-btn:hover {
+  color: #1d4ed8;
+  text-decoration: underline;
+}
+
+/* 手機版 */
+@media (max-width: 768px) {
+  .category-section {
+    margin-bottom: 30px;
+  }
+
+  .category-header {
+    padding: 0 8px;
+  }
+
+  .category-title {
+    font-size: 18px;
+  }
+
+  .category-more-btn {
+    font-size: 13px;
+  }
+}
