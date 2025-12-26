@@ -110,16 +110,20 @@ static async getAll() {
    * 依分類取得商品
    */
   static async getByCategory(categoryId) {
-    const [rows] = await promisePool.execute(`
-      SELECT p.*, c.name as category_name 
-      FROM products p 
-      JOIN product_category_relation pcr ON p.id = pcr.product_id
-      JOIN categories c ON pcr.category_id = c.id
-      WHERE pcr.category_id = ? AND p.status = '上架'
-      ORDER BY p.id DESC
-    `, [categoryId]);
-    return rows;
-  }
+  const [rows] = await promisePool.execute(`
+    SELECT 
+      p.*, 
+      c.name as category_name,
+      pi.image_url as main_image
+    FROM products p 
+    JOIN product_category_relation pcr ON p.id = pcr.product_id
+    JOIN categories c ON pcr.category_id = c.id
+    LEFT JOIN product_images pi ON p.id = pi.product_id AND pi.is_main = 1
+    WHERE pcr.category_id = ? AND p.status = '上架'
+    ORDER BY p.id DESC
+  `, [categoryId]);
+  return rows;
+}
 }
 
 module.exports = Product;
