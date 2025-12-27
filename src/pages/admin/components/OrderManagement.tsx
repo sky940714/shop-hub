@@ -228,12 +228,12 @@ const OrderManagement: React.FC = () => {
       
       if (data.success) {
         alert(`成功！寄貨編號：${data.CVSPaymentNo}`);
-        // 重新載入訂單詳情以更新按鈕狀態
         handleViewDetails(orderNo);
-        // 也重新載入列表
         fetchOrders(pagination.page);
       } else {
-        alert('產生失敗：' + (data.error || JSON.stringify(data.details) || '未知錯誤'));
+        const errorMsg = data.error || '未知錯誤';
+        alert(`❌ 產生寄貨單失敗\n\n原因：${errorMsg}\n\n如需協助，請聯繫系統管理員`);
+        console.error('綠界錯誤詳情:', data.details);
       }
     } catch (error) {
       console.error(error);

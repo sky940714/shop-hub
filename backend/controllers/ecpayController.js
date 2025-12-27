@@ -139,7 +139,28 @@ const createShippingOrder = async (req, res) => {
 
       res.json({ success: true, AllPayLogisticsID, CVSPaymentNo });
     } else {
-      res.status(400).json({ error: '綠界建立失敗', details: resultText });
+      // 解析綠界錯誤訊息
+      let errorMessage = '綠界建立失敗';
+      
+      if (resultText.includes('餘額為負數') || resultText.includes('不足支付')) {
+        errorMessage = '綠界帳戶餘額不足，請先至綠界後台儲值';
+      } else if (resultText.includes('重複')) {
+        errorMessage = '此訂單已建立過物流單';
+      } else if (resultText.includes('門市')) {
+        errorMessage = '超商門市資訊有誤，請確認門市代碼';
+      } else {
+        // 提取括號內的訊息
+        const match = resultText.match(/\(([^)]+)\)/);
+        if (match) {
+          errorMessage = match[1];
+        }
+      }
+      
+      res.status(400).json({ 
+        success: false, 
+        error: errorMessage, 
+        details: resultText 
+      });
     }
   } catch (error) {
     console.error('建立物流單失敗:', error);
