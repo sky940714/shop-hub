@@ -550,10 +550,11 @@ router.get('/admin/dashboard/stats', protect, async (req, res) => {
 // 輔助函數: 產生訂單編號
 // ========================================
 async function generateOrderNo(connection) {
-  const today = new Date();
-  const dateStr = today.toISOString().slice(0, 10).replace(/-/g, ''); // YYYYMMDD
-  const todayDate = today.toISOString().slice(0, 10); // YYYY-MM-DD
-
+  const now = new Date();
+  const taiwanTime = new Date(now.getTime() + (8 * 60 * 60 * 1000));
+  const dateStr = taiwanTime.toISOString().slice(0, 10).replace(/-/g, ''); // YYYYMMDD
+  const todayDate = taiwanTime.toISOString().slice(0, 10); // YYYY-MM-DD
+  
   // 使用 INSERT ... ON DUPLICATE KEY UPDATE 確保原子操作
   await connection.query(`
     INSERT INTO order_sequences (date, last_number)
