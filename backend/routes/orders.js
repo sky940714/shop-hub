@@ -552,16 +552,22 @@ router.get('/admin/dashboard/stats', protect, async (req, res) => {
 async function generateOrderNo(connection) {
   const today = new Date();
   const dateStr = today.toISOString().slice(0, 10).replace(/-/g, ''); // YYYYMMDD
-  
-  // 查詢今天已有幾筆訂單
+  const todayDate = today.toISOString().slice(0, 10); // YYYY-MM-DD
+
+  // 使用 INSERT ... ON DUPLICATE KEY UPDATE 確保原子操作
+  await connection.query(`
+    INSERT INTO order_sequences (date, last_number)
+    VALUES (?, 1)
+    ON DUPLICATE KEY UPDATE last_number = last_number + 1
+  `, [todayDate]);
+
+  // 取得更新後的流水號
   const [result] = await connection.query(`
-    SELECT COUNT(*) as count FROM orders 
-    WHERE DATE(created_at) = CURDATE()
-  `);
-  
-  const todayCount = result[0].count + 1;
-  const orderNo = `ORD${dateStr}${String(todayCount).padStart(3, '0')}`;
-  
+    SELECT last_number FROM order_sequences WHERE date = ?
+  `, [todayDate]);
+
+  const orderNo = `ORD${dateStr}${String(result[0].last_number).padStart(3, '0')}`;
+
   return orderNo;
 }
 

@@ -539,4 +539,60 @@ router.get('/addresses/default', protect, async (req, res) => {
   }
 });
 
+// ========================================
+// 超商門市歷史記錄 API
+// ========================================
+
+// 15. 取得歷史門市（依超商類型）
+// GET /api/members/cvs-stores?type=UNIMARTC2C
+router.get('/cvs-stores', protect, async (req, res) => {
+  try {
+    const { type } = req.query;
+    
+    let query = `
+      SELECT store_id, store_name, store_address, cvs_type, used_at
+      FROM cvs_store_history
+      WHERE user_id = ?
+    `;
+    const params = [req.user.id];
+
+    if (type) {
+      query += ' AND cvs_type = ?';
+      params.push(type);
+    }
+
+    query += ' ORDER BY used_at DESC LIMIT 5';
+
+    const [stores] = await promisePool.query(query, params);
+
+    res.json({ success: true, stores });
+  } catch (error) {
+    console.error('取得歷史門市失敗:', error);
+    res.status(500).json({ success: false, message: '取得歷史門市失敗' });
+  }
+});
+
+// 16. 儲存門市到歷史記錄
+// POST /api/members/cvs-stores
+router.post('/cvs-stores', protect, async (req, res) => {
+  try {
+    const { cvs_type, store_id, store_name, store_address } = req.body;
+
+    if (!cvs_type || !store_id || !store_name || !store_address) {
+      return res.status(400).json({ success: false, message: '缺少必要欄位' });
+    }
+
+    // 使用 REPLACE INTO：如果已存在則更新 used_at
+    await promisePool.query(`
+      REPLACE INTO cvs_store_history (user_id, cvs_type, store_id, store_name, store_address, used_at)
+      VALUES (?, ?, ?, ?, ?, NOW())
+    `, [req.user.id, cvs_type, store_id, store_name, store_address]);
+
+    res.json({ success: true, message: '門市已儲存' });
+  } catch (error) {
+    console.error('儲存門市失敗:', error);
+    res.status(500).json({ success: false, message: '儲存門市失敗' });
+  }
+});
+
 module.exports = router;

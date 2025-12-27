@@ -13,6 +13,14 @@ interface ShippingInfo {
   storeAddress?: string;
 }
 
+interface CvsStoreHistory {
+  store_id: string;
+  store_name: string;
+  store_address: string;
+  cvs_type: string;
+  used_at: string;
+}
+
 interface ShippingFormProps {
   currentStep: number;
   shippingInfo: ShippingInfo;
@@ -62,6 +70,7 @@ const ShippingForm: React.FC<ShippingFormProps> = ({
   // 自取門市列表
   const [pickupStores, setPickupStores] = useState<any[]>([]);
   const [selectedPickupStore, setSelectedPickupStore] = useState<any>(null);
+  const [cvsStoreHistory, setCvsStoreHistory] = useState<CvsStoreHistory[]>([]);
 
    const [homeDeliveryFee, setHomeDeliveryFee] = useState<number>(100);
 
@@ -96,6 +105,57 @@ const ShippingForm: React.FC<ShippingFormProps> = ({
     fetchPickupStores();
   }, []);
 
+  // 載入歷史門市（當選擇超商類型時）
+  useEffect(() => {
+    const fetchCvsHistory = async () => {
+      if (shippingMethod !== 'cvs' || !shippingSubType) {
+        setCvsStoreHistory([]);
+        return;
+      }
+
+      const token = localStorage.getItem('token');
+      if (!token) return;
+
+      try {
+        const res = await fetch(`/api/members/cvs-stores?type=${shippingSubType}`, {
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await res.json();
+        if (data.success) {
+          setCvsStoreHistory(data.stores);
+        }
+      } catch (error) {
+        console.error('載入歷史門市失敗:', error);
+      }
+    };
+
+    fetchCvsHistory();
+  }, [shippingMethod, shippingSubType]);
+
+  // 儲存門市到歷史記錄
+  const saveCvsStoreToHistory = async (storeId: string, storeName: string, storeAddress: string) => {
+    const token = localStorage.getItem('token');
+    if (!token || !shippingSubType) return;
+
+    try {
+      await fetch('/api/members/cvs-stores', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          cvs_type: shippingSubType,
+          store_id: storeId,
+          store_name: storeName,
+          store_address: storeAddress
+        })
+      });
+    } catch (error) {
+      console.error('儲存門市失敗:', error);
+    }
+  };
+
   // ==========================================
   // 監聽綠界地圖回傳
   // ==========================================
@@ -114,12 +174,15 @@ const ShippingForm: React.FC<ShippingFormProps> = ({
           storeName: data.storeName,
           storeAddress: data.storeAddress
         }));
+
+        // 儲存到歷史記錄
+        saveCvsStoreToHistory(data.storeId, data.storeName, data.storeAddress);
       }
     };
 
     window.addEventListener('message', handleEcpayMessage);
     return () => window.removeEventListener('message', handleEcpayMessage);
-  }, [setShippingInfo]);
+  }, [setShippingInfo, shippingSubType]);
 
   // 選擇超商門市 (開啟綠界地圖)
   // src/pages/checkout/components/ShippingForm.tsx
@@ -373,13 +436,50 @@ const ShippingForm: React.FC<ShippingFormProps> = ({
                   OK超商
                 </button>
               </div>
+
+              {/* 歷史門市列表 */}
+              {shippingSubType && cvsStoreHistory.length > 0 && (
+                <div className="cvs-history">
+                  <label className="form-label">📍 最近使用的門市</label>
+                  <div className="cvs-history-list">
+                    {cvsStoreHistory.map((store) => (
+                      <div
+                        key={store.store_id}
+                        className={`cvs-history-item ${shippingInfo.storeId === store.store_id ? 'selected' : ''}`}
+                        onClick={() => {
+                          setShippingInfo(prev => ({
+                            ...prev,
+                            storeId: store.store_id,
+                            storeName: store.store_name,
+                            storeAddress: store.store_address
+                          }));
+                        }}
+                      >
+                        <div className="history-radio">
+                          <input
+                            type="radio"
+                            name="cvsHistory"
+                            checked={shippingInfo.storeId === store.store_id}
+                            readOnly
+                          />
+                        </div>
+                        <div className="history-details">
+                          <div className="history-store-name">{store.store_name}</div>
+                          <div className="history-store-address">{store.store_address}</div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+
               {shippingSubType && (
                 <div className="store-selector">
                   <button type="button" className="select-store-btn" onClick={handleSelectStore}>
                     <MapPin size={20} />
-                    {shippingInfo.storeId ? '變更門市' : '選擇門市'}
+                    {cvsStoreHistory.length > 0 ? '選擇其他門市' : (shippingInfo.storeId ? '變更門市' : '選擇門市')}
                   </button>
-                  {shippingInfo.storeId && (
+                  {shippingInfo.storeId && !cvsStoreHistory.some(s => s.store_id === shippingInfo.storeId) && (
                     <div className="selected-store">
                       <div className="store-name">{shippingInfo.storeName}</div>
                       <div className="store-address">{shippingInfo.storeAddress}</div>
