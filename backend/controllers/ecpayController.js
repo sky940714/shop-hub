@@ -72,16 +72,63 @@ const getMapParams = (req, res) => {
 const handleMapCallback = (req, res) => {
   try {
     const { CVSStoreID, CVSStoreName, CVSAddress, LogisticsSubType } = req.body;
-    const html = `<!DOCTYPE html><html><body><script>
-      if (window.opener) {
-        window.opener.postMessage({
-          storeId: '${CVSStoreID}', storeName: '${CVSStoreName}', storeAddress: '${CVSAddress}', logisticsSubType: '${LogisticsSubType}'
-        }, '*');
-        window.close();
-      }
-    </script></body></html>`;
+    
+    // 編碼參數（處理中文）
+    const params = new URLSearchParams({
+      storeId: CVSStoreID || '',
+      storeName: CVSStoreName || '',
+      storeAddress: CVSAddress || '',
+      logisticsSubType: LogisticsSubType || ''
+    });
+
+    // 回傳 HTML，嘗試兩種方式：Deep Link 和 postMessage
+    const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>門市選擇完成</title>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, sans-serif; text-align: center; padding: 50px 20px; }
+    .success { color: #22c55e; font-size: 48px; }
+    .message { margin: 20px 0; color: #333; }
+    .redirect { color: #666; font-size: 14px; }
+  </style>
+</head>
+<body>
+  <div class="success">✓</div>
+  <div class="message">門市選擇完成</div>
+  <div class="redirect">正在返回 App...</div>
+  
+  <script>
+    const storeData = {
+      storeId: '${CVSStoreID || ''}',
+      storeName: '${CVSStoreName || ''}',
+      storeAddress: '${CVSAddress || ''}',
+      logisticsSubType: '${LogisticsSubType || ''}'
+    };
+
+    // 方法 1: 嘗試 Deep Link (App 環境)
+    const deepLink = 'shophubapp://map-callback?${params.toString()}';
+    
+    // 方法 2: postMessage (網頁環境)
+    if (window.opener) {
+      window.opener.postMessage(storeData, '*');
+      setTimeout(() => window.close(), 500);
+    } else {
+      // App 環境，使用 Deep Link
+      window.location.href = deepLink;
+    }
+  </script>
+</body>
+</html>`;
+    
     res.send(html);
-  } catch (error) { res.send('處理門市資料失敗'); }
+  } catch (error) {
+    console.error('處理門市回調失敗:', error);
+    res.send('<h2>處理門市資料失敗，請重試</h2>');
+  }
 };
 
 // ==========================================
