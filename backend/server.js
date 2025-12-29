@@ -32,6 +32,8 @@ app.use(cors({
     const allowedOrigins = [
       'http://localhost:3000',        // 本機開發網頁
       'https://www.anxinshophub.com', // 您的正式網站
+      'https://anxinshophub.com',     // ← 新增（沒有 www）
+      'https://logistics.ecpay.com.tw', // ← 新增（綠界物流）
       'capacitor://localhost',        // iOS App 來源
       'http://localhost',             // Android App 來源
       'https://localhost'             // 部分 Android 版本
