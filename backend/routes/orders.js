@@ -147,7 +147,7 @@ const total = subtotal + shippingFee;
       success: true,
       message: '訂單建立成功',
       orderNo: orderNo,
-      ecpayParams: ecpayParams // <--- 關鍵：回傳這包給前端 ECPayForm 用
+      ecpayParams: ecpayParams ? { ...ecpayParams, orderId: orderId } : null
     });
 
   } catch (error) {

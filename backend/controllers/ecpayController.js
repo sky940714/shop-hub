@@ -269,6 +269,52 @@ const handleLogisticsCallback = (req, res) => {
   }
 };
 
+// ==========================================
+// 新增：產生金流付款頁面（給 App 用）
+// ==========================================
+const getPaymentPage = async (req, res) => {
+  try {
+    const { orderId } = req.params;
+    
+    const [rows] = await promisePool.execute('SELECT * FROM orders WHERE id = ?', [orderId]);
+    if (rows.length === 0) {
+      return res.send('<h2>找不到訂單</h2>');
+    }
+
+    const order = rows[0];
+    const params = ecpayUtils.getParams(order);
+
+    // 產生自動提交的 HTML 表單
+    const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>前往付款...</title>
+  <style>
+    body { font-family: -apple-system, sans-serif; text-align: center; padding: 50px; }
+    .loading { font-size: 18px; color: #333; }
+  </style>
+</head>
+<body>
+  <div class="loading">正在前往綠界付款頁面...</div>
+  <form id="ecpayForm" method="POST" action="${params.actionUrl}">
+    ${Object.keys(params).filter(k => k !== 'actionUrl').map(k => 
+      `<input type="hidden" name="${k}" value="${params[k]}" />`
+    ).join('')}
+  </form>
+  <script>document.getElementById('ecpayForm').submit();</script>
+</body>
+</html>`;
+
+    res.send(html);
+  } catch (error) {
+    console.error('產生付款頁面失敗:', error);
+    res.send('<h2>產生付款頁面失敗</h2>');
+  }
+};
+
 module.exports = {
   createPayment,
   handleCallback,
@@ -276,5 +322,6 @@ module.exports = {
   handleMapCallback,
   createShippingOrder,
   printShippingLabel,
-  handleLogisticsCallback
+  handleLogisticsCallback,
+  getPaymentPage  // ← 新增這行
 };
