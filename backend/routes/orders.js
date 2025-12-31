@@ -29,8 +29,6 @@ router.post('/create', protect, async (req, res) => {
       items
     } = req.body;
 
-    // 後端重新計算運費（安全性）
-    // 從資料庫讀取宅配運費設定
 let homeDeliveryFee = 100; // 預設值
 const [feeSettings] = await connection.query(
   `SELECT setting_value FROM settings WHERE setting_key = 'home_delivery_fee'`
@@ -38,6 +36,27 @@ const [feeSettings] = await connection.query(
 if (feeSettings.length > 0) {
   homeDeliveryFee = parseInt(feeSettings[0].setting_value) || 100;
 }
+    if (item.variant_id) {
+        const [result] = await connection.query(`
+          UPDATE product_variants 
+          SET stock = stock - ? 
+          WHERE id = ? AND stock >= ?
+        `, [item.quantity, item.variant_id, item.quantity]);
+
+        if (result.affectedRows === 0) {
+            throw new Error(`商品 ${item.name} (${item.variant_name}) 庫存不足`);
+        }
+    } else {
+        const [result] = await connection.query(`
+          UPDATE products 
+          SET stock = stock - ? 
+          WHERE id = ? AND stock >= ?
+        `, [item.quantity, item.product_id, item.quantity]);
+
+        if (result.affectedRows === 0) {
+            throw new Error(`商品 ${item.name} 庫存不足`);
+        }
+    }
 
 // 計算運費
 function calculateShippingFee(method, subtotal, homeFee) {
@@ -571,5 +590,61 @@ async function generateOrderNo(connection) {
 
   return orderNo;
 }
+
+// ========================================
+// 8. 會員自行取消訂單 (需歸還庫存)
+// PUT /api/orders/:orderNo/cancel
+// ========================================
+router.put('/:orderNo/cancel', protect, async (req, res) => {
+  const connection = await promisePool.getConnection();
+  try {
+    await connection.beginTransaction();
+    
+    const { orderNo } = req.params;
+    const userId = req.user.id;
+
+    // 1. 查詢訂單
+    const [orders] = await connection.query(`
+      SELECT id, status, payment_status 
+      FROM orders 
+      WHERE order_no = ? AND user_id = ?
+    `, [orderNo, userId]);
+
+    if (orders.length === 0) {
+      await connection.rollback();
+      return res.status(404).json({ success: false, message: '找不到訂單' });
+    }
+    const order = orders[0];
+
+    // 2. 只有 "待付款" 或 "待出貨" 可以取消
+    if (order.status !== 'pending' && order.status !== 'paid') {
+      await connection.rollback();
+      return res.status(400).json({ success: false, message: '訂單已進入出貨流程，無法取消' });
+    }
+
+    // 3. 歸還庫存
+    const [items] = await connection.query('SELECT product_id, variant_id, quantity FROM order_items WHERE order_id = ?', [order.id]);
+    for (const item of items) {
+      if (item.variant_id) {
+        await connection.query('UPDATE product_variants SET stock = stock + ? WHERE id = ?', [item.quantity, item.variant_id]);
+      } else {
+        await connection.query('UPDATE products SET stock = stock + ? WHERE id = ?', [item.quantity, item.product_id]);
+      }
+    }
+
+    // 4. 更新狀態
+    await connection.query("UPDATE orders SET status = 'cancelled', updated_at = NOW() WHERE id = ?", [order.id]);
+    
+    await connection.commit();
+    res.json({ success: true, message: '訂單已成功取消' });
+
+  } catch (error) {
+    await connection.rollback();
+    console.error('取消失敗:', error);
+    res.status(500).json({ success: false, message: '系統錯誤' });
+  } finally {
+    connection.release();
+  }
+});
 
 module.exports = router;
