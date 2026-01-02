@@ -12,6 +12,7 @@ router.post('/callback', ecpayController.handleCallback);
 // 2. 物流地圖相關 (消費者選門市)
 // ==========================================
 router.get('/map', ecpayController.getMapParams);
+router.get('/map-page', ecpayController.renderMapPage); 
 router.post('/map-callback', ecpayController.handleMapCallback);
 
 // ==========================================

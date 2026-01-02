@@ -352,6 +352,54 @@ const getPaymentPage = async (req, res) => {
   }
 };
 
+// ==========================================
+// [新增] 8. 產生綠界地圖跳轉頁面 (給 App 用，確保用 POST 提交)
+// ==========================================
+const renderMapPage = (req, res) => {
+  try {
+    const { logisticsSubType } = req.query;
+    
+    // 取得綠界所需的參數
+    const params = ecpayUtils.getMapParams(logisticsSubType);
+    const actionUrl = params.actionUrl;
+    
+    // 移除不必要的 actionUrl 欄位，剩下的就是要 POST 的資料
+    delete params.actionUrl;
+
+    // 產生自動提交的 HTML 表單
+    const html = `
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>正在前往門市地圖...</title>
+  <style>
+    body { font-family: -apple-system, sans-serif; text-align: center; padding: 50px; }
+    .loading { font-size: 18px; color: #333; }
+  </style>
+</head>
+<body>
+  <div class="loading">正在前往門市選擇頁面...</div>
+  <form id="ecpayMapForm" method="POST" action="${actionUrl}">
+    ${Object.keys(params).map(k => 
+      `<input type="hidden" name="${k}" value="${params[k]}" />`
+    ).join('')}
+  </form>
+  <script>
+    // 自動提交表單
+    document.getElementById('ecpayMapForm').submit();
+  </script>
+</body>
+</html>`;
+
+    res.send(html);
+  } catch (error) {
+    console.error('產生地圖頁面失敗:', error);
+    res.send('<h2>無法開啟地圖頁面，請稍後再試</h2>');
+  }
+};
+
 module.exports = {
   createPayment,
   handleCallback,
@@ -360,5 +408,6 @@ module.exports = {
   createShippingOrder,
   printShippingLabel,
   handleLogisticsCallback,
-  getPaymentPage  // ← 新增這行
+  getPaymentPage,
+  renderMapPage // <--- 新增這一行
 };
