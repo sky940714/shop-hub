@@ -393,33 +393,33 @@ const renderMapPage = (req, res) => {
 
 // ... (前略)
 
-// ==========================================
-// 10. [修正] 處理 App 地圖回傳 (轉址回 App)
-// ==========================================
+// backend/controllers/ecpayController.js
+
 const handleAppMapRedirect = (req, res) => {
   const { CVSStoreName, CVSStoreID, CVSAddress, LogisticsSubType } = req.body;
   
   console.log('收到 App 地圖回傳，準備喚醒 App:', CVSStoreName);
 
-  // 1. 處理中文編碼
   const storeName = encodeURIComponent(CVSStoreName || '');
   const address = encodeURIComponent(CVSAddress || '');
   
-  // 2. 組合 App 專用網址 (Deep Link)
   const appUrl = `shophubapp://map-result?storeId=${CVSStoreID}&storeName=${storeName}&address=${address}&subtype=${LogisticsSubType}`;
 
-// 🔥🔥🔥 補上這行：允許 inline script 執行 (針對成功跳轉的路徑) 🔥🔥🔥
+  // 1. 設定 Header (第一道防線)
   res.set('Content-Security-Policy', "script-src 'self' 'unsafe-inline' 'unsafe-eval' *");
 
-  // 3. 回傳 HTML (增加手動點擊按鈕，並美化介面)
   const html = `
     <!DOCTYPE html>
     <html>
     <head>
       <meta charset="UTF-8">
       <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      
+      <meta http-equiv="Content-Security-Policy" content="script-src 'self' 'unsafe-inline' 'unsafe-eval' *">
+      
       <title>跳轉中...</title>
       <style>
+        /* ... 省略 style ... */
         body { font-family: -apple-system, sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; background-color: #f9f9f9; }
         .card { background: white; padding: 30px; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); text-align: center; width: 80%; max-width: 320px; }
         h3 { margin-top: 0; color: #333; }
@@ -437,7 +437,7 @@ const handleAppMapRedirect = (req, res) => {
       </div>
 
       <script>
-        // 嘗試自動跳轉 (部分 iOS 版本可能有效)
+        // 嘗試自動跳轉
         setTimeout(function() {
           window.location.href = "${appUrl}";
         }, 300);
