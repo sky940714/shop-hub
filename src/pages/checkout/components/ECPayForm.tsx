@@ -27,7 +27,7 @@ const ECPayForm = ({ params }: { params: ECPayParams | null }) => {
       style={{ display: 'none' }} // 隱藏表單不讓使用者看到
     >
       {Object.keys(params).map((key) => {
-        if (key === 'actionUrl') return null;
+        if (key === 'actionUrl' || key === 'orderId') return null;
         return <input key={key} type="hidden" name={key} value={params[key]} />;
       })}
     </form>
