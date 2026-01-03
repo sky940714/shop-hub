@@ -36,21 +36,32 @@ class ECPayUtils {
     }
   }
 
+  // backend/utils/ecpay.js
+
   // 1. 金流參數
   getParams(order) {
     const tradeDate = this.formatDate(new Date()); 
     const totalAmount = Math.round(order.total).toString();
 
+    const prefix = String(order.order_no).slice(0, 13);
+    
+    // 2. 加上隨機數或時間戳記 (解決重複付款失敗的問題)
+    //    使用 Date.now() 取後 6 位數，確保每次點擊付款按鈕產生的編號都不同
+    const suffix = Date.now().toString().slice(-6);
+    
+    const validTradeNo = `${prefix}${suffix}`; 
+    // 🔥 修改結束
+
     const params = {
       MerchantID: this.merchantId,
-      MerchantTradeNo: order.order_no,
+      MerchantTradeNo: validTradeNo, // ⚠️ 這裡改用新的變數
       MerchantTradeDate: tradeDate,
       PaymentType: 'aio',
       TotalAmount: totalAmount,
       TradeDesc: 'ShopHub Order',
       ItemName: `訂單編號 ${order.order_no}`,
-      ReturnURL: 'https://www.anxinshophub.com/api/ecpay/callback',
-      ClientBackURL: 'https://www.anxinshophub.com/order/result',
+      ReturnURL: 'https://www.anxinshophub.com/api/ecpay/callback',     // 記得確認有加 www
+      ClientBackURL: 'https://www.anxinshophub.com/order/result', // 記得確認有加 www
       ChoosePayment: 'ALL',
       EncryptType: '1',
     };
