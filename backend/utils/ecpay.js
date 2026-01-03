@@ -41,25 +41,27 @@ class ECPayUtils {
     const tradeDate = this.formatDate(new Date()); 
     const totalAmount = Math.round(Number(order.total) || 0).toString(); 
 
-    // --- 訂單編號處理 ---
+    // --- 修改 1：增強版訂單編號 (確保絕對不重複) ---
+    // 加上 Date.now() 還不夠，再加一個 3 位數隨機碼，確保萬無一失
     const cleanOrderNo = String(order.order_no).replace(/[^a-zA-Z0-9]/g, '');
-    const prefix = cleanOrderNo.slice(0, 13);
-    const suffix = Date.now().toString().slice(-6);
-    const validTradeNo = `${prefix}${suffix}`; 
-    // ----------------------------
+    const prefix = cleanOrderNo.slice(0, 10); // 縮短一點，避免超過長度限制
+    const timestamp = Date.now().toString().slice(-8); // 取時間戳後8碼
+    const random = Math.floor(Math.random() * 999).toString().padStart(3, '0');
+    const validTradeNo = `${prefix}${timestamp}${random}`; // 組合
+    // ------------------------------------------------
 
-    // 👇 [DEBUG] 這裡可以暫時切換 ItemName 測試是否為特殊符號問題
-    // const safeItemName = `ShopHub Order ${order.order_no}`; // 純英文測試用
-    const safeItemName = `訂單編號 ${order.order_no}`;       // 原始中文
+    // --- 修改 2：移除 ItemName 的空格 (改用底線) ---
+    // 綠界對空格很敏感，改用底線最安全
+    const safeItemName = `訂單編號_${order.order_no}`.replace(/\s+/g, '_');
 
     const params = {
       MerchantID: this.merchantId,
-      MerchantTradeNo: validTradeNo,
+      MerchantTradeNo: validTradeNo, // 使用新的編號
       MerchantTradeDate: tradeDate,
       PaymentType: 'aio',
       TotalAmount: totalAmount,
-      TradeDesc: 'ShopHub Order',
-      ItemName: safeItemName, // 使用變數
+      TradeDesc: 'ShopHubOrder', // 這裡的空格也建議拿掉，改成 CamelCase
+      ItemName: safeItemName,    // 使用無空格名稱
       ReturnURL: 'https://www.anxinshophub.com/api/ecpay/callback',
       ClientBackURL: customClientBackURL || 'https://www.anxinshophub.com/order/result',
       ChoosePayment: 'ALL',
