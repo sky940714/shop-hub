@@ -4,6 +4,17 @@ const ecpayUtils = require('../utils/ecpay');
 const axios = require('axios');
 const qs = require('qs');
 
+// 🔥 [新增] 輔助函數：防止 HTML 屬性被特殊符號破壞
+const escapeHtml = (unsafe) => {
+  if (typeof unsafe !== 'string') return unsafe;
+  return unsafe
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#039;");
+};
+
 // ==========================================
 // 1. 產生綠界付款資料 (金流 - 前往結帳)
 // ==========================================
@@ -329,7 +340,8 @@ const getPaymentPage = async (req, res) => {
   <div class="loading">正在前往綠界付款頁面...</div>
   <form id="ecpayForm" method="POST" action="${params.actionUrl}">
     ${Object.keys(params).filter(k => k !== 'actionUrl').map(k => 
-      `<input type="hidden" name="${k}" value="${params[k]}" />`
+      // 🔥 加入 escapeHtml(...) 保護
+      `<input type="hidden" name="${k}" value="${escapeHtml(String(params[k]))}" />`
     ).join('')}
   </form>
   <script>document.getElementById('ecpayForm').submit();</script>
@@ -380,7 +392,8 @@ const renderMapPage = (req, res) => {
   <div class="loading">正在前往門市選擇頁面...</div>
   <form id="ecpayMapForm" method="POST" action="${actionUrl}">
     ${Object.keys(params).map(k => 
-      `<input type="hidden" name="${k}" value="${params[k]}" />`
+      // 🔥 加入 escapeHtml(...) 保護
+      `<input type="hidden" name="${k}" value="${escapeHtml(String(params[k]))}" />`
     ).join('')}
   </form>
   <script>

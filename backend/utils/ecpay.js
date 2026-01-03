@@ -52,7 +52,7 @@ class ECPayUtils {
 
     // --- 修改 2：移除 ItemName 的空格 (改用底線) ---
     // 解決 10100050 編碼錯誤
-    const safeItemName = `訂單編號_${order.order_no}`.replace(/\s+/g, '_');
+    const safeItemName = `訂單編號_${order.order_no}`.replace(/[^\u4e00-\u9fa5a-zA-Z0-9_\-]/g, '');
 
     const params = {
       MerchantID: this.merchantId,
