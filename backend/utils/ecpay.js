@@ -41,34 +41,38 @@ class ECPayUtils {
     const tradeDate = this.formatDate(new Date()); 
     const totalAmount = Math.round(Number(order.total) || 0).toString(); 
 
-    // --- 修改 1：增強版訂單編號 (確保絕對不重複) ---
-    // 加上 Date.now() 還不夠，再加一個 3 位數隨機碼，確保萬無一失
+    // --- 🔥 修改 1：縮短版訂單編號 (總長度控制在 20 字內) ---
+    // Prefix(8) + Time(6) + Random(3) = 17 字元 (安全通過綠界限制)
     const cleanOrderNo = String(order.order_no).replace(/[^a-zA-Z0-9]/g, '');
-    const prefix = cleanOrderNo.slice(0, 10); // 縮短一點，避免超過長度限制
-    const timestamp = Date.now().toString().slice(-8); // 取時間戳後8碼
+    const prefix = cleanOrderNo.slice(0, 8); 
+    const timestamp = Date.now().toString().slice(-6); // 改取後6碼
     const random = Math.floor(Math.random() * 999).toString().padStart(3, '0');
-    const validTradeNo = `${prefix}${timestamp}${random}`; // 組合
+    const validTradeNo = `${prefix}${timestamp}${random}`; 
     // ------------------------------------------------
 
     // --- 修改 2：移除 ItemName 的空格 (改用底線) ---
-    // 綠界對空格很敏感，改用底線最安全
+    // 解決 10100050 編碼錯誤
     const safeItemName = `訂單編號_${order.order_no}`.replace(/\s+/g, '_');
 
     const params = {
       MerchantID: this.merchantId,
-      MerchantTradeNo: validTradeNo, // 使用新的編號
+      MerchantTradeNo: validTradeNo, // 使用符合長度的新編號
       MerchantTradeDate: tradeDate,
       PaymentType: 'aio',
       TotalAmount: totalAmount,
-      TradeDesc: 'ShopHubOrder', // 這裡的空格也建議拿掉，改成 CamelCase
-      ItemName: safeItemName,    // 使用無空格名稱
+      TradeDesc: 'ShopHubOrder',     // 移除空格
+      ItemName: safeItemName,        // 使用無空格名稱
       ReturnURL: 'https://www.anxinshophub.com/api/ecpay/callback',
       ClientBackURL: customClientBackURL || 'https://www.anxinshophub.com/order/result',
       ChoosePayment: 'ALL',
       EncryptType: '1',
+
+      // 🔥🔥🔥 修改 3：加入這行！把原始訂單編號藏在這裡 🔥🔥🔥
+      // 這樣回調時我們才能透過這個欄位知道是哪張訂單
+      CustomField1: String(order.order_no),
     };
 
-    // 🔥🔥🔥 [除錯 LOG] 印出參數內容 🔥🔥🔥
+    // 🔥保留除錯 LOG (確認成功後可自行移除)
     console.log('\n=============================================');
     console.log('🔍 [除錯] 準備送給綠界的參數 (Params):');
     console.log(JSON.stringify(params, null, 2));

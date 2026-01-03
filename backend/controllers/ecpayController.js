@@ -36,14 +36,16 @@ const handleCallback = async (req, res) => {
     if (!isValid) return res.send('0|ErrorMessage');
 
     if (ecpayData.RtnCode === '1') {
-      const orderNo = ecpayData.MerchantTradeNo;
+      // ✅ 正確：優先讀取我們藏好的原始編號 CustomField1
+      const orderNo = ecpayData.CustomField1 || ecpayData.MerchantTradeNo; 
       const tradeNo = ecpayData.TradeNo;
+      
+      console.log(`💰 綠界付款成功！更新訂單: ${orderNo} (交易號: ${tradeNo})`);
+
       await promisePool.execute(
         `UPDATE orders SET payment_status = 'paid', status = 'paid', ecpay_trade_no = ?, updated_at = NOW() WHERE order_no = ?`,
-        [tradeNo, orderNo]
+        [tradeNo, orderNo] // ✅ 這樣就找得到訂單了
       );
-      res.send('1|OK');
-    } else {
       res.send('1|OK');
     }
   } catch (error) {
