@@ -302,7 +302,7 @@ const renderMapPage = (req, res) => {
     const { logisticsSubType } = req.query;
     
     // 定義 App 專用的回程網址
-    const appRedirectUrl = "https://www.anxinshophub.com/api/ecpay/map-app-redirect";
+    const appRedirectUrl = "https://anxinshophub.com/api/ecpay/map-app-redirect";
 
     // 🔥 修正：將 URL 作為第二個參數傳入，讓 Utils 幫你一起加密
     const params = ecpayUtils.getMapParams(logisticsSubType, appRedirectUrl);
