@@ -90,6 +90,9 @@ const handleMapCallback = (req, res) => {
       logisticsSubType: LogisticsSubType || ''
     });
 
+    // 🔥🔥🔥 加入這行：允許 inline script 執行 🔥🔥🔥
+    res.set('Content-Security-Policy', "script-src 'self' 'unsafe-inline' 'unsafe-eval' *");
+
     // 3. 回傳智慧型 HTML：同時偵測網頁 popup 與 App
     const html = `
 <!DOCTYPE html>
@@ -300,6 +303,9 @@ const getPaymentPage = async (req, res) => {
     const order = rows[0];
     const params = ecpayUtils.getParams(order);
 
+    // 🔥🔥🔥 加入這行：允許 inline script 執行 🔥🔥🔥
+    res.set('Content-Security-Policy', "script-src 'self' 'unsafe-inline' 'unsafe-eval' *");
+
     const html = `
 <!DOCTYPE html>
 <html>
@@ -347,6 +353,9 @@ const renderMapPage = (req, res) => {
 
     const actionUrl = params.actionUrl;
     delete params.actionUrl;
+
+    // 🔥🔥🔥 加入這行：允許 inline script 執行 🔥🔥🔥
+    res.set('Content-Security-Policy', "script-src 'self' 'unsafe-inline' 'unsafe-eval' *");
 
     const html = `
 <!DOCTYPE html>
@@ -398,6 +407,9 @@ const handleAppMapRedirect = (req, res) => {
   
   // 2. 組合 App 專用網址 (Deep Link)
   const appUrl = `shophubapp://map-result?storeId=${CVSStoreID}&storeName=${storeName}&address=${address}&subtype=${LogisticsSubType}`;
+
+// 🔥🔥🔥 補上這行：允許 inline script 執行 (針對成功跳轉的路徑) 🔥🔥🔥
+  res.set('Content-Security-Policy', "script-src 'self' 'unsafe-inline' 'unsafe-eval' *");
 
   // 3. 回傳 HTML (增加手動點擊按鈕，並美化介面)
   const html = `
