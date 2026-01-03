@@ -66,43 +66,79 @@ const getMapParams = (req, res) => {
   }
 };
 
+// backend/controllers/ecpayController.js
+
+// ... (前略)
+
 // ==========================================
-// 4. 地圖選完後的回調 (物流 - 回程 - 網頁版用)
+// 4. 地圖選完後的回調 (🔥 加強版：同時支援 網頁版 與 App)
 // ==========================================
 const handleMapCallback = (req, res) => {
   try {
     const { CVSStoreID, CVSStoreName, CVSAddress, LogisticsSubType } = req.body;
     
-    // 編碼參數（處理中文）
-    const params = new URLSearchParams({
+    // 1. 準備 App 用 Deep Link (針對 App 使用者)
+    const storeNameEnc = encodeURIComponent(CVSStoreName || '');
+    const addressEnc = encodeURIComponent(CVSAddress || '');
+    const appUrl = `shophubapp://map-result?storeId=${CVSStoreID}&storeName=${storeNameEnc}&address=${addressEnc}&subtype=${LogisticsSubType}`;
+
+    // 2. 準備網頁版用資料 (針對電腦版使用者)
+    const storeData = JSON.stringify({
       storeId: CVSStoreID || '',
       storeName: CVSStoreName || '',
       storeAddress: CVSAddress || '',
       logisticsSubType: LogisticsSubType || ''
     });
 
-    // 回傳 HTML (網頁版使用 postMessage 機制)
+    // 3. 回傳智慧型 HTML：同時偵測網頁 popup 與 App
     const html = `
 <!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>門市選擇完成</title>
+  <style>
+    body { font-family: -apple-system, sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; background-color: #f9f9f9; }
+    .card { background: white; padding: 30px; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); text-align: center; width: 80%; max-width: 320px; }
+    h3 { margin-top: 0; color: #333; }
+    p { color: #666; margin-bottom: 24px; font-size: 14px; }
+    .btn { display: block; width: 100%; padding: 14px 0; background-color: #007aff; color: white; text-decoration: none; border-radius: 12px; font-weight: 600; font-size: 16px; margin-top: 10px; cursor: pointer; border: none; }
+    .hidden { display: none; }
+  </style>
 </head>
 <body>
-  <script>
-    const storeData = {
-      storeId: '${CVSStoreID || ''}',
-      storeName: '${CVSStoreName || ''}',
-      storeAddress: '${CVSAddress || ''}',
-      logisticsSubType: '${LogisticsSubType || ''}'
-    };
+  <div class="card">
+    <h3 id="status">門市選擇完成</h3>
+    
+    <div id="app-content" class="hidden">
+      <p>正在返回 App...<br>如果沒有反應，請點擊下方按鈕</p>
+      <a href="${appUrl}" class="btn">開啟 App</a>
+    </div>
 
+    <div id="web-content" class="hidden">
+      <p>已成功選擇門市，視窗將自動關閉。</p>
+      <button onclick="window.close()" class="btn" style="background-color:#ccc; color:#333">關閉視窗</button>
+    </div>
+  </div>
+
+  <script>
+    const storeData = ${storeData};
+
+    // 判斷邏輯：如果有 window.opener，代表是網頁彈窗 (Web)
     if (window.opener) {
+      document.getElementById('web-content').classList.remove('hidden');
       window.opener.postMessage(storeData, '*');
       setTimeout(() => window.close(), 500);
-    } else {
-      document.write('已選擇門市，請關閉視窗');
+    } 
+    // 否則，代表是獨立視窗或 App WebView
+    else {
+      document.getElementById('app-content').classList.remove('hidden');
+      
+      // 嘗試自動跳轉
+      setTimeout(function() {
+        window.location.href = "${appUrl}";
+      }, 300);
     }
   </script>
 </body>
