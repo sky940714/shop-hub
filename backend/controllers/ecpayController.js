@@ -343,8 +343,12 @@ const renderMapPage = (req, res) => {
   }
 };
 
+// backend/controllers/ecpayController.js
+
+// ... (前略)
+
 // ==========================================
-// 10. [新增] 處理 App 地圖回傳 (轉址回 App)
+// 10. [修正] 處理 App 地圖回傳 (轉址回 App)
 // ==========================================
 const handleAppMapRedirect = (req, res) => {
   const { CVSStoreName, CVSStoreID, CVSAddress, LogisticsSubType } = req.body;
@@ -356,21 +360,38 @@ const handleAppMapRedirect = (req, res) => {
   const address = encodeURIComponent(CVSAddress || '');
   
   // 2. 組合 App 專用網址 (Deep Link)
-  // 格式: shophubapp://map-result?storeId=...
   const appUrl = `shophubapp://map-result?storeId=${CVSStoreID}&storeName=${storeName}&address=${address}&subtype=${LogisticsSubType}`;
 
-  // 3. 回傳 HTML 讓瀏覽器執行跳轉
+  // 3. 回傳 HTML (增加手動點擊按鈕，並美化介面)
   const html = `
     <!DOCTYPE html>
     <html>
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>跳轉中...</title>
+      <style>
+        body { font-family: -apple-system, sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; background-color: #f9f9f9; }
+        .card { background: white; padding: 30px; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); text-align: center; width: 80%; max-width: 320px; }
+        h3 { margin-top: 0; color: #333; }
+        p { color: #666; margin-bottom: 24px; font-size: 14px; }
+        .btn { display: block; width: 100%; padding: 14px 0; background-color: #007aff; color: white; text-decoration: none; border-radius: 12px; font-weight: 600; font-size: 16px; margin-top: 10px; }
+        .btn:active { opacity: 0.8; }
+      </style>
+    </head>
     <body>
-      <script>
-        document.body.innerHTML = "<h3>正在返回 App...</h3>";
-        // 喚醒 App
-        window.location.href = "${appUrl}";
+      <div class="card">
+        <h3>門市選擇完成</h3>
+        <p>正在返回 App...<br>如果沒有反應，請點擊下方按鈕</p>
         
-        // 延遲關閉視窗
-        setTimeout(function() { window.close(); }, 1500);
+        <a href="${appUrl}" class="btn">開啟 App</a>
+      </div>
+
+      <script>
+        // 嘗試自動跳轉 (部分 iOS 版本可能有效)
+        setTimeout(function() {
+          window.location.href = "${appUrl}";
+        }, 300);
       </script>
     </body>
     </html>
