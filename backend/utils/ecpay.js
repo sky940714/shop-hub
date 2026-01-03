@@ -67,6 +67,7 @@ class ECPayUtils {
   }
 
   // 3. 地圖參數
+  // 3. 地圖參數
   getMapParams(logisticsSubType, clientReplyURL) {
     const params = {
       MerchantID: this.merchantId,
@@ -76,17 +77,23 @@ class ECPayUtils {
       IsCollection: 'N',
     };
 
-    // 1. 如果有傳入 clientReplyURL，加入參數 (這步正確)
+    // 1. 加入 ClientReplyURL
     if (clientReplyURL) {
+      console.log('🔥🔥🔥 [DEBUG] 成功加入 ClientReplyURL:', clientReplyURL); // <--- 加入這行
       params.ClientReplyURL = clientReplyURL;
+    } else {
+      console.log('💀💀💀 [DEBUG] 警告：沒有收到 ClientReplyURL'); // <--- 加入這行
     }
 
-    // 🔥 2. 關鍵修正：先產生 CheckMacValue (這時候 params 裡還不能有 actionUrl)
+    // 2. 產生檢查碼
     params.CheckMacValue = this.generateCheckMacValue(params, 'md5');
     
-    // 3. 算完驗證碼後，再把 actionUrl 掛上去方便 Controller 使用
+    // 3. 加入網址
     params.actionUrl = this.getApiUrl('map');
     
+    // 印出最終參數 (除了檢查碼)
+    console.log('📦 [DEBUG] 送給綠界的參數:', JSON.stringify(params)); // <--- 加入這行
+
     return params;
   }
 
