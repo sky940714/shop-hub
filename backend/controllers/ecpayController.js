@@ -301,12 +301,13 @@ const renderMapPage = (req, res) => {
   try {
     const { logisticsSubType } = req.query;
     
-    // 取得綠界所需的參數
-    const params = ecpayUtils.getMapParams(logisticsSubType);
+    // 定義 App 專用的回程網址
+    const appRedirectUrl = "https://www.anxinshophub.com/api/ecpay/map-app-redirect";
+
+    // 🔥 修正：將 URL 作為第二個參數傳入，讓 Utils 幫你一起加密
+    const params = ecpayUtils.getMapParams(logisticsSubType, appRedirectUrl);
     
-    // 🔥 [關鍵修正] 設定回傳網址為 App 專用的轉址路由
-    // 這會告訴綠界：選完後請 POST 到這個網址，而不是預設的網頁版 callback
-    params.ClientReplyURL = "https://www.anxinshophub.com/api/ecpay/map-app-redirect";
+    // 注意：原本這裡手動 params.ClientReplyURL = ... 的程式碼要刪掉，因為已經在上面做完了
 
     const actionUrl = params.actionUrl;
     delete params.actionUrl;

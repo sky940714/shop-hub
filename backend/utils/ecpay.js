@@ -67,15 +67,27 @@ class ECPayUtils {
   }
 
   // 3. 地圖參數
-  getMapParams(logisticsSubType) {
-    return {
+  getMapParams(logisticsSubType, clientReplyURL) {
+    const params = {
       MerchantID: this.merchantId,
       LogisticsType: 'CVS',
       LogisticsSubType: logisticsSubType || 'UNIMARTC2C',
-      ServerReplyURL: 'https://anxinshophub.com/api/ecpay/map-callback',
+      ServerReplyURL: 'https://anxinshophub.com/api/ecpay/map-callback', 
       IsCollection: 'N',
-      actionUrl: this.getApiUrl('map')
     };
+
+    // 1. 如果有傳入 clientReplyURL，加入參數 (這步正確)
+    if (clientReplyURL) {
+      params.ClientReplyURL = clientReplyURL;
+    }
+
+    // 🔥 2. 關鍵修正：先產生 CheckMacValue (這時候 params 裡還不能有 actionUrl)
+    params.CheckMacValue = this.generateCheckMacValue(params, 'md5');
+    
+    // 3. 算完驗證碼後，再把 actionUrl 掛上去方便 Controller 使用
+    params.actionUrl = this.getApiUrl('map');
+    
+    return params;
   }
 
   // 4. 物流訂單參數
