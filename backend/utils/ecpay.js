@@ -13,7 +13,7 @@ class ECPayUtils {
     this.isProduction = true; 
   }
 
-  // 輔助：取得正確的 API 網址 (🔥 修正重點：加入 subType 判斷 C2C 網址)
+  // 輔助：取得正確的 API 網址
   getApiUrl(type, subType) {
     const stage = this.isProduction ? '' : '-stage';
     const baseUrl = `https://logistics${stage}.ecpay.com.tw`;
@@ -25,7 +25,7 @@ class ECPayUtils {
     if (type === 'map') return `${baseUrl}/Express/map`;
     if (type === 'create') return `${baseUrl}/Express/Create`;
 
-    // 🖨️ 列印網址判斷 (C2C 必須用專屬網址)
+    // 🖨️ 列印網址判斷
     if (type === 'print') {
       if (subType === 'UNIMARTC2C') return `${baseUrl}/Express/PrintUniMartC2COrderInfo`;
       if (subType === 'FAMIC2C') return `${baseUrl}/Express/PrintFAMIC2COrderInfo`;
@@ -36,35 +36,41 @@ class ECPayUtils {
     }
   }
 
-  // backend/utils/ecpay.js
-
   // 1. 金流參數
-  getParams(order) {
+  getParams(order, customClientBackURL = null) {
     const tradeDate = this.formatDate(new Date()); 
-    const totalAmount = Math.round(order.total).toString();
+    const totalAmount = Math.round(Number(order.total) || 0).toString(); 
 
-    const prefix = String(order.order_no).slice(0, 13);
-    
-    // 2. 加上隨機數或時間戳記 (解決重複付款失敗的問題)
-    //    使用 Date.now() 取後 6 位數，確保每次點擊付款按鈕產生的編號都不同
+    // --- 訂單編號處理 ---
+    const cleanOrderNo = String(order.order_no).replace(/[^a-zA-Z0-9]/g, '');
+    const prefix = cleanOrderNo.slice(0, 13);
     const suffix = Date.now().toString().slice(-6);
-    
     const validTradeNo = `${prefix}${suffix}`; 
-    // 🔥 修改結束
+    // ----------------------------
+
+    // 👇 [DEBUG] 這裡可以暫時切換 ItemName 測試是否為特殊符號問題
+    // const safeItemName = `ShopHub Order ${order.order_no}`; // 純英文測試用
+    const safeItemName = `訂單編號 ${order.order_no}`;       // 原始中文
 
     const params = {
       MerchantID: this.merchantId,
-      MerchantTradeNo: validTradeNo, // ⚠️ 這裡改用新的變數
+      MerchantTradeNo: validTradeNo,
       MerchantTradeDate: tradeDate,
       PaymentType: 'aio',
       TotalAmount: totalAmount,
       TradeDesc: 'ShopHub Order',
-      ItemName: `訂單編號 ${order.order_no}`,
-      ReturnURL: 'https://www.anxinshophub.com/api/ecpay/callback',     // 記得確認有加 www
-      ClientBackURL: 'https://www.anxinshophub.com/order/result', // 記得確認有加 www
+      ItemName: safeItemName, // 使用變數
+      ReturnURL: 'https://www.anxinshophub.com/api/ecpay/callback',
+      ClientBackURL: customClientBackURL || 'https://www.anxinshophub.com/order/result',
       ChoosePayment: 'ALL',
       EncryptType: '1',
     };
+
+    // 🔥🔥🔥 [除錯 LOG] 印出參數內容 🔥🔥🔥
+    console.log('\n=============================================');
+    console.log('🔍 [除錯] 準備送給綠界的參數 (Params):');
+    console.log(JSON.stringify(params, null, 2));
+    console.log('=============================================\n');
 
     params.CheckMacValue = this.generateCheckMacValue(params, 'sha256');
     return { ...params, actionUrl: this.getApiUrl('payment') };
@@ -78,7 +84,6 @@ class ECPayUtils {
   }
 
   // 3. 地圖參數
-  // 3. 地圖參數
   getMapParams(logisticsSubType, clientReplyURL) {
     const params = {
       MerchantID: this.merchantId,
@@ -88,22 +93,15 @@ class ECPayUtils {
       IsCollection: 'N',
     };
 
-    // 1. 加入 ClientReplyURL
     if (clientReplyURL) {
-      console.log('🔥🔥🔥 [DEBUG] 成功加入 ClientReplyURL:', clientReplyURL); // <--- 加入這行
+      console.log('🔥🔥🔥 [DEBUG] 成功加入 ClientReplyURL:', clientReplyURL);
       params.ClientReplyURL = clientReplyURL;
-    } else {
-      console.log('💀💀💀 [DEBUG] 警告：沒有收到 ClientReplyURL'); // <--- 加入這行
     }
 
-    // 2. 產生檢查碼
     params.CheckMacValue = this.generateCheckMacValue(params, 'md5');
-    
-    // 3. 加入網址
     params.actionUrl = this.getApiUrl('map');
     
-    // 印出最終參數 (除了檢查碼)
-    console.log('📦 [DEBUG] 送給綠界的參數:', JSON.stringify(params)); // <--- 加入這行
+    console.log('📦 [DEBUG] 送給綠界的參數:', JSON.stringify(params));
 
     return params;
   }
@@ -158,11 +156,9 @@ class ECPayUtils {
     return params;
   }
 
-  // 5. 列印 HTML (🔥 修正重點：支援傳入物件並解構驗證碼)
+  // 5. 列印 HTML
   getPrintHtml(inputData) {
-    // 防呆：如果 inputData 是字串（舊寫法），自動轉成物件
     let data = typeof inputData === 'string' ? { AllPayLogisticsID: inputData } : inputData;
-
     const { AllPayLogisticsID, LogisticsSubType, CVSPaymentNo, CVSValidationNo } = data;
     
     const params = {
@@ -170,15 +166,12 @@ class ECPayUtils {
       AllPayLogisticsID: String(AllPayLogisticsID),
     };
 
-    // 如果是 C2C，必須加傳這兩個參數
     if (LogisticsSubType && LogisticsSubType.endsWith('C2C')) {
       if (CVSPaymentNo) params.CVSPaymentNo = String(CVSPaymentNo);
       if (CVSValidationNo) params.CVSValidationNo = String(CVSValidationNo);
     }
 
     params.CheckMacValue = this.generateCheckMacValue(params, 'md5');
-    
-    // 取得對應的 C2C 網址
     const printUrl = this.getApiUrl('print', LogisticsSubType);
 
     return `
@@ -198,6 +191,11 @@ class ECPayUtils {
     let raw = keys.map(k => `${k}=${rawParams[k]}`).join('&');
     
     raw = `HashKey=${this.hashKey}&${raw}&HashIV=${this.hashIv}`;
+
+    // 🔥🔥🔥 [除錯 LOG] 印出加密前字串，檢查是否有亂碼或特殊符號 🔥🔥🔥
+    console.log(`\n🔑 [除錯] 加密前的原始字串 (${algorithm}):`);
+    console.log(raw);
+    console.log('---------------------------------------------');
 
     let encoded = encodeURIComponent(raw).toLowerCase();
 

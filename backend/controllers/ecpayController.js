@@ -301,9 +301,14 @@ const getPaymentPage = async (req, res) => {
     }
 
     const order = rows[0];
-    const params = ecpayUtils.getParams(order);
 
-    // 🔥🔥🔥 加入這行：允許 inline script 執行 🔥🔥🔥
+    // 🔥 1. 設定 App 專用的回程網址 (付款成功後，綠界會導向這裡)
+    const appClientBackUrl = "https://www.anxinshophub.com/api/ecpay/payment-app-redirect";
+
+    // 🔥 2. 傳入第二個參數給 Utils
+    const params = ecpayUtils.getParams(order, appClientBackUrl);
+
+    // 加入 CSP (允許自動送出表單)
     res.set('Content-Security-Policy', "script-src 'self' 'unsafe-inline' 'unsafe-eval' *");
 
     const html = `
