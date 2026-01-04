@@ -90,7 +90,7 @@ const CheckoutPage: React.FC = () => {
         
         if (shouldContinue) {
           // 導向訂單頁面繼續付款
-          navigate(`/member/orders`);
+          navigate(`/checkout/orders`);
         } else {
           // 清除記錄，允許建立新訂單
           sessionStorage.removeItem('pendingOrder');
