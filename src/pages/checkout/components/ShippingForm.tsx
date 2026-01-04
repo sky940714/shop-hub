@@ -40,6 +40,7 @@ interface ShippingFormProps {
   onNextStep: () => void;
   onPrevStep: () => void;
   onSubmitOrder: () => void;
+  isSubmitting?: boolean;
 }
 
 const ShippingForm: React.FC<ShippingFormProps> = ({
@@ -61,6 +62,7 @@ const ShippingForm: React.FC<ShippingFormProps> = ({
   onNextStep,
   onPrevStep,
   onSubmitOrder,
+  isSubmitting = false, 
 }) => {
   // 處理收件資訊變更
   const handleInfoChange = (field: string, value: string) => {
@@ -788,11 +790,19 @@ const ShippingForm: React.FC<ShippingFormProps> = ({
           </div>
 
           <div className="form-actions">
-            <button className="btn-prev" onClick={onPrevStep}>
+            <button 
+              className="btn-prev" 
+              onClick={onPrevStep}
+              disabled={isSubmitting}
+            >
               上一步
             </button>
-            <button className="btn-submit" onClick={onSubmitOrder}>
-              確認送出訂單
+            <button 
+              className="btn-submit" 
+              onClick={onSubmitOrder}
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? '訂單處理中...' : '確認送出訂單'}
             </button>
           </div>
         </div>

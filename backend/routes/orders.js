@@ -29,6 +29,31 @@ router.post('/create', protect, async (req, res) => {
       items
     } = req.body;
 
+    // ✅ 新增：檢查是否有相同的待付款訂單
+    const existingOrder = await checkDuplicateOrder(connection, userId, items);
+    if (existingOrder) {
+      await connection.rollback();
+      
+      // 重新產生 ECPay 參數
+      let ecpayParams = null;
+      if (existingOrder.payment_method !== 'cod' && existingOrder.payment_method !== 'store_pay') {
+        const orderData = {
+          order_no: existingOrder.order_no,
+          total: existingOrder.total,
+          created_at: existingOrder.created_at
+        };
+        ecpayParams = ecpayUtils.getParams(orderData);
+      }
+
+      return res.json({
+        success: true,
+        message: '您有相同的待付款訂單，已為您導向付款',
+        orderNo: existingOrder.order_no,
+        ecpayParams: ecpayParams ? { ...ecpayParams, orderId: existingOrder.id } : null,
+        isExisting: true
+      });
+    }
+
     // 1. 取得運費設定
     let homeDeliveryFee = 100; // 預設值
     const [feeSettings] = await connection.query(
@@ -592,5 +617,65 @@ router.put('/:orderNo/cancel', protect, async (req, res) => {
     connection.release();
   }
 });
+
+// ========================================
+// 輔助函數: 檢查重複訂單
+// ========================================
+async function checkDuplicateOrder(connection, userId, items) {
+  // 1. 查詢該用戶最近 30 分鐘內的待付款訂單
+  const [pendingOrders] = await connection.query(`
+    SELECT id, order_no, total, payment_method, created_at
+    FROM orders
+    WHERE user_id = ?
+      AND status = 'pending'
+      AND payment_status = 'unpaid'
+      AND created_at > DATE_SUB(NOW(), INTERVAL 30 MINUTE)
+    ORDER BY created_at DESC
+  `, [userId]);
+
+  if (pendingOrders.length === 0) return null;
+
+  // 2. 比對商品組合是否相同
+  for (const order of pendingOrders) {
+    const [orderItems] = await connection.query(`
+      SELECT product_id, variant_id, quantity
+      FROM order_items
+      WHERE order_id = ?
+      ORDER BY product_id, variant_id
+    `, [order.id]);
+
+    // 將目前要建立的商品排序
+    const currentItems = items
+      .map(item => ({
+        product_id: item.product_id,
+        variant_id: item.variant_id || null,
+        quantity: item.quantity
+      }))
+      .sort((a, b) => {
+        if (a.product_id !== b.product_id) return a.product_id - b.product_id;
+        return (a.variant_id || 0) - (b.variant_id || 0);
+      });
+
+    // 比對
+    if (orderItems.length === currentItems.length) {
+      let isSame = true;
+      for (let i = 0; i < orderItems.length; i++) {
+        if (
+          orderItems[i].product_id !== currentItems[i].product_id ||
+          orderItems[i].variant_id !== currentItems[i].variant_id ||
+          orderItems[i].quantity !== currentItems[i].quantity
+        ) {
+          isSame = false;
+          break;
+        }
+      }
+      if (isSame) {
+        return order; // 找到重複訂單
+      }
+    }
+  }
+
+  return null; // 沒有重複
+}
 
 module.exports = router;
