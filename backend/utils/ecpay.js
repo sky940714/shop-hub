@@ -40,18 +40,12 @@ class ECPayUtils {
   getParams(order, customClientBackURL = null) {
     const tradeDate = this.formatDate(new Date()); 
     const totalAmount = Math.round(Number(order.total) || 0).toString(); 
-
-    // --- 🔥 修改 1：縮短版訂單編號 (總長度控制在 20 字內) ---
-    // Prefix(8) + Time(6) + Random(3) = 17 字元 (安全通過綠界限制)
-    const cleanOrderNo = String(order.order_no).replace(/[^a-zA-Z0-9]/g, '');
-    const prefix = cleanOrderNo.slice(0, 8); 
-    const timestamp = Date.now().toString().slice(-6); // 改取後6碼
+    const cleanOrderNo = String(order.order_no).replace(/[^0-9]/g, ''); 
+    const timestamp = Date.now().toString().slice(-6);
     const random = Math.floor(Math.random() * 999).toString().padStart(3, '0');
-    const validTradeNo = `${prefix}${timestamp}${random}`; 
-    // ------------------------------------------------
-
-    // --- 修改 2：移除 ItemName 的空格 (改用底線) ---
-    // 解決 10100050 編碼錯誤
+    
+    // 3. 組合 (11 + 9 = 20碼)
+    const validTradeNo = `${cleanOrderNo}${timestamp}${random}`; 
     const safeItemName = `訂單編號_${order.order_no}`.replace(/[^\u4e00-\u9fa5a-zA-Z0-9_\-]/g, '');
 
     const params = {

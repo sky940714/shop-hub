@@ -19,6 +19,9 @@ router.post('/map-callback', ecpayController.handleMapCallback); // 網頁版回
 router.get('/map-page', ecpayController.renderMapPage); // App 開啟的中繼頁
 router.post('/map-app-redirect', ecpayController.handleAppMapRedirect); // [新增] App 地圖回程轉址
 
+// [新增] App 付款完成回程路由 (解決 404 問題)
+router.get('/payment-app-redirect', ecpayController.handleAppPaymentRedirect);
+
 // ==========================================
 // 3. 後台出貨相關
 // ==========================================

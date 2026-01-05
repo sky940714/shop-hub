@@ -469,6 +469,50 @@ const handleAppMapRedirect = (req, res) => {
 };
 
 // ==========================================
+// 10. [新增] 處理 App 付款完成後的跳轉
+// ==========================================
+const handleAppPaymentRedirect = (req, res) => {
+  // 這裡的邏輯是通知 App "付款完成了"，讓 App 決定要跳轉到訂單頁面
+  // App 端請監聽 Deep Link: shophubapp://payment-result
+  const appUrl = `shophubapp://payment-result?status=success`;
+
+  // 設定 CSP 允許 inline script
+  res.set('Content-Security-Policy', "script-src 'self' 'unsafe-inline' 'unsafe-eval' *");
+  
+  const html = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="UTF-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1.0">
+      <title>付款完成</title>
+      <style>
+        body { font-family: -apple-system, sans-serif; display: flex; flex-direction: column; align-items: center; justify-content: center; height: 100vh; margin: 0; background-color: #f9f9f9; }
+        .card { background: white; padding: 30px; border-radius: 16px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); text-align: center; width: 80%; max-width: 320px; }
+        h3 { margin-top: 0; color: #333; }
+        .btn { display: block; width: 100%; padding: 14px 0; background-color: #007aff; color: white; text-decoration: none; border-radius: 12px; font-weight: 600; font-size: 16px; margin-top: 20px; }
+      </style>
+    </head>
+    <body>
+      <div class="card">
+        <h3>付款完成</h3>
+        <p>感謝您的購買！<br>正在返回 App...</p>
+        <a href="${appUrl}" class="btn">返回 App</a>
+      </div>
+
+      <script>
+        // 自動嘗試跳轉
+        setTimeout(function() {
+          window.location.href = "${appUrl}";
+        }, 500);
+      </script>
+    </body>
+    </html>
+  `;
+  res.send(html);
+};
+
+// ==========================================
 // 統一匯出
 // ==========================================
 module.exports = {
@@ -481,5 +525,6 @@ module.exports = {
   handleLogisticsCallback,
   getPaymentPage,
   renderMapPage,
-  handleAppMapRedirect // <--- 新增這個
+  handleAppMapRedirect,
+  handleAppPaymentRedirect
 };
