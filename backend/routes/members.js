@@ -337,6 +337,7 @@ router.get('/orders', protect, async (req, res) => {
         total,
         status,
         payment_status,
+        payment_method,  
         created_at
       FROM orders
       WHERE user_id = ?
