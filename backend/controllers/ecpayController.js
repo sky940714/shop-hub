@@ -50,12 +50,24 @@ const handleCallback = async (req, res) => {
       // ✅ 正確：優先讀取我們藏好的原始編號 CustomField1
       const orderNo = ecpayData.CustomField1 || ecpayData.MerchantTradeNo; 
       const tradeNo = ecpayData.TradeNo;
+
+      // 🔥 [新增] 防止重複處理：先檢查訂單是否已經付款
+      const [checkRows] = await promisePool.execute(
+        'SELECT payment_status FROM orders WHERE order_no = ?', 
+        [orderNo]
+      );
+
+      // 如果訂單已經是 paid，直接回傳 OK，不要重複更新
+      if (checkRows.length > 0 && checkRows[0].payment_status === 'paid') {
+        console.log(`⚠️ 訂單 ${orderNo} 已經付款過，跳過重複處理`);
+        return res.send('1|OK');
+      }
       
       console.log(`💰 綠界付款成功！更新訂單: ${orderNo} (交易號: ${tradeNo})`);
 
       await promisePool.execute(
         `UPDATE orders SET payment_status = 'paid', status = 'paid', ecpay_trade_no = ?, updated_at = NOW() WHERE order_no = ?`,
-        [tradeNo, orderNo] // ✅ 這樣就找得到訂單了
+        [tradeNo, orderNo] 
       );
       res.send('1|OK');
     }
