@@ -413,6 +413,39 @@ const MemberPage: React.FC = () => {
     }
   };
 
+  const handleDeleteAccount = async () => {
+    const confirmDelete = window.confirm(
+      '【嚴重警告】您確定要永久刪除帳號嗎？\n\n1. 此動作無法復原。\n2. 您的購物車、收藏清單與點數將被清空。\n\n如果您確定要刪除，請按「確定」。'
+    );
+
+    if (!confirmDelete) return;
+
+    const token = localStorage.getItem('token');
+    try {
+      const res = await fetch(`${API_BASE}/auth/delete`, { // 呼叫剛剛寫好的後端 API
+        method: 'DELETE',
+        headers: { 'Authorization': `Bearer ${token}` }
+      });
+      const data = await res.json();
+
+      if (data.success) {
+        alert('帳號已成功刪除。');
+        // 刪除成功後，執行登出動作清除本地資料
+        localStorage.removeItem('token');
+        localStorage.removeItem('isLoggedIn');
+        localStorage.removeItem('isAdmin');
+        localStorage.removeItem('userEmail');
+        localStorage.removeItem('userName');
+        navigate('/login'); // 踢回登入頁
+      } else {
+        alert(data.message || '刪除失敗');
+      }
+    } catch (error) {
+      console.error('刪除帳號錯誤:', error);
+      alert('系統發生錯誤，請稍後再試');
+    }
+  };
+
   const handleLogout = () => {
     if (window.confirm('確定要登出嗎?')) {
       localStorage.removeItem('token');
@@ -547,6 +580,15 @@ const MemberPage: React.FC = () => {
             <button className="menu-item" onClick={handleCustomerService}>
               <MessageSquare size={22} />
               <span>客服留言</span>
+              <ChevronRight size={22} className="menu-arrow" />
+            </button>
+            <button 
+              className="menu-item" 
+              onClick={handleDeleteAccount}
+              style={{ color: '#dc2626' }} // 使用紅色字體警示
+            >
+              <LogOut size={22} /> {/* 暫用 LogOut icon，也可換其他 */}
+              <span>刪除帳號</span>
               <ChevronRight size={22} className="menu-arrow" />
             </button>
             <button className="menu-item logout-item" onClick={handleLogout}>

@@ -171,3 +171,31 @@ exports.updateProfile = async (req, res, next) => {
     next(error);
   }
 };
+
+  /**
+ * @desc    刪除帳號
+ * @route   DELETE /api/auth/delete
+ * @access  Private（需要登入）
+ */
+exports.deleteAccount = async (req, res, next) => {
+  try {
+    const userId = req.user.id; // 從 Token 取得使用者 ID
+
+    await User.delete(userId);
+
+    res.json({
+      success: true,
+      message: '帳號與所有個人資料已成功刪除'
+    });
+
+  } catch (error) {
+    // 錯誤代碼 1451 或 1452 代表違反外鍵約束 (通常是因為有訂單)
+    if (error.code === 'ER_ROW_IS_REFERENCED' || error.code === 'ER_ROW_IS_REFERENCED_2' || error.errno === 1451) {
+      return res.status(400).json({
+        success: false,
+        message: '無法刪除帳號：您尚有未完成的訂單或交易紀錄，請聯繫客服處理。'
+      });
+    }
+    next(error);
+  }
+};
