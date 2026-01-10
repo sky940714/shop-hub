@@ -99,7 +99,6 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
 
       if (data.success) {
         await refreshCart();
-        alert(data.message || '已加入購物車');
       } else {
         alert(data.message || '加入購物車失敗');
       }
