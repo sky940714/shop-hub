@@ -562,7 +562,7 @@
 }
 
 /* ========================================
-   超商歷史門市樣式
+   超商歷史門市樣式 (請確保這段在檔案最下方)
    ======================================== */
 .cvs-history {
   margin-top: 16px;
@@ -586,6 +586,7 @@
   align-items: flex-start;
   gap: 12px;
   padding: 12px;
+  /* 👇 這是外框的設定，請確認這一行存在 */
   border: 1px solid #e5e7eb;
   border-radius: 8px;
   cursor: pointer;
@@ -603,6 +604,7 @@
   background: #eff6ff;
 }
 
+/* 以下是內部元件樣式 */
 .history-radio {
   padding-top: 2px;
 }
@@ -628,17 +630,9 @@
   color: #6b7280;
 }
 
-/* 手機版 */
+/* 手機版適配 */
 @media (max-width: 768px) {
   .cvs-history-item {
     padding: 10px;
-  }
-
-  .history-store-name {
-    font-size: 14px;
-  }
-
-  .history-store-address {
-    font-size: 12px;
   }
 }
