@@ -4,6 +4,7 @@ import { ShoppingCart, Search, Menu, X, Home, Heart, User, MessageCircle, Grid }
 import { useCart } from '../context/CartContext';
 import './HomePage.css';
 import BottomNav from '../components/BottomNav';
+import { API_BASE_URL, getImageUrl } from '../config'; // 引入環境變數與圖片工具
 
 interface Product {
   id: number;
@@ -11,13 +12,12 @@ interface Product {
   price: number;
   originalPrice: number | null;
   image: string;
-  category_id: number;  // ← 改這裡
+  category_id: number;
   rating: number;
   reviews: number;
   description: string;
 }
 
-// ← 新增這個介面
 interface Category {
   id: number;
   name: string;
@@ -44,14 +44,13 @@ interface CategoryProducts {
 
 const HomePage: React.FC = () => {
   const navigate = useNavigate();
-  // 狀態管理
   const { cartCount, addToCart } = useCart();
   const [wishlist, setWishlist] = useState<number[]>([]);
-  const [currentCategory, setCurrentCategory] = useState<number | 'all'>('all');  // ← 改這裡
+  const [currentCategory, setCurrentCategory] = useState<number | 'all'>('all');
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
   const [products, setProducts] = useState<Product[]>([]);
-  const [categories, setCategories] = useState<Category[]>([]);  // ← 新增這行
+  const [categories, setCategories] = useState<Category[]>([]);
   const [banners, setBanners] = useState<HeroBanner[]>([]);
   const [currentBannerIndex, setCurrentBannerIndex] = useState(0);
   const [isLineModalOpen, setIsLineModalOpen] = useState(false);
@@ -59,7 +58,7 @@ const HomePage: React.FC = () => {
   const [categoryProductsList, setCategoryProductsList] = useState<CategoryProducts[]>([]);
 
   useEffect(() => {
-   fetchCategories();
+    fetchCategories();
     fetchProducts();
     fetchWishlist();
     fetchBanners();
@@ -67,19 +66,19 @@ const HomePage: React.FC = () => {
 
   const fetchCategories = async () => {
     try {
-      const response = await fetch('/api/categories');
+      // 使用 API_BASE_URL
+      const response = await fetch(`${API_BASE_URL}/api/categories`);
       const data = await response.json();
 
       if (data.success) {
         setCategories(data.categories);
         
-        // 取前4個分類的商品
         const top4Categories = data.categories.slice(0, 4);
         const categoryProductsData: CategoryProducts[] = [];
 
         for (const category of top4Categories) {
           try {
-            const productRes = await fetch(`/api/products/category/${category.id}`);
+            const productRes = await fetch(`${API_BASE_URL}/api/products/category/${category.id}`);
             const productData = await productRes.json();
             
             if (productData.success) {
@@ -112,7 +111,7 @@ const HomePage: React.FC = () => {
 
   const fetchProducts = async () => {
     try {
-      const response = await fetch('/api/products/published');
+      const response = await fetch(`${API_BASE_URL}/api/products/published`);
       const data = await response.json();
 
       if (data.success) {
@@ -122,7 +121,7 @@ const HomePage: React.FC = () => {
           price: parseFloat(product.price),
           originalPrice: null,
           image: product.main_image || 'https://via.placeholder.com/400',
-          category_id: product.category_id,  // ← 改這裡
+          category_id: product.category_id,
           rating: 4.5,
           reviews: 0,
           description: product.description || '暫無描述'
@@ -140,13 +139,12 @@ const HomePage: React.FC = () => {
     if (!token) return;
 
     try {
-      const response = await fetch('/api/wishlist', {
+      const response = await fetch(`${API_BASE_URL}/api/wishlist`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await response.json();
 
       if (data.success) {
-        // 只取 product_id 組成陣列
         const wishlistIds = data.data.map((item: any) => item.product_id);
         setWishlist(wishlistIds);
       }
@@ -157,7 +155,7 @@ const HomePage: React.FC = () => {
 
   const fetchBanners = async () => {
     try {
-      const response = await fetch('/api/banners');
+      const response = await fetch(`${API_BASE_URL}/api/banners`);
       const data = await response.json();
       if (data.success) {
         setBanners(data.banners);
@@ -167,27 +165,13 @@ const HomePage: React.FC = () => {
     }
   };
 
-  // 輪播圖自動切換
   useEffect(() => {
     if (banners.length <= 1) return;
-    
     const interval = setInterval(() => {
       setCurrentBannerIndex((prev) => (prev + 1) % banners.length);
-    }, 5000); // 每 5 秒切換
-
+    }, 5000);
     return () => clearInterval(interval);
   }, [banners.length]);
-
-  // ← 刪除整個 getCategoryId 函數
-
-  // ← 刪除整個 categories 陣列
-
-  // 過濾商品
-  const filteredProducts = products.filter(product => {
-    const matchesCategory = currentCategory === 'all' || product.category_id === currentCategory;  // ← 改這裡
-    const matchesSearch = product.name.toLowerCase().includes(searchTerm.toLowerCase());
-    return matchesCategory && matchesSearch;
-  });
 
   const toggleWishlist = async (productId: number) => {
     const token = localStorage.getItem('token');
@@ -197,78 +181,58 @@ const HomePage: React.FC = () => {
       return;
     }
 
-  const isWishlisted = wishlist.includes(productId);
+    const isWishlisted = wishlist.includes(productId);
 
-  try {
-    if (isWishlisted) {
-      // 移除收藏
-      const response = await fetch(`/api/wishlist/${productId}`, {
-        method: 'DELETE',
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      const data = await response.json();
-
-      if (data.success) {
-        setWishlist(prev => prev.filter(id => id !== productId));
+    try {
+      if (isWishlisted) {
+        const response = await fetch(`${API_BASE_URL}/api/wishlist/${productId}`, {
+          method: 'DELETE',
+          headers: { 'Authorization': `Bearer ${token}` }
+        });
+        const data = await response.json();
+        if (data.success) {
+          setWishlist(prev => prev.filter(id => id !== productId));
+        }
+      } else {
+        const response = await fetch(`${API_BASE_URL}/api/wishlist`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`
+          },
+          body: JSON.stringify({ productId })
+        });
+        const data = await response.json();
+        if (data.success) {
+          setWishlist(prev => [...prev, productId]);
+        }
       }
-    } else {
-      // 新增收藏
-      const response = await fetch('/api/wishlist', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
-        },
-        body: JSON.stringify({ productId })
-      });
-      const data = await response.json();
-
-      if (data.success) {
-        setWishlist(prev => [...prev, productId]);
-      }
+    } catch (error) {
+      console.error('收藏操作失敗：', error);
+      alert('操作失敗，請稍後再試');
     }
-  } catch (error) {
-    console.error('收藏操作失敗：', error);
-    alert('操作失敗，請稍後再試');
-  }
-};
+  };
 
   const totalItems = cartCount;
 
   return (
     <div className="home-page">
-      {/* Header */}
       <header className="header">
         <div className="header-container">
           <div className="header-content">
-            {/* 手機版左側分類按鈕 */}
-            {/* 手機版左側分類按鈕 */}
-            <button 
-              className="mobile-category-btn"
-              onClick={() => setIsCategoryOpen(!isCategoryOpen)}
-            >
+            <button className="mobile-category-btn" onClick={() => setIsCategoryOpen(!isCategoryOpen)}>
               <Grid size={24} />
             </button>
-            {/* Logo */}
-              <div className="logo">
-                <h1>安鑫購物</h1>
-              </div>
-
-               {/* 手機版右側客服按鈕 */}
-            <button 
-              className="mobile-service-btn"
-              onClick={() => setIsLineModalOpen(true)}
-            >
+            <div className="logo">
+              <h1>安鑫購物</h1>
+            </div>
+            <button className="mobile-service-btn" onClick={() => setIsLineModalOpen(true)}>
               <MessageCircle size={24} />
             </button>
-
-           <nav className="nav-desktop">
+            <nav className="nav-desktop">
               <Link to="/" className="nav-link">首頁</Link>
               <div className="category-dropdown">
-                <button 
-                  className="nav-link category-btn"
-                  onClick={() => setIsCategoryOpen(!isCategoryOpen)}
-                >
+                <button className="nav-link category-btn" onClick={() => setIsCategoryOpen(!isCategoryOpen)}>
                   商品分類 ▾
                 </button>
                 {isCategoryOpen && (
@@ -292,11 +256,9 @@ const HomePage: React.FC = () => {
               <Link to="/wishlist" className="nav-link">最愛</Link>
               <Link to="/member" className="nav-link">會員</Link>
               <button className="nav-link customer-service-btn" onClick={() => setIsLineModalOpen(true)}>
-                <MessageCircle size={18} />
-                客服
+                <MessageCircle size={18} /> 客服
               </button>
             </nav>
-
             <div className="search-bar">
               <div className="search-container">
                 <Search className="search-icon" size={20} />
@@ -309,13 +271,11 @@ const HomePage: React.FC = () => {
                 />
               </div>
             </div>
-
             <div className="header-actions">
-            <button onClick={() => navigate('/cart')} className="cart-button">
-              <ShoppingCart size={24} />
-              {totalItems > 0 && <span className="cart-badge">{totalItems}</span>}
-            </button>
-
+              <button onClick={() => navigate('/cart')} className="cart-button">
+                <ShoppingCart size={24} />
+                {totalItems > 0 && <span className="cart-badge">{totalItems}</span>}
+              </button>
               <button onClick={() => setIsMobileMenuOpen(true)} className="mobile-menu-button">
                 <Menu size={24} />
               </button>
@@ -324,15 +284,12 @@ const HomePage: React.FC = () => {
         </div>
       </header>
 
-      {/* Mobile Menu */}
       {isMobileMenuOpen && (
         <div className="overlay" onClick={() => setIsMobileMenuOpen(false)}>
           <div className="mobile-menu" onClick={(e) => e.stopPropagation()}>
             <div className="mobile-menu-header">
               <h2>選單</h2>
-              <button onClick={() => setIsMobileMenuOpen(false)}>
-                <X size={24} />
-              </button>
+              <button onClick={() => setIsMobileMenuOpen(false)}><X size={24} /></button>
             </div>
             <nav className="mobile-nav">
               <Link to="/" className="mobile-nav-link" onClick={() => setIsMobileMenuOpen(false)}>首頁</Link>
@@ -344,14 +301,11 @@ const HomePage: React.FC = () => {
         </div>
       )}
 
-      {/* 手機版分類選單 */}
       {isCategoryOpen && (
         <div className="mobile-category-menu">
           <div className="mobile-category-menu-header">
             <h3>商品分類</h3>
-            <button onClick={() => setIsCategoryOpen(false)}>
-              <X size={24} />
-            </button>
+            <button onClick={() => setIsCategoryOpen(false)}><X size={24} /></button>
           </div>
           {categories.map(category => (
             <button
@@ -368,127 +322,68 @@ const HomePage: React.FC = () => {
         </div>
       )}
 
-      {/* Hero Section */}
       <section 
         className="hero"
         style={banners.length > 0 && banners[currentBannerIndex]?.image_url ? {
-          backgroundImage: `linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url(${banners[currentBannerIndex].image_url})`,
+          // 使用 getImageUrl 處理輪播圖
+          backgroundImage: `linear-gradient(rgba(0,0,0,0.3), rgba(0,0,0,0.3)), url(${getImageUrl(banners[currentBannerIndex].image_url)})`,
           backgroundSize: 'cover',
           backgroundPosition: 'center'
         } : {}}
       >
         <div className="hero-container">
-          <h2 className="hero-title">
-            {banners.length > 0 && banners[currentBannerIndex]?.title 
-              ? banners[currentBannerIndex].title 
-              : '發現你的完美商品'}
-          </h2>
-          <p className="hero-subtitle">
-            {banners.length > 0 && banners[currentBannerIndex]?.subtitle 
-              ? banners[currentBannerIndex].subtitle 
-              : '精選商品,品質保證,快速配送'}
-          </p>
+          <h2 className="hero-title">{banners.length > 0 && banners[currentBannerIndex]?.title ? banners[currentBannerIndex].title : '發現你的完美商品'}</h2>
+          <p className="hero-subtitle">{banners.length > 0 && banners[currentBannerIndex]?.subtitle ? banners[currentBannerIndex].subtitle : '精選商品,品質保證,快速配送'}</p>
           <button 
             className="hero-button"
             onClick={() => {
               const linkUrl = banners[currentBannerIndex]?.link_url;
               if (linkUrl) {
-                if (linkUrl.startsWith('http://') || linkUrl.startsWith('https://')) {
-                  window.open(linkUrl, '_blank');
-                } else {
-                  navigate(linkUrl);
-                }
+                if (linkUrl.startsWith('http')) { window.open(linkUrl, '_blank'); } else { navigate(linkUrl); }
               } else {
                 document.getElementById('products')?.scrollIntoView({ behavior: 'smooth' });
               }
             }}
-          >
-            立即購物
-          </button>
-          
-          {/* 輪播指示點 */}
+          >立即購物</button>
           {banners.length > 1 && (
             <div className="hero-dots">
               {banners.map((_, index) => (
-                <button
-                  key={index}
-                  className={`hero-dot ${index === currentBannerIndex ? 'active' : ''}`}
-                  onClick={() => setCurrentBannerIndex(index)}
-                />
+                <button key={index} className={`hero-dot ${index === currentBannerIndex ? 'active' : ''}`} onClick={() => setCurrentBannerIndex(index)} />
               ))}
             </div>
           )}
         </div>
       </section>
 
-      {/* Products by Category */}
       <section className="products-section" id="products">
         {categoryProductsList.length === 0 ? (
-          <div className="empty-products">
-            <p>目前沒有商品，請從後台新增商品</p>
-          </div>
+          <div className="empty-products"><p>目前沒有商品，請從後台新增商品</p></div>
         ) : (
           categoryProductsList.map(({ category, products }) => (
             <div key={category.id} className="category-section">
-              {/* 分類標題 */}
               <div className="category-header">
                 <h2 className="category-title">{category.name}</h2>
-                <button 
-                  className="category-more-btn"
-                  onClick={() => navigate(`/search?category=${encodeURIComponent(category.name)}`)}
-                >
-                  查看更多 →
-                </button>
+                <button className="category-more-btn" onClick={() => navigate(`/search?category=${encodeURIComponent(category.name)}`)}>查看更多 →</button>
               </div>
-
-              {/* 商品網格 */}
               <div className="products-grid">
                 {products.map(product => (
                   <div key={product.id} className="product-card">
-                    <div
-                      className="product-image-container"
-                      onClick={() => navigate(`/product/${product.id}`)}
-                      style={{ cursor: 'pointer' }}
-                    >
-                      <img src={product.image} alt={product.name} className="product-image" />
-                      <button
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          toggleWishlist(product.id);
-                        }}
-                        className={`wishlist-button ${wishlist.includes(product.id) ? 'active' : ''}`}
-                      >
-                        ❤
-                      </button>
+                    <div className="product-image-container" onClick={() => navigate(`/product/${product.id}`)} style={{ cursor: 'pointer' }}>
+                      {/* 使用 getImageUrl 處理商品圖片 */}
+                      <img src={getImageUrl(product.image)} alt={product.name} className="product-image" />
+                      <button onClick={(e) => { e.stopPropagation(); toggleWishlist(product.id); }} className={`wishlist-button ${wishlist.includes(product.id) ? 'active' : ''}`}>❤</button>
                       {product.originalPrice && <div className="sale-badge">特價</div>}
                     </div>
-
                     <div className="product-info">
-                      <h3
-                        className="product-name"
-                        onClick={() => navigate(`/product/${product.id}`)}
-                        style={{ cursor: 'pointer' }}
-                      >
-                        {product.name}
-                      </h3>
+                      <h3 className="product-name" onClick={() => navigate(`/product/${product.id}`)} style={{ cursor: 'pointer' }}>{product.name}</h3>
                       <p className="product-description">{product.description}</p>
-
-                      <div className="product-rating">
-                        <span>⭐ {product.rating} ({product.reviews})</span>
-                      </div>
-
+                      <div className="product-rating"><span>⭐ {product.rating} ({product.reviews})</span></div>
                       <div className="product-footer">
                         <div className="price-container">
                           <span className="price">NT$ {product.price.toLocaleString()}</span>
-                          {product.originalPrice && (
-                            <span className="original-price">
-                              NT$ {product.originalPrice.toLocaleString()}
-                            </span>
-                          )}
+                          {product.originalPrice && <span className="original-price">NT$ {product.originalPrice.toLocaleString()}</span>}
                         </div>
-                        <button onClick={() => addToCart(product.id, 1)} className="add-to-cart-button">
-                          加入購物車
-                        </button>
+                        <button onClick={() => addToCart(product.id, 1)} className="add-to-cart-button">加入購物車</button>
                       </div>
                     </div>
                   </div>
@@ -497,45 +392,31 @@ const HomePage: React.FC = () => {
             </div>
           ))
         )}
-
-        {/* 最底部查看更多 */}
-        <div className="view-more-container">
-          <button 
-            className="view-more-btn"
-            onClick={() => navigate('/search')}
-          >
-            查看更多商品
-          </button>
-        </div>
+        <div className="view-more-container"><button className="view-more-btn" onClick={() => navigate('/search')}>查看更多商品</button></div>
       </section>
 
-      {/* LINE 客服彈窗 */}
       {isLineModalOpen && (
         <div className="overlay" onClick={() => setIsLineModalOpen(false)}>
           <div className="line-modal" onClick={(e) => e.stopPropagation()}>
             <div className="line-modal-header">
               <h3>聯絡客服</h3>
-              <button onClick={() => setIsLineModalOpen(false)}>
-                <X size={24} />
-              </button>
+              <button onClick={() => setIsLineModalOpen(false)}><X size={24} /></button>
             </div>
             <div className="line-modal-body">
-              <img src="/images/line_qrcode.png" alt="LINE QRCode" className="line-qrcode" />
+              {/* 使用 getImageUrl 處理 QR Code 確保 App 下正常 */}
+              <img src={getImageUrl('/images/line_qrcode.png')} alt="LINE QRCode" className="line-qrcode" />
               <p>掃描 QRCode 加入官方 LINE</p>
             </div>
           </div>
         </div>
       )}
 
-      {/* Footer */}
       <footer className="footer">
         <div className="footer-container">
           <div className="footer-grid">
             <div className="footer-column">
               <h3 className="footer-title">安鑫購物</h3>
               <p className="footer-text">提供最優質的商品與服務,打造完美的購物體驗。</p>
-
-
             </div>
             <div className="footer-column" id="contact">
               <h4 className="footer-heading">聯絡資訊</h4>
@@ -546,9 +427,7 @@ const HomePage: React.FC = () => {
               </div>
             </div>
           </div>
-          <div className="footer-bottom">
-            <p>&copy; 2025 ShopHub. All rights reserved.</p>
-          </div>
+          <div className="footer-bottom"><p>&copy; 2025 ShopHub. All rights reserved.</p></div>
         </div>
       </footer>
       <BottomNav activePage="home" />

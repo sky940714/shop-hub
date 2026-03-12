@@ -255,7 +255,7 @@ const MemberPage: React.FC = () => {
       const token = localStorage.getItem('token');
       // 注意：如果您是 App 版，這裡的網址必須是完整的 https://...
       // 如果您的專案有設定 API_BASE 變數，也可以使用 `${API_BASE}/orders/${orderNo}/cancel`
-      const res = await fetch(`https://www.anxinshophub.com/api/orders/${orderNo}/cancel`, {
+      const res = await fetch(`/api/orders/${orderNo}/cancel`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,

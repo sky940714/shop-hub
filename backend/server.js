@@ -31,9 +31,10 @@ app.use(cors({
     // 允許的來源清單
     const allowedOrigins = [
       'http://localhost:3000',        // 本機開發網頁
+      'http://localhost:5001',        // 本機後端 (處理您報錯中出現的來源)
       'https://www.anxinshophub.com', // 您的正式網站
-      'https://anxinshophub.com',     // ← 新增（沒有 www）
-      'https://logistics.ecpay.com.tw', // ← 新增（綠界物流）
+      'https://anxinshophub.com',     // 沒有 www
+      'https://logistics.ecpay.com.tw', // 綠界物流
       'capacitor://localhost',        // iOS App 來源
       'http://localhost',             // Android App 來源
       'https://localhost'             // 部分 Android 版本
@@ -41,12 +42,13 @@ app.use(cors({
     
     // 邏輯判斷：
     // 1. !origin: 允許沒有來源的請求 (某些手機請求或 Postman)
-    // 2. indexOf: 來源在上面的白名單內
-    // 3. startsWith: 允許本機區網連線 (方便您用手機連電腦測試 192.168.x.x)
-    if (!origin || allowedOrigins.indexOf(origin) !== -1 || origin.startsWith('http://192.168.')) {
+    // 2. 處理帶有斜線的網址 (例如報錯中的 http://localhost:5001/)
+    const cleanOrigin = origin ? origin.replace(/\/$/, '') : null;
+
+    if (!origin || allowedOrigins.indexOf(cleanOrigin) !== -1 || origin.startsWith('http://192.168.')) {
       callback(null, true);
     } else {
-      console.log('被 CORS 擋住的來源:', origin); // 方便除錯
+      console.log('❌ 被 CORS 擋住的來源:', origin); // 方便除錯
       callback(new Error('Not allowed by CORS'));
     }
   },
@@ -54,6 +56,7 @@ app.use(cors({
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'], // 允許的方法
   allowedHeaders: ['Content-Type', 'Authorization'] // 允許的標頭
 }));
+
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
@@ -86,7 +89,7 @@ app.get('/api/health', (req, res) => {
 // ==========================================
 app.use('/api/auth', authRoutes);
 app.use('/api/products', productRoutes);
-app.use('/api/upload', uploadRoutes);  // ← 加這行！
+app.use('/api/upload', uploadRoutes); 
 app.use('/api/cart', cartRoutes); 
 app.use('/api/orders', orderRoutes);
 app.use('/api/categories', categoryRoutes); 
@@ -96,7 +99,7 @@ app.use('/api/ecpay', ecpayRoutes);
 app.use('/api/pickup-stores', pickupStoresRoutes);
 app.use('/api/banners', bannerRoutes);
 app.use('/api/settings', settingsRoutes);
-app.use('/api/returns', returnRoutes); // ← 新增這行
+app.use('/api/returns', returnRoutes);
 
 // ==========================================
 // 404 處理（必須放在所有路由之後）

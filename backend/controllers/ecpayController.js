@@ -328,7 +328,7 @@ const getPaymentPage = async (req, res) => {
     const order = rows[0];
 
     // 🔥 1. 設定 App 專用的回程網址 (付款成功後，綠界會導向這裡)
-    const appClientBackUrl = "https://www.anxinshophub.com/api/ecpay/payment-app-redirect";
+    const appClientBackUrl = "/api/ecpay/payment-app-redirect";
 
     // 🔥 2. 傳入第二個參數給 Utils
     const params = ecpayUtils.getParams(order, appClientBackUrl);
@@ -375,7 +375,7 @@ const renderMapPage = (req, res) => {
     const { logisticsSubType } = req.query;
     
     // 定義 App 專用的回程網址
-    const appRedirectUrl = "https://www.anxinshophub.com/api/ecpay/map-app-redirect";
+    const appRedirectUrl = "/api/ecpay/map-app-redirect";
 
     // 🔥 修正：將 URL 作為第二個參數傳入，讓 Utils 幫你一起加密
     const params = ecpayUtils.getMapParams(logisticsSubType, appRedirectUrl);
