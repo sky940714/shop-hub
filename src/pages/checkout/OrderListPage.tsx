@@ -4,6 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Package, ChevronRight, ArrowLeft, CreditCard } from 'lucide-react';
 import './styles/OrderListPage.css';
 import ECPayForm from './components/ECPayForm'; // 新增這行
+import { apiFetch } from '../../utils/api';
 
 interface Order {
   id: number;
@@ -30,7 +31,7 @@ const OrderListPage: React.FC = () => {
     try {
       const token = localStorage.getItem('token');
       // 2. 修正路徑：從 /api/orders 改為 /api/orders/user/list
-      const response = await fetch('/api/orders/user/list', { 
+      const response = await apiFetch('/api/orders/user/list', { 
         headers: {
           'Authorization': `Bearer ${token}`,
         },
@@ -51,7 +52,7 @@ const OrderListPage: React.FC = () => {
   const handlePay = async (e: React.MouseEvent, orderId: number) => {
     e.stopPropagation(); // 防止點擊觸發 "查看詳情"
     try {
-      const response = await fetch('/api/ecpay/checkout', {
+      const response = await apiFetch('/api/ecpay/checkout', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

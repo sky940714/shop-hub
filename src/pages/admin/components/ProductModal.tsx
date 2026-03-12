@@ -5,6 +5,7 @@ import { DndContext, closestCenter, PointerSensor, useSensor, useSensors } from 
 import { SortableContext, useSortable, horizontalListSortingStrategy, arrayMove } from '@dnd-kit/sortable';
 import { CSS } from '@dnd-kit/utilities';
 import '../styles/ProductModal.css';
+import { apiFetch } from '../../../utils/api';
 
 // ⭐ 新增：規格介面
 interface ProductVariant {
@@ -132,7 +133,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ product, onClose, onSave })
   // ⭐ 載入分類列表
   const fetchCategories = async () => {
     try {
-      const response = await fetch('/api/categories');
+      const response = await apiFetch('/api/categories');
       const data = await response.json();
 
       if (data.success) {
@@ -148,7 +149,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ product, onClose, onSave })
     try {
       const token = localStorage.getItem('token');
       
-      const response = await fetch(`/api/products/${productId}`, {
+      const response = await apiFetch(`/api/products/${productId}`, {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -304,7 +305,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ product, onClose, onSave })
         formData.append('images', file);
       });
 
-      const response = await fetch('/api/upload/images', {
+      const response = await apiFetch('/api/upload/images', {
         method: 'POST',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -356,7 +357,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ product, onClose, onSave })
         return;
       }
 
-      const response = await fetch('/api/upload/image', {
+      const response = await apiFetch('/api/upload/image', {
         method: 'DELETE',
         headers: {
           'Content-Type': 'application/json',
@@ -458,7 +459,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ product, onClose, onSave })
 
       if (product) {
         // 更新商品
-        response = await fetch(`/api/products/${product.id}`, {
+        response = await apiFetch(`/api/products/${product.id}`, {
           method: 'PUT',
           headers: {
             'Content-Type': 'application/json',
@@ -468,7 +469,7 @@ const ProductModal: React.FC<ProductModalProps> = ({ product, onClose, onSave })
         });
       } else {
         // 新增商品
-        response = await fetch('/api/products', {
+        response = await apiFetch('/api/products', {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

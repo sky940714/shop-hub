@@ -5,6 +5,7 @@ import { User, Package, FileText, MessageSquare, LogOut, ChevronRight, RefreshCc
 import BottomNav from '../components/BottomNav';
 import './MemberPage.css';
 import ECPayForm from './checkout/components/ECPayForm';
+import { apiFetch } from '../utils/api';
 
 interface OrderItem {
   product_name: string;
@@ -86,7 +87,7 @@ const MemberPage: React.FC = () => {
   const handlePay = async (orderId: number) => {
     try {
       const token = localStorage.getItem('token'); // 記得帶 Token 雖然這個 API 可能不需要，但保持習慣
-      const res = await fetch('/api/ecpay/checkout', {
+      const res = await apiFetch('/api/ecpay/checkout', {
         method: 'POST',
         headers: { 
           'Content-Type': 'application/json',
@@ -126,7 +127,7 @@ const MemberPage: React.FC = () => {
   const fetchProfile = async () => {
     const token = localStorage.getItem('token');
     try {
-      const res = await fetch(`${API_BASE}/members/profile`, {
+      const res = await apiFetch(`${API_BASE}/members/profile`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await res.json();
@@ -146,7 +147,7 @@ const MemberPage: React.FC = () => {
   const fetchOrders = async () => {
     const token = localStorage.getItem('token');
     try {
-      const res = await fetch(`${API_BASE}/members/orders`, {
+      const res = await apiFetch(`${API_BASE}/members/orders`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await res.json();
@@ -162,7 +163,7 @@ const MemberPage: React.FC = () => {
   const fetchAddresses = async () => {
     const token = localStorage.getItem('token');
     try {
-      const res = await fetch(`${API_BASE}/members/addresses`, {
+      const res = await apiFetch(`${API_BASE}/members/addresses`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await res.json();
@@ -216,7 +217,7 @@ const MemberPage: React.FC = () => {
 
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`${API_BASE}/returns/apply`, {
+      const res = await apiFetch(`${API_BASE}/returns/apply`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -255,7 +256,7 @@ const MemberPage: React.FC = () => {
       const token = localStorage.getItem('token');
       // 注意：如果您是 App 版，這裡的網址必須是完整的 https://...
       // 如果您的專案有設定 API_BASE 變數，也可以使用 `${API_BASE}/orders/${orderNo}/cancel`
-      const res = await fetch(`/api/orders/${orderNo}/cancel`, {
+      const res = await apiFetch(`/api/orders/${orderNo}/cancel`, {
         method: 'PUT',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -280,7 +281,7 @@ const MemberPage: React.FC = () => {
   const handleUpdateProfile = async () => {
     const token = localStorage.getItem('token');
     try {
-      const res = await fetch(`${API_BASE}/members/profile`, {
+      const res = await apiFetch(`${API_BASE}/members/profile`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -305,7 +306,7 @@ const MemberPage: React.FC = () => {
   const handleUpdateCarrier = async () => {
     const token = localStorage.getItem('token');
     try {
-      const res = await fetch(`${API_BASE}/members/carrier`, {
+      const res = await apiFetch(`${API_BASE}/members/carrier`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -367,7 +368,7 @@ const MemberPage: React.FC = () => {
         ? `${API_BASE}/members/addresses/${editingAddress.id}`
         : `${API_BASE}/members/addresses`;
       
-      const res = await fetch(url, {
+      const res = await apiFetch(url, {
         method: editingAddress ? 'PUT' : 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -396,7 +397,7 @@ const MemberPage: React.FC = () => {
 
     const token = localStorage.getItem('token');
     try {
-      const res = await fetch(`${API_BASE}/members/addresses/${id}`, {
+      const res = await apiFetch(`${API_BASE}/members/addresses/${id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -422,7 +423,7 @@ const MemberPage: React.FC = () => {
 
     const token = localStorage.getItem('token');
     try {
-      const res = await fetch(`${API_BASE}/auth/delete`, { // 呼叫剛剛寫好的後端 API
+      const res = await apiFetch(`${API_BASE}/auth/delete`, { // 呼叫剛剛寫好的後端 API
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });

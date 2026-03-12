@@ -1,6 +1,7 @@
 // src/pages/admin/components/ReturnManagement.tsx
 import React, { useState, useEffect } from 'react';
 import '../styles/OrderManagement.css'; // 共用訂單管理的樣式
+import { apiFetch } from '../../../utils/api';
 
 interface ReturnRequest {
   id: number;
@@ -24,7 +25,7 @@ const ReturnManagement: React.FC = () => {
     try {
       setLoading(true);
       const token = localStorage.getItem('token');
-      const res = await fetch('/api/returns/admin/list', {
+      const res = await apiFetch('/api/returns/admin/list', {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await res.json();
@@ -44,7 +45,7 @@ const ReturnManagement: React.FC = () => {
 
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`/api/returns/admin/${id}/status`, {
+      const res = await apiFetch(`/api/returns/admin/${id}/status`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

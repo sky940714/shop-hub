@@ -4,6 +4,7 @@ import { ShoppingCart, X, ArrowLeft } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import BottomNav from '../components/BottomNav';
 import './CartPage.css';
+import { apiFetch } from '../utils/api';
 
 const CartPage: React.FC = () => {
   const navigate = useNavigate();

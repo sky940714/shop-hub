@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Search, MapPin, Store, Plus, Trash2, Edit2, Image, Truck } from 'lucide-react';
 import '../styles/MainSettings.css';
+import { apiFetch } from '../../../utils/api';
 
 
 interface MemberPoints {
@@ -114,7 +115,7 @@ const MainSettings: React.FC = () => {
     setPickupLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`${API_BASE}/pickup-stores/admin/all`, {
+      const res = await apiFetch(`${API_BASE}/pickup-stores/admin/all`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await res.json();
@@ -131,7 +132,7 @@ const MainSettings: React.FC = () => {
   // 載入運費設定
   const fetchShippingFee = async () => {
     try {
-      const res = await fetch(`${API_BASE}/settings/shipping-fee`);
+      const res = await apiFetch(`${API_BASE}/settings/shipping-fee`);
       const data = await res.json();
       if (data.success) {
         setShippingFee(data.fee);
@@ -146,7 +147,7 @@ const MainSettings: React.FC = () => {
     setShippingFeeLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`${API_BASE}/settings/shipping-fee`, {
+      const res = await apiFetch(`${API_BASE}/settings/shipping-fee`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -263,7 +264,7 @@ const MainSettings: React.FC = () => {
         : `${API_BASE}/pickup-stores/admin`;
       const method = editingStore ? 'PUT' : 'POST';
 
-      const res = await fetch(url, {
+      const res = await apiFetch(url, {
         method,
         headers: {
           'Content-Type': 'application/json',
@@ -293,7 +294,7 @@ const MainSettings: React.FC = () => {
 
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`${API_BASE}/pickup-stores/admin/${id}`, {
+      const res = await apiFetch(`${API_BASE}/pickup-stores/admin/${id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -316,7 +317,7 @@ const MainSettings: React.FC = () => {
   const handleToggleActive = async (store: PickupStore) => {
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`${API_BASE}/pickup-stores/admin/${store.id}`, {
+      const res = await apiFetch(`${API_BASE}/pickup-stores/admin/${store.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -349,7 +350,7 @@ const MainSettings: React.FC = () => {
     setBannerLoading(true);
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`${API_BASE}/banners/admin/all`, {
+      const res = await apiFetch(`${API_BASE}/banners/admin/all`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await res.json();
@@ -374,7 +375,7 @@ const MainSettings: React.FC = () => {
       const formData = new FormData();
       formData.append('image', file);
 
-      const res = await fetch(`${API_BASE}/upload/image`, {
+      const res = await apiFetch(`${API_BASE}/upload/image`, {
         method: 'POST',
         headers: { 'Authorization': `Bearer ${token}` },
         body: formData
@@ -442,7 +443,7 @@ const MainSettings: React.FC = () => {
         : `${API_BASE}/banners/admin`;
       const method = editingBanner ? 'PUT' : 'POST';
 
-      const res = await fetch(url, {
+      const res = await apiFetch(url, {
         method,
         headers: {
           'Content-Type': 'application/json',
@@ -471,7 +472,7 @@ const MainSettings: React.FC = () => {
 
     try {
       const token = localStorage.getItem('token');
-      const res = await fetch(`${API_BASE}/banners/admin/${id}`, {
+      const res = await apiFetch(`${API_BASE}/banners/admin/${id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
@@ -490,7 +491,7 @@ const MainSettings: React.FC = () => {
   const handleToggleBanner = async (banner: HeroBanner) => {
     try {
       const token = localStorage.getItem('token');
-      await fetch(`${API_BASE}/banners/admin/${banner.id}`, {
+      await apiFetch(`${API_BASE}/banners/admin/${banner.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',

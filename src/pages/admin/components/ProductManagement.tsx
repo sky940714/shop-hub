@@ -3,6 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, Search } from 'lucide-react';
 import ProductModal from './ProductModal';
 import '../styles/ProductManagement.css';
+import { apiFetch } from '../../../utils/api';
 
 interface Product {
   id: string;
@@ -28,7 +29,7 @@ const ProductManagement: React.FC = () => {
 
   const fetchProducts = async () => {
   try {
-    const response = await fetch('/api/products');
+    const response = await apiFetch('/api/products');
     const data = await response.json();
 
     if (data.success) {
@@ -81,7 +82,7 @@ const getCategoryName = (categoryId: number): string => {
   try {
     const token = localStorage.getItem('token');
 
-    const response = await fetch(`/api/products/${id}`, {
+    const response = await apiFetch(`/api/products/${id}`, {
       method: 'DELETE',
       headers: {
         'Authorization': `Bearer ${token}`

@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Plus, Edit2, Trash2, GripVertical, Eye} from 'lucide-react';
 import CategoryProductModal from './CategoryProductModal';
+import { apiFetch } from '../../../utils/api';
 
 import {
   DndContext,
@@ -141,7 +142,7 @@ const sensors = useSensors(
       setLoading(true);
       setError(null);
 
-      const response = await fetch('/api/categories');
+      const response = await apiFetch('/api/categories');
       const data = await response.json();
 
       if (data.success) {
@@ -200,7 +201,7 @@ const handleDragEnd = async (event: DragEndEvent) => {
         return;
       }
 
-      const response = await fetch('/api/categories/update-order', {
+      const response = await apiFetch('/api/categories/update-order', {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -242,7 +243,7 @@ const handleDragEnd = async (event: DragEndEvent) => {
         return;
       }
 
-      const response = await fetch('/api/categories', {
+      const response = await apiFetch('/api/categories', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -281,7 +282,7 @@ const handleDragEnd = async (event: DragEndEvent) => {
         return;
       }
 
-      const response = await fetch(`/api/categories/${category.id}`, {
+      const response = await apiFetch(`/api/categories/${category.id}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -320,7 +321,7 @@ const handleDragEnd = async (event: DragEndEvent) => {
         return;
       }
 
-      const response = await fetch(`/api/categories/${category.id}`, {
+      const response = await apiFetch(`/api/categories/${category.id}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`,
@@ -348,7 +349,7 @@ const handleDragEnd = async (event: DragEndEvent) => {
     setProductsLoading(true);
 
     try {
-      const response = await fetch(`/api/products/category/${category.id}`);
+      const response = await apiFetch(`/api/products/category/${category.id}`);
       const data = await response.json();
 
       if (data.success) {

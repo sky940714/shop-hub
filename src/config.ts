@@ -5,7 +5,7 @@ import { Capacitor } from '@capacitor/core';
 // 開發環境設定區
 // ==========================================
 // 💡 要在模擬器或手機測試本機後端時，設為 true。準備打包上線時，改為 false。
-const IS_DEV_MODE = true; 
+const IS_DEV_MODE = false; 
 
 // 📱 使用 Xcode 模擬器測試，直接填寫 localhost 即可
 // (如果是實體手機才需要換成 Mac 的 Wi-Fi IP)

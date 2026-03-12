@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ShoppingCart, Lock, Mail, User } from 'lucide-react';
 import './LoginPage.css';
+import { apiFetch } from '../utils/api';
 
 // ⭐ 關鍵修正：引入 API 基礎網址設定
 import { API_BASE_URL } from '../config';
@@ -33,7 +34,7 @@ const LoginPage: React.FC = () => {
 
     try {
       // ✅ 修正：加上 API_BASE_URL
-      const response = await fetch(`${API_BASE_URL}/api/auth/login`, {
+      const response = await apiFetch(`${API_BASE_URL}/api/auth/login`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -87,7 +88,7 @@ const LoginPage: React.FC = () => {
 
     try {
       // ✅ 修正：加上 API_BASE_URL
-      const response = await fetch(`${API_BASE_URL}/api/auth/register`, {
+      const response = await apiFetch(`${API_BASE_URL}/api/auth/register`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

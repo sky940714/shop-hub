@@ -2,6 +2,7 @@
 import React, { useEffect } from 'react';
 import { X, Package } from 'lucide-react';
 import '../styles/CategoryProductModal.css';
+import { apiFetch } from '../../../utils/api';
 
 interface Product {
   id: number;

@@ -10,6 +10,7 @@ import 'swiper/css/navigation';
 import 'swiper/css/pagination';
 import 'swiper/css/thumbs';
 import './ProductDetailPage.css';
+import { apiFetch } from '../utils/api';
 
 // ⭐ 引入 API 網址與圖片處理工具 (請確認 config.ts 的相對路徑是否正確)
 import { API_BASE_URL, getImageUrl } from '../config';
@@ -63,7 +64,7 @@ const ProductDetailPage: React.FC = () => {
     const loadProduct = async () => {
       try {
         // ✅ 修正點 1：加上 API_BASE_URL，讓 App 知道要去哪裡抓資料
-        const response = await fetch(`${API_BASE_URL}/api/products/${id}`);
+        const response = await apiFetch(`${API_BASE_URL}/api/products/${id}`);
         const data = await response.json();
 
         if (data.success) {

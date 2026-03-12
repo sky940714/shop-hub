@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Package, ShoppingCart, Users, BarChart3 } from 'lucide-react';
 import '../styles/Dashboard.css';
+import { apiFetch } from '../../../utils/api';
 
 interface Stats {
   totalProducts: number;
@@ -36,7 +37,7 @@ const Dashboard: React.FC = () => {
         return;
       }
 
-      const response = await fetch('/api/orders/admin/dashboard/stats', {
+      const response = await apiFetch('/api/orders/admin/dashboard/stats', {
         method: 'GET',
         headers: {
           'Authorization': `Bearer ${token}`,

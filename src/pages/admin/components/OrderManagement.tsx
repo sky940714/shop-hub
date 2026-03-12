@@ -1,6 +1,7 @@
 // pages/admin/components/OrderManagement.tsx
 import React, { useState, useEffect } from 'react';
 import '../styles/OrderManagement.css';
+import { apiFetch } from '../../../utils/api';
 
 interface Order {
   id: number;
@@ -87,7 +88,7 @@ const OrderManagement: React.FC = () => {
       if (statusFilter !== 'all') params.append('status', statusFilter);
       
       // ✅ 修正 1: 改為相對路徑，解決 Mixed Content 錯誤
-      const response = await fetch(
+      const response = await apiFetch(
         `/api/orders/admin/all?${params}`,
         {
           headers: {
@@ -117,7 +118,7 @@ const OrderManagement: React.FC = () => {
     try {
       const token = localStorage.getItem('token');
       // ✅ 修正 2: 改為相對路徑
-      const response = await fetch(
+      const response = await apiFetch(
         `/api/orders/admin/${orderNo}`,
         {
           headers: {
@@ -149,7 +150,7 @@ const OrderManagement: React.FC = () => {
     try {
       const token = localStorage.getItem('token');
       // ✅ 修正 3: 改為相對路徑
-      const response = await fetch(
+      const response = await apiFetch(
         `/api/orders/admin/${orderNo}/status`,
         {
           method: 'PUT',
@@ -184,7 +185,7 @@ const OrderManagement: React.FC = () => {
     try {
       const token = localStorage.getItem('token');
       // ✅ 修正 4: 改為相對路徑
-      const response = await fetch(
+      const response = await apiFetch(
         `/api/orders/admin/${orderNo}`,
         {
           method: 'DELETE',
@@ -215,7 +216,7 @@ const OrderManagement: React.FC = () => {
     try {
       const token = localStorage.getItem('token');
       // ✅ 修正 5: 改為相對路徑 (重要！)
-      const response = await fetch('/api/ecpay/create-shipping', {
+      const response = await apiFetch('/api/ecpay/create-shipping', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

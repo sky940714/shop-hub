@@ -1,6 +1,7 @@
 // src/pages/checkout/PaymentResultPage.tsx
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
+import { apiFetch } from '../../utils/api';
 
 const PaymentResultPage: React.FC = () => {
   const navigate = useNavigate();

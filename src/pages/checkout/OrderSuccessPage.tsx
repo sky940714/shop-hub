@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { CheckCircle, Package, Home } from 'lucide-react';
 import './styles/OrderSuccessPage.css';
+import { apiFetch } from '../../utils/api';
 
 interface OrderDetail {
   order_no: string;
@@ -25,7 +26,7 @@ const OrderSuccessPage: React.FC = () => {
   const fetchOrderDetail = async () => {
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(`/api/orders/${orderNo}`, {
+      const response = await apiFetch(`/api/orders/${orderNo}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },

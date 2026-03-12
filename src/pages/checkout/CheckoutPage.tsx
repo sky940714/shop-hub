@@ -8,6 +8,7 @@ import ShippingForm from './components/ShippingForm';
 import OrderSummary from './components/OrderSummary';
 import './styles/CheckoutPage.css';
 import ECPayForm from './components/ECPayForm';
+import { apiFetch } from '../../utils/api';
 
 interface ShippingInfo {
   name: string;
@@ -103,7 +104,7 @@ const CheckoutPage: React.FC = () => {
   useEffect(() => {
     const fetchFee = async () => {
       try {
-        const res = await fetch('/api/settings/shipping-fee');
+        const res = await apiFetch('/api/settings/shipping-fee');
         const data = await res.json();
         if (data.success) {
           setHomeDeliveryFee(data.fee);
@@ -122,12 +123,12 @@ const CheckoutPage: React.FC = () => {
       if (!token) return;
 
       try {
-        const profileRes = await fetch('/api/members/profile', {
+        const profileRes = await apiFetch('/api/members/profile', {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         const profileData = await profileRes.json();
 
-        const addressRes = await fetch('/api/members/addresses/default', {
+        const addressRes = await apiFetch('/api/members/addresses/default', {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         const addressData = await addressRes.json();
@@ -258,7 +259,7 @@ const CheckoutPage: React.FC = () => {
         }))
       };
 
-      const response = await fetch('/api/orders/create', {
+      const response = await apiFetch('/api/orders/create', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',

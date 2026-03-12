@@ -3,6 +3,7 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ShoppingCart, User, Heart, Search, LogOut } from 'lucide-react';
 import './Navbar.css';
+import { apiFetch } from '../../../utils/api';
 
 const Navbar: React.FC = () => {
   const navigate = useNavigate();

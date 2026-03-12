@@ -5,6 +5,7 @@ import BottomNav from '../components/BottomNav';
 import './WishlistPage.css';
 // 引入你提供的 CartContext
 import { useCart } from '../context/CartContext';
+import { apiFetch } from '../utils/api';
 
 // 定義介面 (根據後端回傳的資料結構)
 interface WishlistProduct {
@@ -36,7 +37,7 @@ const WishlistPage: React.FC = () => {
 
     try {
       setLoading(true);
-      const res = await fetch(`${API_BASE}/wishlist`, {
+      const res = await apiFetch(`${API_BASE}/wishlist`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await res.json();
@@ -63,7 +64,7 @@ const WishlistPage: React.FC = () => {
   if (!token) return;
 
   try {
-      const res = await fetch(`${API_BASE}/wishlist/${productId}`, {
+      const res = await apiFetch(`${API_BASE}/wishlist/${productId}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });

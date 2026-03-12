@@ -5,6 +5,7 @@ import { useCart } from '../context/CartContext';
 import './HomePage.css';
 import BottomNav from '../components/BottomNav';
 import { API_BASE_URL, getImageUrl } from '../config'; // 引入環境變數與圖片工具
+import { apiFetch } from '../utils/api';
 
 interface Product {
   id: number;
@@ -67,7 +68,7 @@ const HomePage: React.FC = () => {
   const fetchCategories = async () => {
     try {
       // 使用 API_BASE_URL
-      const response = await fetch(`${API_BASE_URL}/api/categories`);
+      const response = await apiFetch(`${API_BASE_URL}/api/categories`);
       const data = await response.json();
 
       if (data.success) {
@@ -78,7 +79,7 @@ const HomePage: React.FC = () => {
 
         for (const category of top4Categories) {
           try {
-            const productRes = await fetch(`${API_BASE_URL}/api/products/category/${category.id}`);
+            const productRes = await apiFetch(`${API_BASE_URL}/api/products/category/${category.id}`);
             const productData = await productRes.json();
             
             if (productData.success) {
@@ -111,7 +112,7 @@ const HomePage: React.FC = () => {
 
   const fetchProducts = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/products/published`);
+      const response = await apiFetch(`${API_BASE_URL}/api/products/published`);
       const data = await response.json();
 
       if (data.success) {
@@ -139,7 +140,7 @@ const HomePage: React.FC = () => {
     if (!token) return;
 
     try {
-      const response = await fetch(`${API_BASE_URL}/api/wishlist`, {
+      const response = await apiFetch(`${API_BASE_URL}/api/wishlist`, {
         headers: { 'Authorization': `Bearer ${token}` }
       });
       const data = await response.json();
@@ -155,7 +156,7 @@ const HomePage: React.FC = () => {
 
   const fetchBanners = async () => {
     try {
-      const response = await fetch(`${API_BASE_URL}/api/banners`);
+      const response = await apiFetch(`${API_BASE_URL}/api/banners`);
       const data = await response.json();
       if (data.success) {
         setBanners(data.banners);
@@ -185,7 +186,7 @@ const HomePage: React.FC = () => {
 
     try {
       if (isWishlisted) {
-        const response = await fetch(`${API_BASE_URL}/api/wishlist/${productId}`, {
+        const response = await apiFetch(`${API_BASE_URL}/api/wishlist/${productId}`, {
           method: 'DELETE',
           headers: { 'Authorization': `Bearer ${token}` }
         });
@@ -194,7 +195,7 @@ const HomePage: React.FC = () => {
           setWishlist(prev => prev.filter(id => id !== productId));
         }
       } else {
-        const response = await fetch(`${API_BASE_URL}/api/wishlist`, {
+        const response = await apiFetch(`${API_BASE_URL}/api/wishlist`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',

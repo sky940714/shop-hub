@@ -2,6 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Store, Truck, CreditCard, MapPin, Banknote } from 'lucide-react'; // 新增 Banknote
 import './styles/ShippingForm.css';
+import { apiFetch } from '../../../utils/api';
 
 interface ShippingInfo {
   name: string;
@@ -79,7 +80,7 @@ const ShippingForm: React.FC<ShippingFormProps> = ({
    useEffect(() => {
     const fetchShippingFee = async () => {
       try {
-        const res = await fetch('/api/settings/shipping-fee');
+        const res = await apiFetch('/api/settings/shipping-fee');
         const data = await res.json();
         if (data.success) {
           setHomeDeliveryFee(data.fee);
@@ -95,7 +96,7 @@ const ShippingForm: React.FC<ShippingFormProps> = ({
   useEffect(() => {
     const fetchPickupStores = async () => {
       try {
-        const res = await fetch('/api/pickup-stores');
+        const res = await apiFetch('/api/pickup-stores');
         const data = await res.json();
         if (data.success) {
           setPickupStores(data.stores);
@@ -119,7 +120,7 @@ const ShippingForm: React.FC<ShippingFormProps> = ({
       if (!token) return;
 
       try {
-        const res = await fetch(`/api/members/cvs-stores?type=${shippingSubType}`, {
+        const res = await apiFetch(`/api/members/cvs-stores?type=${shippingSubType}`, {
           headers: { 'Authorization': `Bearer ${token}` }
         });
         const data = await res.json();
@@ -140,7 +141,7 @@ const ShippingForm: React.FC<ShippingFormProps> = ({
     if (!token || !shippingSubType) return;
 
     try {
-      await fetch('/api/members/cvs-stores', {
+      await apiFetch('/api/members/cvs-stores', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -219,7 +220,7 @@ const ShippingForm: React.FC<ShippingFormProps> = ({
 
     try {
       // ✅ 修改 2：視窗開啟後，才去後端抓資料
-      const response = await fetch(`/api/ecpay/map?logisticsSubType=${shippingSubType}`);
+      const response = await apiFetch(`/api/ecpay/map?logisticsSubType=${shippingSubType}`);
       
       if (!response.ok) throw new Error('Network response was not ok');
       const params = await response.json();

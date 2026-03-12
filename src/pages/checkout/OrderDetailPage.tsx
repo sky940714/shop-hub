@@ -3,6 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, Package, MapPin, CreditCard, FileText } from 'lucide-react';
 import './styles/OrderDetailPage.css';
+import { apiFetch } from '../../utils/api';
 
 interface OrderItem {
   id: number;
@@ -61,7 +62,7 @@ const OrderDetailPage: React.FC = () => {
         return;
       }
 
-      const response = await fetch(`/api/orders/${orderNo}`, {
+      const response = await apiFetch(`/api/orders/${orderNo}`, {
         headers: {
           'Authorization': `Bearer ${token}`,
         },

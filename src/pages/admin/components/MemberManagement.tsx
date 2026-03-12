@@ -1,6 +1,7 @@
 // pages/admin/components/MemberManagement.tsx
 import React, { useState, useEffect } from 'react';
 import '../styles/MemberManagement.css';
+import { apiFetch } from '../../../utils/api';
 
 interface Member {
   id: number;
@@ -63,7 +64,7 @@ const [memberToDelete, setMemberToDelete] = useState<Member | null>(null);
       const params = new URLSearchParams();
       if (searchTerm) params.append('search', searchTerm);
       
-      const response = await fetch(
+      const response = await apiFetch(
         `/api/members/admin/all?${params}`,
         {
           headers: {
@@ -93,7 +94,7 @@ const [memberToDelete, setMemberToDelete] = useState<Member | null>(null);
       const token = localStorage.getItem('token');
       
       // 查詢會員資料
-      const memberResponse = await fetch(
+      const memberResponse = await apiFetch(
         `/api/members/admin/${memberId}`,
         {
           headers: {
@@ -104,7 +105,7 @@ const [memberToDelete, setMemberToDelete] = useState<Member | null>(null);
       const memberData = await memberResponse.json();
       
       // 查詢訂單列表
-      const ordersResponse = await fetch(
+      const ordersResponse = await apiFetch(
         `/api/members/admin/${memberId}/orders`,
         {
           headers: {
@@ -115,7 +116,7 @@ const [memberToDelete, setMemberToDelete] = useState<Member | null>(null);
       const ordersData = await ordersResponse.json();
       
       // 查詢點數歷史
-      const historyResponse = await fetch(
+      const historyResponse = await apiFetch(
         `/api/members/admin/${memberId}/points-history`,
         {
           headers: {
@@ -151,7 +152,7 @@ const [memberToDelete, setMemberToDelete] = useState<Member | null>(null);
     
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(
+      const response = await apiFetch(
         `/api/members/admin/${selectedMember.id}/points`,
         {
           method: 'POST',
@@ -191,7 +192,7 @@ const [memberToDelete, setMemberToDelete] = useState<Member | null>(null);
     
     try {
       const token = localStorage.getItem('token');
-      const response = await fetch(
+      const response = await apiFetch(
         `/api/members/admin/${memberToDelete.id}`,
         {
           method: 'DELETE',

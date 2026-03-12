@@ -3,6 +3,7 @@ import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Search, X, TrendingUp, Loader } from 'lucide-react';
 import BottomNav from '../components/BottomNav';
 import './SearchPage.css'; 
+import { apiFetch } from '../utils/api';
 
 // 定義後端回傳的資料格式
 interface BackendProduct {
@@ -56,7 +57,7 @@ const SearchPage: React.FC = () => {
       try {
         setIsLoading(true);
         // 呼叫後端 API
-        const response = await fetch('/api/products/published');
+        const response = await apiFetch('/api/products/published');
         
         if (!response.ok) {
           throw new Error('無法連線至伺服器');

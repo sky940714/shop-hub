@@ -1,4 +1,5 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { apiFetch } from '../utils/api';
 
 // 購物車項目介面
 interface CartItem {
@@ -53,7 +54,7 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
     }
 
     try {
-      const response = await fetch('/api/cart', {
+      const response = await apiFetch('/api/cart', {
         headers: {
           'Authorization': `Bearer ${token}`
         }
@@ -82,7 +83,7 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
     setLoading(true);
 
     try {
-      const response = await fetch('/api/cart/add', {
+      const response = await apiFetch('/api/cart/add', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
@@ -122,7 +123,7 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
     setLoading(true);
 
     try {
-      const response = await fetch(`/api/cart/remove/${cartItemId}`, {
+      const response = await apiFetch(`/api/cart/remove/${cartItemId}`, {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`
@@ -161,7 +162,7 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
     setLoading(true);
 
     try {
-      const response = await fetch(`/api/cart/update/${cartItemId}`, {
+      const response = await apiFetch(`/api/cart/update/${cartItemId}`, {
         method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
@@ -197,7 +198,7 @@ export const CartProvider: React.FC<CartProviderProps> = ({ children }) => {
     setLoading(true);
 
     try {
-      const response = await fetch('/api/cart/clear', {
+      const response = await apiFetch('/api/cart/clear', {
         method: 'DELETE',
         headers: {
           'Authorization': `Bearer ${token}`
