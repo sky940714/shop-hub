@@ -8,6 +8,9 @@
   height: fit-content;
   position: sticky;
   top: 20px;
+  /* 👇 新增：確保卡片寬度不會超出父容器，並將 padding 算在寬度內 */
+  width: 100%; 
+  box-sizing: border-box; 
 }
 
 .summary-title {
@@ -28,6 +31,9 @@
   gap: 12px;
   padding: 12px 0;
   border-bottom: 1px solid #f3f4f6;
+  /* 👇 新增：強制單列佔滿父層寬度，防止被內部極長文字撐開 */
+  width: 100%; 
+  overflow: hidden; 
 }
 
 .summary-item:last-child {
@@ -44,7 +50,7 @@
 
 .item-info {
   flex: 1;
-  min-width: 0;
+  min-width: 0; /* 這裡原本就有，保留不動，這是 Flex 縮放關鍵 */
 }
 
 .item-name {
@@ -52,9 +58,13 @@
   font-weight: 500;
   color: #333;
   margin-bottom: 4px;
+  /* 👇 修改：將原本的單行強制不換行，改為「最多顯示兩行，超過顯示省略號」 */
+  display: -webkit-box;
+  -webkit-line-clamp: 2; 
+  -webkit-box-orient: vertical;
   overflow: hidden;
   text-overflow: ellipsis;
-  white-space: nowrap;
+  /* 刪除原有的 white-space: nowrap; */
 }
 
 .item-quantity {
@@ -123,6 +133,9 @@
 @media (max-width: 768px) {
   .order-summary {
     padding: 15px;
+    /* 👇 新增：在手機版強制滿版，避免因為任何原因超出螢幕 */
+    width: 100%;
+    overflow: hidden; 
   }
 
   .summary-title {
