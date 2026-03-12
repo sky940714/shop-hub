@@ -68,5 +68,12 @@
 	<false/>
 	<key>UIViewControllerBasedStatusBarAppearance</key>
 	<true/>
+	<key>NSAppTransportSecurity</key>
+    <dict>
+        <key>NSAllowsArbitraryLoads</key>
+        <true/>
+    </dict>
+	<key>NSLocalNetworkUsageDescription</key>
+    <string>開發階段需要存取區域網路以連線至本機測試伺服器</string>
 </dict>
 </plist>

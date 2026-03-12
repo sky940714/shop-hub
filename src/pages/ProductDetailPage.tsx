@@ -11,7 +11,10 @@ import 'swiper/css/pagination';
 import 'swiper/css/thumbs';
 import './ProductDetailPage.css';
 
-// ⭐ 新增：商品規格介面
+// ⭐ 引入 API 網址與圖片處理工具 (請確認 config.ts 的相對路徑是否正確)
+import { API_BASE_URL, getImageUrl } from '../config';
+
+// 商品規格介面
 interface ProductVariant {
   id: number;
   product_id: number;
@@ -30,7 +33,7 @@ interface Product {
   category_id: number;
   status: string;
   category_name?: string;
-  variants?: ProductVariant[];  // ⭐ 新增
+  variants?: ProductVariant[];
   images?: Array<{
     id: number;
     product_id: number;
@@ -50,22 +53,23 @@ const ProductDetailPage: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [thumbsSwiper, setThumbsSwiper] = useState<any>(null);
   
-  // ⭐ 新增：選中的規格
+  // 選中的規格
   const [selectedVariant, setSelectedVariant] = useState<ProductVariant | null>(null);
   
-  // ⭐ 新增：描述展開狀態
+  // 描述展開狀態
   const [showFullDescription, setShowFullDescription] = useState(false);
 
   useEffect(() => {
     const loadProduct = async () => {
       try {
-        const response = await fetch(`/api/products/${id}`);
+        // ✅ 修正點 1：加上 API_BASE_URL，讓 App 知道要去哪裡抓資料
+        const response = await fetch(`${API_BASE_URL}/api/products/${id}`);
         const data = await response.json();
 
         if (data.success) {
           setProduct(data.product);
           
-          // ⭐ 新增：自動選擇第一個有庫存的規格
+          // 自動選擇第一個有庫存的規格
           if (data.product.variants && data.product.variants.length > 0) {
             const firstAvailableVariant = data.product.variants.find(
               (v: ProductVariant) => v.stock > 0
@@ -83,13 +87,13 @@ const ProductDetailPage: React.FC = () => {
     loadProduct();
   }, [id]);
 
-  // ⭐ 新增：處理規格選擇
+  // 處理規格選擇
   const handleVariantSelect = (variant: ProductVariant) => {
     setSelectedVariant(variant);
     setQuantity(1); // 重置數量
   };
 
-  // ⭐ 新增：切換描述展開
+  // 切換描述展開
   const toggleDescription = () => {
     setShowFullDescription(!showFullDescription);
   };
@@ -97,14 +101,14 @@ const ProductDetailPage: React.FC = () => {
   const handleAddToCart = async () => {
     if (!product) return;
     
-    // ⭐ 新增：檢查是否選擇規格
+    // 檢查是否選擇規格
     if (product.variants && product.variants.length > 1 && !selectedVariant) {
       alert('請選擇商品規格');
       return;
     }
     
     try {
-      // ⭐ 修改：傳送 variant_id
+      // 傳送 variant_id
       await addToCart(product.id, quantity, selectedVariant?.id);
       alert('已加入購物車！');
       setQuantity(1);
@@ -117,7 +121,7 @@ const ProductDetailPage: React.FC = () => {
   const handleBuyNow = () => {
     if (!product) return;
     
-    // ⭐ 新增：檢查是否選擇規格
+    // 檢查是否選擇規格
     if (product.variants && product.variants.length > 1 && !selectedVariant) {
       alert('請選擇商品規格');
       return;
@@ -129,19 +133,20 @@ const ProductDetailPage: React.FC = () => {
         items: [{
           cart_item_id: 0,
           product_id: product.id,
-          variant_id: selectedVariant?.id,  // ⭐ 新增
-          variant_name: selectedVariant?.variant_name,  // ⭐ 新增
+          variant_id: selectedVariant?.id,
+          variant_name: selectedVariant?.variant_name,
           name: product.name,
-          price: selectedVariant?.price || product.price,  // ⭐ 修改
+          price: selectedVariant?.price || product.price,
           quantity: quantity,
-          image_url: product.image_url,
+          // ✅ 確保結帳頁面也拿到正確的圖片路徑
+          image_url: getImageUrl(product.image_url),
         }]
       }
     });
   };
 
   const increaseQuantity = () => {
-    // ⭐ 修改：使用 selectedVariant 的庫存
+    // 使用 selectedVariant 的庫存
     const maxStock = selectedVariant?.stock || product?.stock || 0;
     if (quantity < maxStock) {
       setQuantity(quantity + 1);
@@ -195,7 +200,8 @@ const ProductDetailPage: React.FC = () => {
               product.images.map((img, index) => (
                 <SwiperSlide key={img.id || index}>
                   <img 
-                    src={img.image_url} 
+                    // ✅ 修正點 2：使用 getImageUrl 確保 App 能顯示圖片
+                    src={getImageUrl(img.image_url)} 
                     alt={`${product.name} - 圖片 ${index + 1}`}
                     className="main-product-image"
                   />
@@ -204,7 +210,8 @@ const ProductDetailPage: React.FC = () => {
             ) : (
               <SwiperSlide>
                 <img 
-                  src="https://via.placeholder.com/500" 
+                  // 如果沒有圖片，也確保預設圖可以正常顯示
+                  src={getImageUrl(product.image_url)} 
                   alt={product.name}
                   className="main-product-image"
                 />
@@ -226,7 +233,8 @@ const ProductDetailPage: React.FC = () => {
               {product.images.map((img, index) => (
                 <SwiperSlide key={img.id || index}>
                   <img 
-                    src={img.image_url} 
+                    // ✅ 修正點 3：縮圖也使用 getImageUrl
+                    src={getImageUrl(img.image_url)} 
                     alt={`縮圖 ${index + 1}`}
                     className="thumb-image"
                   />
@@ -255,7 +263,7 @@ const ProductDetailPage: React.FC = () => {
             </span>
           </div>
 
-          {/* ⭐ 新增：規格選擇器（只在多規格時顯示） */}
+          {/* 規格選擇器 */}
           {product.variants && product.variants.length > 1 && (
             <div className="variant-selector">
               <h3 className="section-title">規格</h3>
@@ -281,7 +289,7 @@ const ProductDetailPage: React.FC = () => {
             </div>
           )}
 
-          {/* ⭐ 修改：可展開/收合的商品描述 */}
+          {/* 可展開/收合的商品描述 */}
           <div className="description-section">
             <h3 className="section-title">商品描述</h3>
             <p className={`description-text ${showFullDescription ? 'expanded' : 'collapsed'}`}>
