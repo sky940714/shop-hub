@@ -56,7 +56,7 @@ class ECPayUtils {
       TotalAmount: totalAmount,
       TradeDesc: 'ShopHubOrder',     // 移除空格
       ItemName: safeItemName,        // 使用無空格名稱
-      ReturnURL: '/api/ecpay/callback',
+      ReturnURL: `${process.env.SERVER_URL}/api/ecpay/callback`,
       ClientBackURL: customClientBackURL || 'https://www.anxinshophub.com/order/result',
       ChoosePayment: 'ALL',
       EncryptType: '1',
@@ -89,7 +89,7 @@ class ECPayUtils {
       MerchantID: this.merchantId,
       LogisticsType: 'CVS',
       LogisticsSubType: logisticsSubType || 'UNIMARTC2C',
-      ServerReplyURL: '/api/ecpay/map-callback', 
+      ServerReplyURL: `${process.env.SERVER_URL}/api/ecpay/map-callback`,
       IsCollection: 'N',
     };
 
@@ -149,7 +149,7 @@ class ECPayUtils {
       ReceiverEmail: order.receiver_email || '', 
       ReceiverStoreID: storeID, 
       
-      ServerReplyURL: '/api/ecpay/logistics-callback',
+      ServerReplyURL: `${process.env.SERVER_URL}/api/ecpay/logistics-callback`,
     };
 
     params.CheckMacValue = this.generateCheckMacValue(params, 'md5');
