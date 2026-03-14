@@ -319,51 +319,49 @@ const handleLogisticsCallback = async (req, res) => {
 const getPaymentPage = async (req, res) => {
   try {
     const { orderId } = req.params;
-    
     const [rows] = await promisePool.execute('SELECT * FROM orders WHERE id = ?', [orderId]);
-    if (rows.length === 0) {
-      return res.send('<h2>找不到訂單</h2>');
-    }
+    if (rows.length === 0) return res.send('<h2>找不到訂單</h2>');
 
     const order = rows[0];
-
-    // 🔥 1. 設定 App 專用的回程網址 (付款成功後，綠界會導向這裡)
-    const appClientBackUrl = "/api/ecpay/payment-app-redirect";
-
-    // 🔥 2. 傳入第二個參數給 Utils
+    
+    // 🔥 修正：這裡必須是包含 http/https 的完整網址！
+    const baseUrl = process.env.SERVER_URL || 'http://localhost:5001';
+    const appClientBackUrl = `${baseUrl}/api/ecpay/payment-app-redirect`;
+    
     const params = ecpayUtils.getParams(order, appClientBackUrl);
 
-    // 加入 CSP (允許自動送出表單)
-    res.set('Content-Security-Policy', "script-src 'self' 'unsafe-inline' 'unsafe-eval' *");
+    res.set('Content-Security-Policy', "script-src 'self' 'unsafe-inline' https://payment-stage.ecpay.com.tw;");
 
     const html = `
 <!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>前往付款...</title>
-  <style>
-    body { font-family: -apple-system, sans-serif; text-align: center; padding: 50px; }
-    .loading { font-size: 18px; color: #333; }
-  </style>
 </head>
 <body>
-  <div class="loading">正在前往綠界付款頁面...</div>
+  <div style="text-align:center; margin-top:50px;">
+    <h3>正在前往綠界付款頁面...</h3>
+    <p>如果畫面沒有自動跳轉，請點擊下方按鈕</p>
+  </div>
   <form id="ecpayForm" method="POST" action="${params.actionUrl}">
     ${Object.keys(params).filter(k => k !== 'actionUrl').map(k => 
-      // 🔥 加入 escapeHtml(...) 保護
       `<input type="hidden" name="${k}" value="${escapeHtml(String(params[k]))}" />`
     ).join('')}
+    <button type="submit" style="display:block; margin: 20px auto; padding: 10px 20px;">手動前往付款</button>
   </form>
-  <script>document.getElementById('ecpayForm').submit();</script>
+  <script>
+    window.onload = function() {
+      document.getElementById('ecpayForm').submit();
+    };
+  </script>
 </body>
 </html>`;
 
     res.send(html);
   } catch (error) {
     console.error('產生付款頁面失敗:', error);
-    res.send('<h2>產生付款頁面失敗</h2>');
+    res.status(500).send('<h2>伺服器錯誤</h2>');
   }
 };
 

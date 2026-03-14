@@ -33,9 +33,11 @@ app.use(cors({
       'http://localhost:3000',        // 本機開發網頁
       'http://localhost:3002',        // 新增這行：解決新專案 CORS 報錯
       'http://localhost:5001',        // 本機後端 (處理您報錯中出現的來源)
+      'https://imparipinnate-avidly-cesar.ngrok-free.dev',
       'https://www.anxinshophub.com', // 您的正式網站
       'https://anxinshophub.com',     // 沒有 www
       'https://logistics.ecpay.com.tw', // 綠界物流
+      'https://logistics-stage.ecpay.com.tw', // 🔥 新增：綠界物流 (測試環境)
       'capacitor://localhost',        // iOS App 來源
       'http://localhost',             // Android App 來源
       'https://localhost'             // 部分 Android 版本

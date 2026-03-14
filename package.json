@@ -5,6 +5,8 @@
   "proxy": "http://localhost:5001",
   "dependencies": {
     "@capacitor/android": "^8.2.0",
+    "@capacitor/app": "^8.0.1",
+    "@capacitor/browser": "^8.0.2",
     "@capacitor/core": "^8.2.0",
     "@capacitor/ios": "^8.2.0",
     "@dnd-kit/core": "^6.3.1",
