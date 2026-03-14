@@ -31,6 +31,7 @@ app.use(cors({
     // 允許的來源清單
     const allowedOrigins = [
       'http://localhost:3000',        // 本機開發網頁
+      'http://localhost:3002',        // 新增這行：解決新專案 CORS 報錯
       'http://localhost:5001',        // 本機後端 (處理您報錯中出現的來源)
       'https://www.anxinshophub.com', // 您的正式網站
       'https://anxinshophub.com',     // 沒有 www
