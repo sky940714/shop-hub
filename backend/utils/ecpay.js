@@ -4,16 +4,35 @@ const crypto = require('crypto');
 
 class ECPayUtils {
   constructor() {
-    // 🛑 正式環境設定
-    this.merchantId = '3389062';              
-    this.hashKey = 'Uu9VuV2Z8HG3pGEy';        
-    this.hashIv = 'LzZh0CKl0FGIvw9Z';         
-    
-    // 強制設定為 true (正式環境)
-    this.isProduction = true; 
+    // 🔥 1. 系統自動判斷環境：看 .env 裡的 NODE_ENV 是不是 production
+    this.isProduction = process.env.NODE_ENV === 'production';
+
+    // 🔥 2. 系統自動切換金鑰
+    if (this.isProduction) {
+        // 🔴 [正式環境] 您的真實金鑰 (會產生真實訂單、扣真錢)
+        this.merchantId = '3389062';              
+        this.hashKey = 'Uu9VuV2Z8HG3pGEy';        
+        this.hashIv = 'LzZh0CKl0FGIvw9Z'; 
+    } else {
+        // 🟢 [本地測試環境] 綠界官方的「測試金鑰」 (隨便測都不會扣錢，也不會真的叫物流)
+        this.merchantId = '3002607';              
+        this.hashKey = 'pwFHCqoQZGmho4w6';        
+        this.hashIv = 'EkRm7iFT261dpevs';
+    }
   }
 
-  // 輔助：取得正確的 API 網址
+  // 🔥 3. 系統自動決定回傳網址
+  getBaseUrl() {
+    if (this.isProduction) {
+      // 正式機：強制使用正式網域，最安全不怕錯
+      return 'https://api.anxinshophub.com'; 
+    } else {
+      // 測試機：讀取 .env 裡面的 ngrok 網址，如果沒填就先用 localhost 擋著
+      return process.env.SERVER_URL || 'http://localhost:5001';
+    }
+  }
+
+  // 輔助：取得正確的 API 網址 (根據 isProduction 自動切換測試機/正式機 API)
   getApiUrl(type, subType) {
     const stage = this.isProduction ? '' : '-stage';
     const baseUrl = `https://logistics${stage}.ecpay.com.tw`;
@@ -31,7 +50,6 @@ class ECPayUtils {
       if (subType === 'FAMIC2C') return `${baseUrl}/Express/PrintFAMIC2COrderInfo`;
       if (subType === 'HILIFEC2C') return `${baseUrl}/Express/PrintHiLifeC2COrderInfo`;
       if (subType === 'OKMARTC2C') return `${baseUrl}/Express/PrintOKMARTC2COrderInfo`;
-      // B2C 預設
       return `${baseUrl}/Helper/PrintTradeDocument`;
     }
   }
@@ -44,34 +62,27 @@ class ECPayUtils {
     const timestamp = Date.now().toString().slice(-6);
     const random = Math.floor(Math.random() * 999).toString().padStart(3, '0');
     
-    // 3. 組合 (11 + 9 = 20碼)
     const validTradeNo = `${cleanOrderNo}${timestamp}${random}`; 
     const safeItemName = `訂單編號_${order.order_no}`.replace(/[^\u4e00-\u9fa5a-zA-Z0-9_\-]/g, '');
 
+    const baseUrl = this.getBaseUrl(); // 🔥 呼叫自動判斷網址的方法
+
     const params = {
       MerchantID: this.merchantId,
-      MerchantTradeNo: validTradeNo, // 使用符合長度的新編號
+      MerchantTradeNo: validTradeNo, 
       MerchantTradeDate: tradeDate,
       PaymentType: 'aio',
       TotalAmount: totalAmount,
-      TradeDesc: 'ShopHubOrder',     // 移除空格
-      ItemName: safeItemName,        // 使用無空格名稱
-      ReturnURL: `${process.env.SERVER_URL}/api/ecpay/callback`,
+      TradeDesc: 'ShopHubOrder',     
+      ItemName: safeItemName,        
+      ReturnURL: `${baseUrl}/api/ecpay/callback`, // 🔥 自動帶入網址
       ClientBackURL: customClientBackURL || 'https://www.anxinshophub.com/order/result',
       ChoosePayment: 'ALL',
       EncryptType: '1',
-
-      // 🔥🔥🔥 修改 3：加入這行！把原始訂單編號藏在這裡 🔥🔥🔥
-      // 這樣回調時我們才能透過這個欄位知道是哪張訂單
       CustomField1: String(order.order_no),
     };
 
-    // 🔥保留除錯 LOG (確認成功後可自行移除)
-    console.log('\n=============================================');
-    console.log('🔍 [除錯] 準備送給綠界的參數 (Params):');
-    console.log(JSON.stringify(params, null, 2));
-    console.log('=============================================\n');
-
+    console.log(`\n📦 [綠界模式: ${this.isProduction ? '🔴正式' : '🟢測試'}] 準備送出請求`);
     params.CheckMacValue = this.generateCheckMacValue(params, 'sha256');
     return { ...params, actionUrl: this.getApiUrl('payment') };
   }
@@ -85,24 +96,20 @@ class ECPayUtils {
 
   // 3. 地圖參數
   getMapParams(logisticsSubType, clientReplyURL) {
+    const baseUrl = this.getBaseUrl(); // 🔥 自動判斷網址
+
     const params = {
       MerchantID: this.merchantId,
       LogisticsType: 'CVS',
       LogisticsSubType: logisticsSubType || 'UNIMARTC2C',
-      ServerReplyURL: `${process.env.SERVER_URL}/api/ecpay/map-callback`,
+      ServerReplyURL: `${baseUrl}/api/ecpay/map-callback`, // 🔥 自動帶入網址
       IsCollection: 'N',
     };
 
-    if (clientReplyURL) {
-      console.log('🔥🔥🔥 [DEBUG] 成功加入 ClientReplyURL:', clientReplyURL);
-      params.ClientReplyURL = clientReplyURL;
-    }
+    if (clientReplyURL) params.ClientReplyURL = clientReplyURL;
 
     params.CheckMacValue = this.generateCheckMacValue(params, 'md5');
     params.actionUrl = this.getApiUrl('map');
-    
-    console.log('📦 [DEBUG] 送給綠界的參數:', JSON.stringify(params));
-
     return params;
   }
 
@@ -116,21 +123,16 @@ class ECPayUtils {
     let storeID = order.store_id || '';
     storeID = storeID.replace(/[^0-9]/g, ''); 
 
-    // 防重複編號
     const randomSuffix = Date.now().toString().slice(-6); 
     const uniqueTradeNo = `${order.order_no}L${randomSuffix}`;
 
-    // 姓名清洗
     let cleanName = (order.receiver_name || '').replace(/[^\u4e00-\u9fa5a-zA-Z0-9]/g, '');
-    if (/^[a-zA-Z0-9]+$/.test(cleanName) && cleanName.length < 4) {
-        cleanName = cleanName + "Cust"; 
-    }
-    else if (cleanName.length < 2) {
-        cleanName = cleanName + "先生";
-    }
+    if (/^[a-zA-Z0-9]+$/.test(cleanName) && cleanName.length < 4) cleanName += "Cust"; 
+    else if (cleanName.length < 2) cleanName += "先生";
     if (cleanName.length > 5) cleanName = cleanName.substring(0, 5);
 
     const cleanPhone = (order.receiver_phone || '0912345678').replace(/[^0-9]/g, '');
+    const baseUrl = this.getBaseUrl(); // 🔥 自動判斷網址
 
     const params = {
       MerchantID: this.merchantId,
@@ -148,8 +150,7 @@ class ECPayUtils {
       ReceiverCellPhone: cleanPhone,
       ReceiverEmail: order.receiver_email || '', 
       ReceiverStoreID: storeID, 
-      
-      ServerReplyURL: `${process.env.SERVER_URL}/api/ecpay/logistics-callback`,
+      ServerReplyURL: `${baseUrl}/api/ecpay/logistics-callback`, // 🔥 自動帶入網址
     };
 
     params.CheckMacValue = this.generateCheckMacValue(params, 'md5');
@@ -192,22 +193,10 @@ class ECPayUtils {
     
     raw = `HashKey=${this.hashKey}&${raw}&HashIV=${this.hashIv}`;
 
-    // 🔥🔥🔥 [除錯 LOG] 印出加密前字串，檢查是否有亂碼或特殊符號 🔥🔥🔥
-    console.log(`\n🔑 [除錯] 加密前的原始字串 (${algorithm}):`);
-    console.log(raw);
-    console.log('---------------------------------------------');
-
-    let encoded = encodeURIComponent(raw).toLowerCase();
-
-    encoded = encoded
-      .replace(/%2d/g, '-')
-      .replace(/%5f/g, '_')
-      .replace(/%2e/g, '.')
-      .replace(/%21/g, '!')
-      .replace(/%2a/g, '*')
-      .replace(/%28/g, '(')
-      .replace(/%29/g, ')')
-      .replace(/%20/g, '+');
+    let encoded = encodeURIComponent(raw).toLowerCase()
+      .replace(/%2d/g, '-').replace(/%5f/g, '_').replace(/%2e/g, '.')
+      .replace(/%21/g, '!').replace(/%2a/g, '*').replace(/%28/g, '(')
+      .replace(/%29/g, ')').replace(/%20/g, '+');
 
     return crypto.createHash(algorithm).update(encoded).digest('hex').toUpperCase();
   }
