@@ -1,7 +1,7 @@
 // src/pages/MemberPage.tsx
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { User, Package, FileText, MessageSquare, LogOut, ChevronRight, RefreshCcw, ChevronLeft, CreditCard } from 'lucide-react';
+import { User, Package, FileText, MessageSquare, LogOut, ChevronRight, RefreshCcw, ChevronLeft, CreditCard, Smartphone } from 'lucide-react';
 import BottomNav from '../components/BottomNav';
 import './MemberPage.css';
 import ECPayForm from './checkout/components/ECPayForm';
@@ -55,6 +55,7 @@ const MemberPage: React.FC = () => {
   const [showBasicInfoModal, setShowBasicInfoModal] = useState(false);
   const [showCarrierModal, setShowCarrierModal] = useState(false);
   const [showServiceModal, setShowServiceModal] = useState(false);
+  const [showInstallGuideModal, setShowInstallGuideModal] = useState(false);
 
   // 收件地址相關
   const [showAddressModal, setShowAddressModal] = useState(false);
@@ -573,6 +574,11 @@ const MemberPage: React.FC = () => {
               <span>收件地址管理</span>
               <ChevronRight size={22} className="menu-arrow" />
             </button>
+            <button className="menu-item" onClick={() => setShowInstallGuideModal(true)}>
+              <Smartphone size={22} color="#007aff" />
+              <span style={{ color: '#007aff', fontWeight: 'bold' }}>安卓 App 安裝教學</span>
+              <ChevronRight size={22} className="menu-arrow" color="#007aff" />
+            </button>
             <button className="menu-item" onClick={handleMemberGuide}>
               <FileText size={22} />
               <span>會員使用說明</span>
@@ -1011,6 +1017,41 @@ const MemberPage: React.FC = () => {
           </div>
         </div>
       )}
+      {/* 🔽 新增這段：Android 安裝教學 Modal */}
+      {showInstallGuideModal && (
+        <div className="modal-overlay" onClick={() => setShowInstallGuideModal(false)}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <div className="modal-header">
+              <h2>📱 安卓 App 安裝教學</h2>
+              <button onClick={() => setShowInstallGuideModal(false)} className="modal-close">×</button>
+            </div>
+            <div className="modal-body" style={{ lineHeight: '1.6', color: '#333' }}>
+              <p style={{ marginBottom: '15px', fontWeight: 'bold', color: '#007aff' }}>
+                免透過商店！直接將「安鑫購物」加入手機桌面，購物更流暢！
+              </p>
+              
+              <div style={{ background: '#f0f9ff', padding: '15px', borderRadius: '8px', marginBottom: '15px', border: '1px solid #bae6fd' }}>
+                <h4 style={{ margin: '0 0 10px 0', color: '#0369a1' }}>💡 Chrome 瀏覽器安裝步驟：</h4>
+                <ol style={{ paddingLeft: '20px', margin: 0, fontSize: '15px' }}>
+                  <li style={{ marginBottom: '10px' }}>點擊瀏覽器右上角的 <strong>「三個點 (⋮)」</strong> 開啟選單</li>
+                  <li style={{ marginBottom: '10px' }}>尋找並點選 <strong>「加到主畫面」</strong> 或 <strong>「安裝應用程式」</strong></li>
+                  <li style={{ marginBottom: '10px' }}>點擊 <strong>「新增/安裝」</strong>，等待幾秒鐘</li>
+                  <li>回到您的手機桌面，就可以看到安鑫購物的 App 圖示囉！🎉</li>
+                </ol>
+              </div>
+
+              <button 
+                className="form-submit" 
+                onClick={() => setShowInstallGuideModal(false)}
+                style={{ backgroundColor: '#007aff' }}
+              >
+                我知道了
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* 🔼 新增結束 */}
       {/* ✅ [新增] 隱藏的綠界表單 */}
       <ECPayForm params={ecpayParams} />
     </div>

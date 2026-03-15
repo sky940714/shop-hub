@@ -6,7 +6,6 @@ const config: CapacitorConfig = {
   appName: '安鑫購物',
   webDir: 'build',
   server: {
-    cleartext: true,
     // 🔽 【新增這段】：允許 App 跳轉到綠界的網域進行付款
     allowNavigation: [
       "*.ecpay.com.tw"
