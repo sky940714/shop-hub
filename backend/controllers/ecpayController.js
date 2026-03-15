@@ -324,36 +324,42 @@ const getPaymentPage = async (req, res) => {
 
     const order = rows[0];
     
-    // 🔥 修正：這裡必須是包含 http/https 的完整網址！
-    const baseUrl = process.env.SERVER_URL || 'http://localhost:5001';
-    const appClientBackUrl = `${baseUrl}/api/ecpay/payment-app-redirect`;
+    // 🟢 終極解法 1：完全寫死絕對網址，徹底避免 .env 斜線造成的「雙斜線」驗證錯誤
+    const appClientBackUrl = 'https://anxinshophub.com/api/ecpay/payment-app-redirect';
     
     const params = ecpayUtils.getParams(order, appClientBackUrl);
 
-    res.set('Content-Security-Policy', "script-src 'self' 'unsafe-inline' https://payment-stage.ecpay.com.tw;");
+    // 🟢 終極解法 2：移除嚴格的 CSP 限制，避免在 App 的 WebView 內被錯誤阻擋
+    res.removeHeader('Content-Security-Policy');
 
     const html = `
 <!DOCTYPE html>
 <html>
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>前往付款...</title>
+  <style>
+    body { font-family: -apple-system, sans-serif; text-align: center; padding: 20px; background-color: #f9f9f9; }
+    .btn-submit { display:block; margin: 30px auto; padding: 14px 24px; background:#007aff; color:#fff; border:none; border-radius:12px; font-size:16px; width: 80%; max-width: 300px; cursor: pointer; }
+  </style>
 </head>
 <body>
-  <div style="text-align:center; margin-top:50px;">
-    <h3>正在前往綠界付款頁面...</h3>
-    <p>如果畫面沒有自動跳轉，請點擊下方按鈕</p>
+  <div style="margin-top: 50px;">
+    <h3 style="color:#333;">正在前往綠界付款...</h3>
+    <p style="color:#666; font-size:14px;">如果畫面沒有自動跳轉，請點擊下方按鈕</p>
   </div>
   <form id="ecpayForm" method="POST" action="${params.actionUrl}">
     ${Object.keys(params).filter(k => k !== 'actionUrl').map(k => 
       `<input type="hidden" name="${k}" value="${escapeHtml(String(params[k]))}" />`
     ).join('')}
-    <button type="submit" style="display:block; margin: 20px auto; padding: 10px 20px;">手動前往付款</button>
+    <button type="submit" class="btn-submit">手動前往付款</button>
   </form>
   <script>
-    window.onload = function() {
+    // 🟢 終極解法 3：稍微延遲 0.5 秒再送出，確保手機端畫面與腳本完全載入
+    setTimeout(function() {
       document.getElementById('ecpayForm').submit();
-    };
+    }, 500);
   </script>
 </body>
 </html>`;
@@ -373,7 +379,8 @@ const renderMapPage = (req, res) => {
     const { logisticsSubType } = req.query;
     
     // 定義 App 專用的回程網址
-    const appRedirectUrl = "/api/ecpay/map-app-redirect";
+    const baseUrl = process.env.SERVER_URL || 'https://anxinshophub.com';
+    const appRedirectUrl = `${baseUrl}/api/ecpay/map-app-redirect`;
 
     // 🔥 修正：將 URL 作為第二個參數傳入，讓 Utils 幫你一起加密
     const params = ecpayUtils.getMapParams(logisticsSubType, appRedirectUrl);

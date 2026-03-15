@@ -6,6 +6,7 @@ import { App } from '@capacitor/app';
 import { Capacitor } from '@capacitor/core';
 import './styles/ShippingForm.css';
 import { apiFetch } from '../../../utils/api';
+import { API_BASE_URL } from '../../../config'; // ✅ 新增這行
 
 interface ShippingInfo {
   name: string;
@@ -220,7 +221,7 @@ const ShippingForm: React.FC<ShippingFormProps> = ({
 
     if (Capacitor.isNativePlatform()) {
       // ✅ App 環境：直接開啟後端的中繼頁面，避開 WebView 彈窗阻擋
-      const bridgeUrl = `${window.location.origin}/api/ecpay/map-page?logisticsSubType=${shippingSubType}`;
+      const bridgeUrl = `${API_BASE_URL}/api/ecpay/map-page?logisticsSubType=${shippingSubType}`;
       console.log('App 開啟地圖頁面:', bridgeUrl);
       await Browser.open({ 
         url: bridgeUrl,
