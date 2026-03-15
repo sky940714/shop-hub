@@ -1,12 +1,16 @@
+// capacitor.config.ts
 import type { CapacitorConfig } from '@capacitor/cli';
 
 const config: CapacitorConfig = {
   appId: 'com.anxin.shophub',
   appName: '安鑫購物',
   webDir: 'build',
-  // 🔽 加入這段：允許 App 在本地測試時使用 http 連線 (明文傳輸)
   server: {
-    cleartext: true
+    cleartext: true,
+    // 🔽 【新增這段】：允許 App 跳轉到綠界的網域進行付款
+    allowNavigation: [
+      "*.ecpay.com.tw"
+    ]
   }
 };
 
