@@ -227,9 +227,6 @@ const HomePage: React.FC = () => {
             <div className="logo">
               <h1>安鑫購物</h1>
             </div>
-            <button className="mobile-service-btn" onClick={() => setIsLineModalOpen(true)}>
-              <MessageCircle size={24} />
-            </button>
             <nav className="nav-desktop">
               <Link to="/" className="nav-link">首頁</Link>
               <div className="category-dropdown">
@@ -273,6 +270,9 @@ const HomePage: React.FC = () => {
               </div>
             </div>
             <div className="header-actions">
+              <button className="mobile-service-btn" onClick={() => setIsLineModalOpen(true)}>
+                <MessageCircle size={24} />
+              </button>
               <button onClick={() => navigate('/cart')} className="cart-button">
                 <ShoppingCart size={24} />
                 {totalItems > 0 && <span className="cart-badge">{totalItems}</span>}
