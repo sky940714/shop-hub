@@ -18,8 +18,8 @@ const DEV_LOCAL_IP = '127.0.0.1';
  * 3. 如果在線上正式網頁 (production)：連向正式站網址。
  */
 export const API_BASE_URL = Capacitor.isNativePlatform()
-  ? (IS_DEV_MODE ? `http://${DEV_LOCAL_IP}:5001` : 'https://www.anxinshophub.com')
-  : (process.env.NODE_ENV === 'development' ? '' : 'https://www.anxinshophub.com');
+  ? (IS_DEV_MODE ? `http://${DEV_LOCAL_IP}:5001` : 'https://anxinshophub.com')
+  : (process.env.NODE_ENV === 'development' ? '' : 'https://anxinshophub.com');
 
 /**
  * 圖片路徑處理工具
@@ -42,10 +42,10 @@ export const getImageUrl = (path: string | null | undefined): string => {
   let domain = '';
   if (Capacitor.isNativePlatform()) {
     // 手機 App 模式
-    domain = IS_DEV_MODE ? `http://${DEV_LOCAL_IP}:5001` : 'https://www.anxinshophub.com';
+    domain = IS_DEV_MODE ? `http://${DEV_LOCAL_IP}:5001` : 'https://anxinshophub.com';
   } else if (process.env.NODE_ENV === 'production') {
     // 正式網頁模式
-    domain = 'https://www.anxinshophub.com';
+    domain = 'https://anxinshophub.com';
   }
 
   return `${domain}${cleanPath}`;
