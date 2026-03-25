@@ -1036,57 +1036,117 @@
 }
 
 /* ========================================
-   分類區塊樣式
+   分類區塊樣式 - 已優化支援美宣圖
    ======================================== */
 .category-section {
-  margin-bottom: 40px;
+  margin-bottom: 50px; /* 增加間距，讓大圖更有呼吸感 */
 }
 
 .category-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16px;
+  align-items: flex-end; /* 讓"查看更多"對齊底部，視覺更穩重 */
+  margin-bottom: 20px;
   padding: 0 10px;
+  flex-wrap: wrap; /* 確保在極小螢幕不會擠壓 */
 }
 
+/* 文字標題樣式 (保底用) */
 .category-title {
-  font-size: 20px;
-  font-weight: bold;
-  color: #333;
+  font-size: 24px;
+  font-weight: 800;
+  color: #111827;
   margin: 0;
+  position: relative;
+  padding-left: 12px;
+}
+
+/* 標題裝飾線 */
+.category-title::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 15%;
+  height: 70%;
+  width: 4px;
+  background-color: #2563eb;
+  border-radius: 2px;
+}
+
+/* 📌 美宣圖容器樣式 */
+.category-banner-container {
+  flex: 1; /* 佔滿剩餘空間 */
+  min-width: 280px; /* 確保不會縮得太小 */
+  max-width: 800px; /* 限制電腦版最大寬度，不破壞版面 */
+  margin-right: 20px;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.category-banner-container:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+.category-banner-image {
+  width: 100%;
+  height: auto;
+  display: block;
+  object-fit: cover;
 }
 
 .category-more-btn {
-  background: none;
+  background: #f3f4f6;
   border: none;
-  color: #3b82f6;
+  color: #2563eb;
   font-size: 14px;
+  font-weight: 600;
   cursor: pointer;
-  padding: 4px 8px;
-  transition: color 0.2s;
+  padding: 8px 16px;
+  border-radius: 20px;
+  transition: all 0.2s;
+  white-space: nowrap;
+  margin-bottom: 5px; /* 稍微抬高一點點 */
 }
 
 .category-more-btn:hover {
-  color: #1d4ed8;
-  text-decoration: underline;
+  background: #2563eb;
+  color: white;
+  transform: translateX(4px);
 }
 
-/* 手機版 */
+/* ========================================
+   手機版響應式微調 (max-width: 768px)
+   ======================================== */
 @media (max-width: 768px) {
   .category-section {
-    margin-bottom: 30px;
+    margin-bottom: 35px;
   }
 
   .category-header {
-    padding: 0 8px;
+    flex-direction: column; /* 手機版圖上按鈕下 */
+    align-items: flex-start;
+    padding: 0 15px;
+    gap: 12px;
+  }
+
+  .category-banner-container {
+    width: 100%;
+    margin-right: 0;
+    max-width: 100%;
+    border-radius: 8px;
   }
 
   .category-title {
-    font-size: 18px;
+    font-size: 20px;
   }
 
   .category-more-btn {
+    align-self: flex-end; /* 按鈕靠右顯示 */
     font-size: 13px;
+    padding: 6px 12px;
   }
 }

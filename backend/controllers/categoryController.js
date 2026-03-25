@@ -15,6 +15,7 @@ exports.getAllCategories = async (req, res) => {
         c.level,
         c.is_active,
         c.created_at,
+        c.image_url,
         COUNT(pcr.product_id) as productCount
       FROM categories c
       LEFT JOIN product_category_relation pcr ON c.id = pcr.category_id
@@ -52,6 +53,7 @@ exports.getCategoryById = async (req, res) => {
         c.level,
         c.is_active,
         c.created_at,
+        c.image_url,
         COUNT(pcr.product_id) as productCount
       FROM categories c
       LEFT JOIN product_category_relation pcr ON c.id = pcr.category_id
@@ -85,7 +87,7 @@ exports.getCategoryById = async (req, res) => {
 // ========================================
 exports.createCategory = async (req, res) => {
   try {
-    const { name, parent_id = null, level = 1 } = req.body;
+   const { name, parent_id = null, level = 1, image_url = null } = req.body; // 加入 image_url
 
     // 驗證必填欄位
     if (!name || name.trim() === '') {
@@ -124,10 +126,10 @@ exports.createCategory = async (req, res) => {
     }
 
     // 新增分類
-    const [result] = await promisePool.query(
-      'INSERT INTO categories (name, parent_id, level) VALUES (?, ?, ?)',
-      [name.trim(), parent_id, level]
-    );
+   const [result] = await promisePool.query(
+  'INSERT INTO categories (name, parent_id, level, image_url) VALUES (?, ?, ?, ?)', // 增加一個欄位與問號
+  [name.trim(), parent_id, level, image_url] // 加入參數值
+  );
 
     res.status(201).json({
       success: true,
@@ -150,7 +152,7 @@ exports.createCategory = async (req, res) => {
 exports.updateCategory = async (req, res) => {
   try {
     const { id } = req.params;
-    const { name, parent_id, level, is_active } = req.body;
+    const { name, parent_id, level, is_active, image_url } = req.body; // 加入 image_url
 
     // 檢查分類是否存在
     const [existing] = await promisePool.query(
@@ -189,9 +191,9 @@ exports.updateCategory = async (req, res) => {
     // 更新分類
     await promisePool.query(
       `UPDATE categories 
-       SET name = ?, parent_id = ?, level = ?, is_active = ?
-       WHERE id = ?`,
-      [name.trim(), parent_id || null, level || 1, is_active !== undefined ? is_active : 1, id]
+      SET name = ?, parent_id = ?, level = ?, is_active = ?, image_url = ?
+      WHERE id = ?`, // 增加 image_url = ?
+      [name.trim(), parent_id || null, level || 1, is_active !== undefined ? is_active : 1, image_url, id] // 加入參數值
     );
 
     res.json({

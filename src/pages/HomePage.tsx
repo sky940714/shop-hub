@@ -26,6 +26,7 @@ interface Category {
   level: number;
   is_active: number;
   productCount: number;
+  image_url: string | null; // 📌 新增這一行
 }
 
 interface HeroBanner {
@@ -358,14 +359,27 @@ const HomePage: React.FC = () => {
 
       <section className="products-section" id="products">
         {categoryProductsList.length === 0 ? (
-          <div className="empty-products"><p>目前沒有商品，請從後台新增商品</p></div>
-        ) : (
+          <div className="empty-products"><p>正在為您挑選商品，請稍後</p></div>
+        ) : ( 
           categoryProductsList.map(({ category, products }) => (
             <div key={category.id} className="category-section">
               <div className="category-header">
-                <h2 className="category-title">{category.name}</h2>
+
+               {category.image_url ? (
+        <div className="category-banner-container">
+          <img 
+            src={getImageUrl(category.image_url)} 
+            alt={category.name} 
+            className="category-banner-image" 
+            onClick={() => navigate(`/search?category=${encodeURIComponent(category.name)}`)}
+          />
+        </div>
+      ) : (
+        <h2 className="category-title">{category.name}</h2>
+      )}
                 <button className="category-more-btn" onClick={() => navigate(`/search?category=${encodeURIComponent(category.name)}`)}>查看更多 →</button>
               </div>
+              
               <div className="products-grid">
                 {products.map(product => (
                   <div key={product.id} className="product-card">

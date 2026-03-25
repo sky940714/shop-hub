@@ -51,22 +51,18 @@ const SearchPage: React.FC = () => {
 
   const hotKeywords = ['特價商品', '新品上市', '熱銷排行', '限時優惠'];
 
-  // 1. 初始化：從後端抓取所有「上架中」的商品
+  // 1. 初始化：從後端抓取商品
   useEffect(() => {
     const fetchProducts = async () => {
       try {
         setIsLoading(true);
-        // 呼叫後端 API
         const response = await apiFetch('/api/products/published');
         
-        if (!response.ok) {
-          throw new Error('無法連線至伺服器');
-        }
+        if (!response.ok) throw new Error('無法連線至伺服器');
 
         const data = await response.json();
 
         if (data.success && Array.isArray(data.products)) {
-          // 資料轉換：將後端欄位對應到前端 UI
           const mappedProducts: DisplayProduct[] = data.products.map((p: BackendProduct) => ({
             id: p.id,
             name: p.name,
@@ -91,7 +87,7 @@ const SearchPage: React.FC = () => {
     fetchProducts();
   }, []);
 
-  // 讀取 URL 分類參數
+  // 2. 處理 URL 分類參數
   useEffect(() => {
     const category = searchParams.get('category');
     if (category) {
@@ -100,28 +96,25 @@ const SearchPage: React.FC = () => {
     }
   }, [searchParams]);
 
-  // 2. 監聽歷史紀錄變化並存入 LocalStorage
+  // 3. 監聽歷史紀錄變化
   useEffect(() => {
     localStorage.setItem('recentSearches', JSON.stringify(recentSearches));
   }, [recentSearches]);
 
-  // 3. 即時過濾搜尋結果 (由前端計算，速度極快)
+  // 4. 過濾搜尋結果
   const searchResults = useMemo(() => {
-    // 如果有分類篩選
+    const lowerTerm = searchTerm.toLowerCase().trim();
+
     if (categoryFilter) {
       return allProducts.filter(product => {
-        // 【修正重點】將 "A,B,C" 切割成陣列，檢查是否包含目前的篩選值
-        // 這樣商品不管有幾個分類，只要包含當前選的，就會顯示
         if (!product.category) return false;
-        const categories = product.category.split(','); 
+        const categories = product.category.split(',').map(c => c.trim()); 
         return categories.includes(categoryFilter);
       });
     }
     
-    if (!searchTerm.trim()) return [];
+    if (!lowerTerm) return [];
     
-    const lowerTerm = searchTerm.toLowerCase();
-    // 搜尋邏輯保持不變 (文字搜尋包含即可)
     return allProducts.filter(product => 
       product.name.toLowerCase().includes(lowerTerm) || 
       product.category.toLowerCase().includes(lowerTerm)
@@ -135,9 +128,10 @@ const SearchPage: React.FC = () => {
   };
 
   const handleSearch = (keyword: string) => {
-    setSearchTerm(keyword);
-    // 加入歷史紀錄 (去除重複並保持最新的在前面，保留前 6 筆)
-    const newHistory = [keyword, ...recentSearches.filter(k => k !== keyword)].slice(0, 6);
+    const trimmed = keyword.trim();
+    if (!trimmed) return;
+    setSearchTerm(trimmed);
+    const newHistory = [trimmed, ...recentSearches.filter(k => k !== trimmed)].slice(0, 6);
     setRecentSearches(newHistory);
   };
 
@@ -147,7 +141,6 @@ const SearchPage: React.FC = () => {
 
   return (
     <div className="search-page">
-      {/* Header */}
       <header className="search-header">
         <div className="search-header-content">
           <Link to="/" className="back-button">← 返回</Link>
@@ -155,7 +148,6 @@ const SearchPage: React.FC = () => {
         </div>
       </header>
 
-      {/* Search Container */}
       <div className="search-main-container">
         <div className="search-input-wrapper">
           <Search className="search-icon" size={20} />
@@ -169,45 +161,32 @@ const SearchPage: React.FC = () => {
             autoFocus
           />
           {searchTerm && (
-            <button onClick={handleClearSearch} className="clear-button">
+            <button onClick={handleClearSearch} className="clear-button" aria-label="清除搜尋">
               <X size={20} />
             </button>
           )}
         </div>
 
-        {/* Loading State */}
         {isLoading && (
-          <div className="loading-state">
-            <Loader className="animate-spin" size={24} />
+          <div className="loading-container">
+            <Loader className="loader-spinner" size={24} />
             <span>正在載入商品目錄...</span>
           </div>
         )}
 
-        {/* Error State */}
-        {error && !isLoading && (
-          <div className="error-message">
-            ⚠️ {error}
-          </div>
-        )}
+        {error && !isLoading && <div className="error-message">⚠️ {error}</div>}
 
-        {/* Recent Searches (只有在沒搜尋文字且載入完畢時顯示) */}
         {!isLoading && recentSearches.length > 0 && !searchTerm && (
           <div className="search-section">
             <h2 className="section-title">最近搜尋</h2>
             <div className="keyword-list">
               {recentSearches.map((keyword, index) => (
                 <div key={index} className="keyword-item">
-                  <button
-                    onClick={() => handleSearch(keyword)}
-                    className="keyword-button"
-                  >
+                  <button onClick={() => handleSearch(keyword)} className="keyword-button">
                     {keyword}
                   </button>
                   <button
-                    onClick={(e) => {
-                      e.stopPropagation();
-                      removeRecentSearch(keyword);
-                    }}
+                    onClick={(e) => { e.stopPropagation(); removeRecentSearch(keyword); }}
                     className="remove-button"
                   >
                     <X size={16} />
@@ -218,7 +197,6 @@ const SearchPage: React.FC = () => {
           </div>
         )}
 
-        {/* Hot Keywords */}
         {!isLoading && !searchTerm && (
           <div className="search-section">
             <h2 className="section-title">
@@ -227,11 +205,7 @@ const SearchPage: React.FC = () => {
             </h2>
             <div className="hot-keywords">
               {hotKeywords.map((keyword, index) => (
-                <button
-                  key={index}
-                  onClick={() => handleSearch(keyword)}
-                  className="hot-keyword-button"
-                >
+                <button key={index} onClick={() => handleSearch(keyword)} className="hot-keyword-button">
                   {keyword}
                 </button>
               ))}
@@ -239,7 +213,6 @@ const SearchPage: React.FC = () => {
           </div>
         )}
 
-        {/* Search Results */}
         {!isLoading && searchTerm && (
           <div className="search-results">
             {searchResults.length === 0 ? (
@@ -257,22 +230,21 @@ const SearchPage: React.FC = () => {
                            src={product.image} 
                            alt={product.name} 
                            className="product-image"
-                           onError={(e) => {
-                             (e.target as HTMLImageElement).src = 'https://placehold.co/300x300?text=No+Image';
-                           }}
+                           loading="lazy"
+                           onError={(e) => { (e.target as HTMLImageElement).src = 'https://placehold.co/300x300?text=No+Image'; }}
                          />
                       </div>
                       <div className="product-info">
-                        <h3 className="product-name">{product.name}</h3>
+                        <h3 className="product-name" title={product.name}>{product.name}</h3>
                         <div className="product-meta">
-                           <span className="product-category">{product.category}</span>
+                           <span className="product-category-tag" title={product.category}>
+                             {product.category}
+                           </span>
                         </div>
                         <div className="product-price-row">
                           <span className="price">NT$ {product.price.toLocaleString()}</span>
                           {product.originalPrice && (
-                            <span className="original-price">
-                              NT$ {product.originalPrice.toLocaleString()}
-                            </span>
+                            <span className="original-price">NT$ {product.originalPrice.toLocaleString()}</span>
                           )}
                         </div>
                         <div className="product-rating">⭐ {product.rating}</div>
