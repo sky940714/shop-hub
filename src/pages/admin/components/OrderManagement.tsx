@@ -33,6 +33,9 @@ interface OrderDetail {
   items: OrderItem[];
   ecpay_payment_no?: string;
   ecpay_logistics_id?: string;
+  store_id?: string;
+  store_name?: string;
+  store_address?: string;
 }
 
 interface OrderItem {
@@ -543,22 +546,30 @@ const OrderManagement: React.FC = () => {
                   </div>
                   <div className="detail-item full-width">
                     <span className="label">收件地址：</span>
-                    <span className="value">{selectedOrder.receiver_address || '超商取貨'}</span>
+                    <span className="value">
+                      {selectedOrder.shipping_method === 'home' 
+                        ? selectedOrder.receiver_address 
+                        : selectedOrder.shipping_method === 'pickup'
+                          ? `${selectedOrder.store_name || '自取點'} (${selectedOrder.store_address || '未提供地址'})`
+                          : '超商取貨'
+                      }
+                    </span>
                   </div>
                   <div className="detail-item">
                     <span className="label">配送方式：</span>
                     <span className="value">
-                      {selectedOrder.shipping_method === 'home' ? '宅配到府' : '超商取貨'}
+                      {selectedOrder.shipping_method === 'home' ? '宅配到府' : 
+                        selectedOrder.shipping_method === 'pickup' ? '門市自取' : '超商取貨'}
                     </span>
                   </div>
                   
-                  {/* 新增：綠界物流操作區 (改為防呆機制：只要不是宅配，就顯示超商物流操作) */}
-                  {selectedOrder.shipping_method !== 'home' && (
+                  {/* 綠界物流操作區 */}
+                  {selectedOrder.shipping_method === 'cvs' && (
                     <div className="detail-item full-width" style={{ marginTop: '15px', borderTop: '1px dashed #eee', paddingTop: '15px' }}>
                       <span className="label">物流操作：</span>
                       <div className="value" style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
                         
-                        {/* 如果沒有 ecpay_logistics_id 才顯示產生按鈕 */}
+                        {/* 沒有 ecpay_logistics_id 才顯示產生按鈕 */}
                         {!selectedOrder.ecpay_logistics_id ? (
                           <button 
                             onClick={() => handleCreateShipping(selectedOrder.order_no)}
