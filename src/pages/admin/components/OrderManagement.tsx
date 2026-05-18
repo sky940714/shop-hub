@@ -552,13 +552,13 @@ const OrderManagement: React.FC = () => {
                     </span>
                   </div>
                   
-                  {/* 新增：綠界物流操作區 (只在超商取貨時顯示) */}
-                  {selectedOrder.shipping_method === 'cvs' && (
+                  {/* 新增：綠界物流操作區 (改為防呆機制：只要不是宅配，就顯示超商物流操作) */}
+                  {selectedOrder.shipping_method !== 'home' && (
                     <div className="detail-item full-width" style={{ marginTop: '15px', borderTop: '1px dashed #eee', paddingTop: '15px' }}>
                       <span className="label">物流操作：</span>
                       <div className="value" style={{ display: 'flex', gap: '10px', alignItems: 'center' }}>
                         
-                        {/* 如果沒有 logistics_id 才顯示產生按鈕 */}
+                        {/* 如果沒有 ecpay_logistics_id 才顯示產生按鈕 */}
                         {!selectedOrder.ecpay_logistics_id ? (
                           <button 
                             onClick={() => handleCreateShipping(selectedOrder.order_no)}
@@ -574,7 +574,7 @@ const OrderManagement: React.FC = () => {
                             📦 產生綠界寄貨單
                           </button>
                         ) : (
-                          /* 如果有 logistics_id -> 顯示狀態 + 列印按鈕 */
+                          /* 如果有 ecpay_logistics_id -> 顯示狀態 + 列印按鈕 */
                           <>
                             <span style={{ color: '#0056b3', fontWeight: 'bold' }}>
                               {selectedOrder.ecpay_payment_no 

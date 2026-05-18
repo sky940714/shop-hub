@@ -6467,353 +6467,6 @@ exports.deleteAccount = async (req, res, next) => {
 };
 </file>
 
-<file path="backend/controllers/categoryController.js">
-// backend/controllers/categoryController.js
-const { promisePool } = require('../config/database');
-
-// ========================================
-// 1. 取得所有分類（包含商品數量統計）
-// GET /api/categories
-// ========================================
-exports.getAllCategories = async (req, res) => {
-  try {
-    const [categories] = await promisePool.query(`
-      SELECT 
-        c.id,
-        c.name,
-        c.parent_id,
-        c.level,
-        c.is_active,
-        c.created_at,
-        COUNT(pcr.product_id) as productCount
-      FROM categories c
-      LEFT JOIN product_category_relation pcr ON c.id = pcr.category_id
-      WHERE c.is_active = 1
-      GROUP BY c.id
-      ORDER BY c.sort_order ASC
-    `);
-
-    res.json({
-      success: true,
-      categories: categories
-    });
-  } catch (error) {
-    console.error('取得分類列表失敗:', error);
-    res.status(500).json({
-      success: false,
-      message: '取得分類列表失敗'
-    });
-  }
-};
-
-// ========================================
-// 2. 取得單一分類
-// GET /api/categories/:id
-// ========================================
-exports.getCategoryById = async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    const [categories] = await promisePool.query(`
-      SELECT 
-        c.id,
-        c.name,
-        c.parent_id,
-        c.level,
-        c.is_active,
-        c.created_at,
-        COUNT(pcr.product_id) as productCount
-      FROM categories c
-      LEFT JOIN product_category_relation pcr ON c.id = pcr.category_id
-      WHERE c.id = ?
-      GROUP BY c.id
-    `, [id]);
-
-    if (categories.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: '找不到該分類'
-      });
-    }
-
-    res.json({
-      success: true,
-      category: categories[0]
-    });
-  } catch (error) {
-    console.error('取得分類失敗:', error);
-    res.status(500).json({
-      success: false,
-      message: '取得分類失敗'
-    });
-  }
-};
-
-// ========================================
-// 3. 新增分類
-// POST /api/categories
-// ========================================
-exports.createCategory = async (req, res) => {
-  try {
-    const { name, parent_id = null, level = 1 } = req.body;
-
-    // 驗證必填欄位
-    if (!name || name.trim() === '') {
-      return res.status(400).json({
-        success: false,
-        message: '分類名稱不能為空'
-      });
-    }
-
-    // 檢查分類名稱是否已存在
-    const [existing] = await promisePool.query(
-      'SELECT id FROM categories WHERE name = ?',
-      [name.trim()]
-    );
-
-    if (existing.length > 0) {
-      return res.status(400).json({
-        success: false,
-        message: '此分類名稱已存在'
-      });
-    }
-
-    // 如果有父分類，驗證父分類是否存在
-    if (parent_id) {
-      const [parentCategory] = await promisePool.query(
-        'SELECT id, level FROM categories WHERE id = ?',
-        [parent_id]
-      );
-
-      if (parentCategory.length === 0) {
-        return res.status(400).json({
-          success: false,
-          message: '父分類不存在'
-        });
-      }
-    }
-
-    // 新增分類
-    const [result] = await promisePool.query(
-      'INSERT INTO categories (name, parent_id, level) VALUES (?, ?, ?)',
-      [name.trim(), parent_id, level]
-    );
-
-    res.status(201).json({
-      success: true,
-      message: '分類新增成功',
-      categoryId: result.insertId
-    });
-  } catch (error) {
-    console.error('新增分類失敗:', error);
-    res.status(500).json({
-      success: false,
-      message: '新增分類失敗'
-    });
-  }
-};
-
-// ========================================
-// 4. 更新分類
-// PUT /api/categories/:id
-// ========================================
-exports.updateCategory = async (req, res) => {
-  try {
-    const { id } = req.params;
-    const { name, parent_id, level, is_active } = req.body;
-
-    // 檢查分類是否存在
-    const [existing] = await promisePool.query(
-      'SELECT id FROM categories WHERE id = ?',
-      [id]
-    );
-
-    if (existing.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: '找不到該分類'
-      });
-    }
-
-    // 驗證分類名稱
-    if (!name || name.trim() === '') {
-      return res.status(400).json({
-        success: false,
-        message: '分類名稱不能為空'
-      });
-    }
-
-    // 檢查新名稱是否與其他分類重複
-    const [duplicate] = await promisePool.query(
-      'SELECT id FROM categories WHERE name = ? AND id != ?',
-      [name.trim(), id]
-    );
-
-    if (duplicate.length > 0) {
-      return res.status(400).json({
-        success: false,
-        message: '此分類名稱已被使用'
-      });
-    }
-
-    // 更新分類
-    await promisePool.query(
-      `UPDATE categories 
-       SET name = ?, parent_id = ?, level = ?, is_active = ?
-       WHERE id = ?`,
-      [name.trim(), parent_id || null, level || 1, is_active !== undefined ? is_active : 1, id]
-    );
-
-    res.json({
-      success: true,
-      message: '分類更新成功'
-    });
-  } catch (error) {
-    console.error('更新分類失敗:', error);
-    res.status(500).json({
-      success: false,
-      message: '更新分類失敗'
-    });
-  }
-};
-
-// ========================================
-// 5. 刪除分類
-// DELETE /api/categories/:id
-// ========================================
-exports.deleteCategory = async (req, res) => {
-  try {
-    const { id } = req.params;
-
-    // 檢查分類是否存在
-    const [existing] = await promisePool.query(
-      'SELECT id FROM categories WHERE id = ?',
-      [id]
-    );
-
-    if (existing.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: '找不到該分類'
-      });
-    }
-
-   // 檢查是否有商品使用此分類
-    const [products] = await promisePool.query(
-      'SELECT COUNT(*) as count FROM product_category_relation WHERE category_id = ?',
-      [id]
-    );
-
-    if (products[0].count > 0) {
-      return res.status(400).json({
-        success: false,
-        message: `此分類下還有 ${products[0].count} 個商品，無法刪除`
-      });
-    }
-
-    // 檢查是否有子分類
-    const [children] = await promisePool.query(
-      'SELECT COUNT(*) as count FROM categories WHERE parent_id = ?',
-      [id]
-    );
-
-    if (children[0].count > 0) {
-      return res.status(400).json({
-        success: false,
-        message: `此分類下還有 ${children[0].count} 個子分類，無法刪除`
-      });
-    }
-
-    // 刪除分類
-    await promisePool.query('DELETE FROM categories WHERE id = ?', [id]);
-
-    res.json({
-      success: true,
-      message: '分類刪除成功'
-    });
-  } catch (error) {
-    console.error('刪除分類失敗:', error);
-    res.status(500).json({
-      success: false,
-      message: '刪除分類失敗'
-    });
-  }
-};
-
-// ========================================
-// 6. 取得頂層分類（父分類列表）
-// GET /api/categories/parent/list
-// ========================================
-exports.getParentCategories = async (req, res) => {
-  try {
-    const [categories] = await promisePool.query(`
-      SELECT id, name, level
-      FROM categories
-      WHERE parent_id IS NULL AND is_active = 1
-      ORDER BY name ASC
-    `);
-
-    res.json({
-      success: true,
-      categories: categories
-    });
-  } catch (error) {
-    console.error('取得父分類列表失敗:', error);
-    res.status(500).json({
-      success: false,
-      message: '取得父分類列表失敗'
-    });
-  }
-};
-
-// ========================================
-// 7. 批次更新分類排序
-// PUT /api/categories/update-order
-// ========================================
-exports.updateCategoriesOrder = async (req, res) => {
-  const connection = await promisePool.getConnection();
-  
-  try {
-    await connection.beginTransaction();
-    
-    const { categories } = req.body;
-    
-    // 驗證資料
-    if (!categories || !Array.isArray(categories)) {
-      return res.status(400).json({
-        success: false,
-        message: '無效的資料格式'
-      });
-    }
-    
-    // 批次更新排序
-    for (const category of categories) {
-      await connection.query(
-        'UPDATE categories SET sort_order = ? WHERE id = ?',
-        [category.sort_order, category.id]
-      );
-    }
-    
-    await connection.commit();
-    
-    res.json({
-      success: true,
-      message: '排序更新成功'
-    });
-    
-  } catch (error) {
-    await connection.rollback();
-    console.error('更新排序失敗:', error);
-    res.status(500).json({
-      success: false,
-      message: '更新排序失敗'
-    });
-  } finally {
-    connection.release();
-  }
-};
-</file>
-
 <file path="backend/middleware/auth.js">
 // backend/middleware/auth.js
 const jwt = require('jsonwebtoken');
@@ -13487,40 +13140,352 @@ html, body {
 }
 </file>
 
-<file path="src/utils/api.ts">
-// src/utils/api.ts
-import { API_BASE_URL } from '../config';
+<file path="backend/controllers/categoryController.js">
+// backend/controllers/categoryController.js
+const { promisePool } = require('../config/database');
 
-/**
- * 統一的 API 請求工具
- * 自動處理：基礎網址、Token 注入、Content-Type 設定
- */
-export const apiFetch = async (endpoint: string, options: RequestInit = {}) => {
-  const token = localStorage.getItem('token');
-  
-  // 1. 自動判斷並補全網址
-  const url = endpoint.startsWith('http') ? endpoint : `${API_BASE_URL}${endpoint}`;
-  
-  // 2. 設定預設 Headers
-  const defaultHeaders: Record<string, string> = {
-    'Content-Type': 'application/json',
-  };
-  
-  // 3. 如果有 Token 則自動注入
-  if (token) {
-    defaultHeaders['Authorization'] = `Bearer ${token}`;
+// ========================================
+// 1. 取得所有分類（包含商品數量統計）
+// GET /api/categories
+// ========================================
+exports.getAllCategories = async (req, res) => {
+  try {
+    const [categories] = await promisePool.query(`
+      SELECT 
+        c.id,
+        c.name,
+        c.parent_id,
+        c.level,
+        c.is_active,
+        c.created_at,
+        c.image_url,
+        COUNT(pcr.product_id) as productCount
+      FROM categories c
+      LEFT JOIN product_category_relation pcr ON c.id = pcr.category_id
+      WHERE c.is_active = 1
+      GROUP BY c.id
+      ORDER BY c.sort_order ASC
+    `);
+
+    res.json({
+      success: true,
+      categories: categories
+    });
+  } catch (error) {
+    console.error('取得分類列表失敗:', error);
+    res.status(500).json({
+      success: false,
+      message: '取得分類列表失敗'
+    });
   }
+};
 
-  // ⚠️ 這裡必須呼叫瀏覽器原生 fetch，不可呼叫 apiFetch 以免造成死循環
-  const response = await fetch(url, {
-    ...options,
-    headers: {
-      ...defaultHeaders,
-      ...options.headers,
-    },
-  });
+// ========================================
+// 2. 取得單一分類
+// GET /api/categories/:id
+// ========================================
+exports.getCategoryById = async (req, res) => {
+  try {
+    const { id } = req.params;
 
-  return response;
+    const [categories] = await promisePool.query(`
+      SELECT 
+        c.id,
+        c.name,
+        c.parent_id,
+        c.level,
+        c.is_active,
+        c.created_at,
+        c.image_url,
+        COUNT(pcr.product_id) as productCount
+      FROM categories c
+      LEFT JOIN product_category_relation pcr ON c.id = pcr.category_id
+      WHERE c.id = ?
+      GROUP BY c.id
+    `, [id]);
+
+    if (categories.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: '找不到該分類'
+      });
+    }
+
+    res.json({
+      success: true,
+      category: categories[0]
+    });
+  } catch (error) {
+    console.error('取得分類失敗:', error);
+    res.status(500).json({
+      success: false,
+      message: '取得分類失敗'
+    });
+  }
+};
+
+// ========================================
+// 3. 新增分類
+// POST /api/categories
+// ========================================
+exports.createCategory = async (req, res) => {
+  try {
+   const { name, parent_id = null, level = 1, image_url = null } = req.body; // 加入 image_url
+
+    // 驗證必填欄位
+    if (!name || name.trim() === '') {
+      return res.status(400).json({
+        success: false,
+        message: '分類名稱不能為空'
+      });
+    }
+
+    // 檢查分類名稱是否已存在
+    const [existing] = await promisePool.query(
+      'SELECT id FROM categories WHERE name = ?',
+      [name.trim()]
+    );
+
+    if (existing.length > 0) {
+      return res.status(400).json({
+        success: false,
+        message: '此分類名稱已存在'
+      });
+    }
+
+    // 如果有父分類，驗證父分類是否存在
+    if (parent_id) {
+      const [parentCategory] = await promisePool.query(
+        'SELECT id, level FROM categories WHERE id = ?',
+        [parent_id]
+      );
+
+      if (parentCategory.length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: '父分類不存在'
+        });
+      }
+    }
+
+    // 新增分類
+   const [result] = await promisePool.query(
+  'INSERT INTO categories (name, parent_id, level, image_url) VALUES (?, ?, ?, ?)', // 增加一個欄位與問號
+  [name.trim(), parent_id, level, image_url] // 加入參數值
+  );
+
+    res.status(201).json({
+      success: true,
+      message: '分類新增成功',
+      categoryId: result.insertId
+    });
+  } catch (error) {
+    console.error('新增分類失敗:', error);
+    res.status(500).json({
+      success: false,
+      message: '新增分類失敗'
+    });
+  }
+};
+
+// ========================================
+// 4. 更新分類
+// PUT /api/categories/:id
+// ========================================
+exports.updateCategory = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { name, parent_id, level, is_active, image_url } = req.body; // 加入 image_url
+
+    // 檢查分類是否存在
+    const [existing] = await promisePool.query(
+      'SELECT id FROM categories WHERE id = ?',
+      [id]
+    );
+
+    if (existing.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: '找不到該分類'
+      });
+    }
+
+    // 驗證分類名稱
+    if (!name || name.trim() === '') {
+      return res.status(400).json({
+        success: false,
+        message: '分類名稱不能為空'
+      });
+    }
+
+    // 檢查新名稱是否與其他分類重複
+    const [duplicate] = await promisePool.query(
+      'SELECT id FROM categories WHERE name = ? AND id != ?',
+      [name.trim(), id]
+    );
+
+    if (duplicate.length > 0) {
+      return res.status(400).json({
+        success: false,
+        message: '此分類名稱已被使用'
+      });
+    }
+
+    // 更新分類
+    await promisePool.query(
+      `UPDATE categories 
+      SET name = ?, parent_id = ?, level = ?, is_active = ?, image_url = ?
+      WHERE id = ?`, // 增加 image_url = ?
+      [name.trim(), parent_id || null, level || 1, is_active !== undefined ? is_active : 1, image_url, id] // 加入參數值
+    );
+
+    res.json({
+      success: true,
+      message: '分類更新成功'
+    });
+  } catch (error) {
+    console.error('更新分類失敗:', error);
+    res.status(500).json({
+      success: false,
+      message: '更新分類失敗'
+    });
+  }
+};
+
+// ========================================
+// 5. 刪除分類
+// DELETE /api/categories/:id
+// ========================================
+exports.deleteCategory = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    // 檢查分類是否存在
+    const [existing] = await promisePool.query(
+      'SELECT id FROM categories WHERE id = ?',
+      [id]
+    );
+
+    if (existing.length === 0) {
+      return res.status(404).json({
+        success: false,
+        message: '找不到該分類'
+      });
+    }
+
+   // 檢查是否有商品使用此分類
+    const [products] = await promisePool.query(
+      'SELECT COUNT(*) as count FROM product_category_relation WHERE category_id = ?',
+      [id]
+    );
+
+    if (products[0].count > 0) {
+      return res.status(400).json({
+        success: false,
+        message: `此分類下還有 ${products[0].count} 個商品，無法刪除`
+      });
+    }
+
+    // 檢查是否有子分類
+    const [children] = await promisePool.query(
+      'SELECT COUNT(*) as count FROM categories WHERE parent_id = ?',
+      [id]
+    );
+
+    if (children[0].count > 0) {
+      return res.status(400).json({
+        success: false,
+        message: `此分類下還有 ${children[0].count} 個子分類，無法刪除`
+      });
+    }
+
+    // 刪除分類
+    await promisePool.query('DELETE FROM categories WHERE id = ?', [id]);
+
+    res.json({
+      success: true,
+      message: '分類刪除成功'
+    });
+  } catch (error) {
+    console.error('刪除分類失敗:', error);
+    res.status(500).json({
+      success: false,
+      message: '刪除分類失敗'
+    });
+  }
+};
+
+// ========================================
+// 6. 取得頂層分類（父分類列表）
+// GET /api/categories/parent/list
+// ========================================
+exports.getParentCategories = async (req, res) => {
+  try {
+    const [categories] = await promisePool.query(`
+      SELECT id, name, level
+      FROM categories
+      WHERE parent_id IS NULL AND is_active = 1
+      ORDER BY name ASC
+    `);
+
+    res.json({
+      success: true,
+      categories: categories
+    });
+  } catch (error) {
+    console.error('取得父分類列表失敗:', error);
+    res.status(500).json({
+      success: false,
+      message: '取得父分類列表失敗'
+    });
+  }
+};
+
+// ========================================
+// 7. 批次更新分類排序
+// PUT /api/categories/update-order
+// ========================================
+exports.updateCategoriesOrder = async (req, res) => {
+  const connection = await promisePool.getConnection();
+  
+  try {
+    await connection.beginTransaction();
+    
+    const { categories } = req.body;
+    
+    // 驗證資料
+    if (!categories || !Array.isArray(categories)) {
+      return res.status(400).json({
+        success: false,
+        message: '無效的資料格式'
+      });
+    }
+    
+    // 批次更新排序
+    for (const category of categories) {
+      await connection.query(
+        'UPDATE categories SET sort_order = ? WHERE id = ?',
+        [category.sort_order, category.id]
+      );
+    }
+    
+    await connection.commit();
+    
+    res.json({
+      success: true,
+      message: '排序更新成功'
+    });
+    
+  } catch (error) {
+    await connection.rollback();
+    console.error('更新排序失敗:', error);
+    res.status(500).json({
+      success: false,
+      message: '更新排序失敗'
+    });
+  } finally {
+    connection.release();
+  }
 };
 </file>
 
@@ -16927,6 +16892,31 @@ const WishlistPage: React.FC = () => {
 export default WishlistPage;
 </file>
 
+<file path="src/utils/api.ts">
+import { API_BASE_URL } from '../config';
+
+export const apiFetch = async (endpoint: string, options: RequestInit = {}) => {
+  const token = localStorage.getItem('token');
+  const url = endpoint.startsWith('http') ? endpoint : `${API_BASE_URL}${endpoint}`;
+  
+  const headers: Record<string, string> = { ...((options.headers as any) || {}) };
+  
+  // ✅ 智慧判斷：如果不是傳送檔案，才加上 JSON 宣告
+  if (!(options.body instanceof FormData)) {
+    headers['Content-Type'] = 'application/json';
+  }
+  
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
+
+  return await fetch(url, {
+    ...options,
+    headers: headers, 
+  });
+};
+</file>
+
 <file path="ios/App/App.xcodeproj/project.pbxproj">
 // !$*UTF8*$!
 {
@@ -19543,274 +19533,6 @@ export default OrderManagement;
 }
 </file>
 
-<file path="src/pages/SearchPage.tsx">
-import React, { useState, useEffect, useMemo } from 'react';
-import { Link, useNavigate, useSearchParams } from 'react-router-dom';
-import { Search, X, TrendingUp, Loader } from 'lucide-react';
-import BottomNav from '../components/BottomNav';
-import './SearchPage.css'; 
-import { apiFetch } from '../utils/api';
-
-// 定義後端回傳的資料格式
-interface BackendProduct {
-  id: number;
-  name: string;
-  price: number;
-  description?: string;
-  stock: number;
-  category_names: string | null;
-  main_image: string | null;
-  created_at?: string;
-}
-
-// 定義前端顯示用的資料格式
-interface DisplayProduct {
-  id: number;
-  name: string;
-  price: number;
-  originalPrice?: number;
-  image: string;
-  category: string;
-  rating: number;
-}
-
-const SearchPage: React.FC = () => {
-  const navigate = useNavigate();
-  const [searchParams] = useSearchParams();
-  
-  // 狀態管理
-  const [searchTerm, setSearchTerm] = useState('');
-  const [categoryFilter, setCategoryFilter] = useState('');
-  const [allProducts, setAllProducts] = useState<DisplayProduct[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  
-  // 從 localStorage 讀取歷史紀錄
-  const [recentSearches, setRecentSearches] = useState<string[]>(() => {
-    try {
-      const saved = localStorage.getItem('recentSearches');
-      return saved ? JSON.parse(saved) : ['白色T恤', '藍牙耳機', '咖啡豆'];
-    } catch (e) {
-      return ['白色T恤', '藍牙耳機', '咖啡豆'];
-    }
-  });
-
-  const hotKeywords = ['特價商品', '新品上市', '熱銷排行', '限時優惠'];
-
-  // 1. 初始化：從後端抓取商品
-  useEffect(() => {
-    const fetchProducts = async () => {
-      try {
-        setIsLoading(true);
-        const response = await apiFetch('/api/products/published');
-        
-        if (!response.ok) throw new Error('無法連線至伺服器');
-
-        const data = await response.json();
-
-        if (data.success && Array.isArray(data.products)) {
-          const mappedProducts: DisplayProduct[] = data.products.map((p: BackendProduct) => ({
-            id: p.id,
-            name: p.name,
-            price: p.price,
-            originalPrice: undefined, 
-            image: p.main_image 
-              ? (p.main_image.startsWith('http') ? p.main_image : `/uploads/${p.main_image}`)
-              : 'https://placehold.co/300x300?text=No+Image', 
-            category: p.category_names || '未分類',
-            rating: 5.0, 
-          }));
-          setAllProducts(mappedProducts);
-        }
-      } catch (err) {
-        console.error('Fetch error:', err);
-        setError('目前無法載入商品目錄，請稍後再試。');
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    fetchProducts();
-  }, []);
-
-  // 2. 處理 URL 分類參數
-  useEffect(() => {
-    const category = searchParams.get('category');
-    if (category) {
-      setCategoryFilter(category);
-      setSearchTerm(category);
-    }
-  }, [searchParams]);
-
-  // 3. 監聽歷史紀錄變化
-  useEffect(() => {
-    localStorage.setItem('recentSearches', JSON.stringify(recentSearches));
-  }, [recentSearches]);
-
-  // 4. 過濾搜尋結果
-  const searchResults = useMemo(() => {
-    const lowerTerm = searchTerm.toLowerCase().trim();
-
-    if (categoryFilter) {
-      return allProducts.filter(product => {
-        if (!product.category) return false;
-        const categories = product.category.split(',').map(c => c.trim()); 
-        return categories.includes(categoryFilter);
-      });
-    }
-    
-    if (!lowerTerm) return [];
-    
-    return allProducts.filter(product => 
-      product.name.toLowerCase().includes(lowerTerm) || 
-      product.category.toLowerCase().includes(lowerTerm)
-    );
-  }, [searchTerm, categoryFilter, allProducts]);
-
-  const handleClearSearch = () => {
-    setSearchTerm('');
-    setCategoryFilter('');
-    navigate('/search');
-  };
-
-  const handleSearch = (keyword: string) => {
-    const trimmed = keyword.trim();
-    if (!trimmed) return;
-    setSearchTerm(trimmed);
-    const newHistory = [trimmed, ...recentSearches.filter(k => k !== trimmed)].slice(0, 6);
-    setRecentSearches(newHistory);
-  };
-
-  const removeRecentSearch = (keyword: string) => {
-    setRecentSearches(recentSearches.filter(item => item !== keyword));
-  };
-
-  return (
-    <div className="search-page">
-      <header className="search-header">
-        <div className="search-header-content">
-          <Link to="/" className="back-button">← 返回</Link>
-          <h1 className="search-title">搜尋商品</h1>
-        </div>
-      </header>
-
-      <div className="search-main-container">
-        <div className="search-input-wrapper">
-          <Search className="search-icon" size={20} />
-          <input
-            type="text"
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            onKeyPress={(e) => e.key === 'Enter' && handleSearch(searchTerm)}
-            placeholder="搜尋商品名稱或分類..."
-            className="search-input"
-            autoFocus
-          />
-          {searchTerm && (
-            <button onClick={handleClearSearch} className="clear-button" aria-label="清除搜尋">
-              <X size={20} />
-            </button>
-          )}
-        </div>
-
-        {isLoading && (
-          <div className="loading-container">
-            <Loader className="loader-spinner" size={24} />
-            <span>正在載入商品目錄...</span>
-          </div>
-        )}
-
-        {error && !isLoading && <div className="error-message">⚠️ {error}</div>}
-
-        {!isLoading && recentSearches.length > 0 && !searchTerm && (
-          <div className="search-section">
-            <h2 className="section-title">最近搜尋</h2>
-            <div className="keyword-list">
-              {recentSearches.map((keyword, index) => (
-                <div key={index} className="keyword-item">
-                  <button onClick={() => handleSearch(keyword)} className="keyword-button">
-                    {keyword}
-                  </button>
-                  <button
-                    onClick={(e) => { e.stopPropagation(); removeRecentSearch(keyword); }}
-                    className="remove-button"
-                  >
-                    <X size={16} />
-                  </button>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {!isLoading && !searchTerm && (
-          <div className="search-section">
-            <h2 className="section-title">
-              <TrendingUp size={20} />
-              熱門搜尋
-            </h2>
-            <div className="hot-keywords">
-              {hotKeywords.map((keyword, index) => (
-                <button key={index} onClick={() => handleSearch(keyword)} className="hot-keyword-button">
-                  {keyword}
-                </button>
-              ))}
-            </div>
-          </div>
-        )}
-
-        {!isLoading && searchTerm && (
-          <div className="search-results">
-            {searchResults.length === 0 ? (
-              <div className="empty-results">
-                <p>找不到「{searchTerm}」的相關商品</p>
-                <p className="empty-hint">試試其他關鍵字或瀏覽熱門商品</p>
-              </div>
-            ) : (
-              <div className="results-grid">
-                {searchResults.map(product => (
-                  <Link to={`/product/${product.id}`} key={product.id} className="product-card-link">
-                    <div className="product-card">
-                      <div className="product-image-container">
-                         <img 
-                           src={product.image} 
-                           alt={product.name} 
-                           className="product-image"
-                           loading="lazy"
-                           onError={(e) => { (e.target as HTMLImageElement).src = 'https://placehold.co/300x300?text=No+Image'; }}
-                         />
-                      </div>
-                      <div className="product-info">
-                        <h3 className="product-name" title={product.name}>{product.name}</h3>
-                        <div className="product-meta">
-                           <span className="product-category-tag" title={product.category}>
-                             {product.category}
-                           </span>
-                        </div>
-                        <div className="product-price-row">
-                          <span className="price">NT$ {product.price.toLocaleString()}</span>
-                          {product.originalPrice && (
-                            <span className="original-price">NT$ {product.originalPrice.toLocaleString()}</span>
-                          )}
-                        </div>
-                        <div className="product-rating">⭐ {product.rating}</div>
-                      </div>
-                    </div>
-                  </Link>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-      </div>
-      <BottomNav activePage="search" />
-    </div>
-  );
-};
-
-export default SearchPage;
-</file>
-
 <file path="backend/routes/ecpayRoutes.js">
 // backend/routes/ecpayRoutes.js
 const express = require('express');
@@ -19866,863 +19588,6 @@ const config: CapacitorConfig = {
 };
 
 export default config;
-</file>
-
-<file path="src/pages/admin/components/CategoryManagement.tsx">
-// pages/admin/components/CategoryManagement.tsx
-import React, { useState, useEffect } from 'react';
-import { Plus, Edit2, Trash2, GripVertical, Eye} from 'lucide-react';
-import CategoryProductModal from './CategoryProductModal';
-import { apiFetch } from '../../../utils/api';
-
-import {
-  DndContext,
-  closestCenter,
-  KeyboardSensor,
-  PointerSensor,
-  useSensor,
-  useSensors,
-  DragEndEvent,
-  DragStartEvent,
-  DragOverlay,
-} from '@dnd-kit/core';
-import {
-  arrayMove,
-  SortableContext,
-  sortableKeyboardCoordinates,
-  useSortable,
-  verticalListSortingStrategy,
-} from '@dnd-kit/sortable';
-import { CSS } from '@dnd-kit/utilities';
-import '../styles/CategoryManagement.css';
-
-interface Category {
-  id: number;
-  name: string;
-  parent_id: number | null;
-  level: number;
-  sort_order: number;
-  is_active: number;
-  productCount: number;
-  created_at: string;
-}
-
-interface Product {
-  id: number;
-  name: string;
-  price: number;
-  stock: number;
-  status: string;
-}
-
-// 可拖拽的分類卡片組件
-const SortableCategory: React.FC<{
-  category: Category;
-  onEdit: (category: Category) => void;
-  onDelete: (category: Category) => void;
-  onView: (category: Category) => void;
-}> = ({ category, onEdit, onDelete, onView }) => {
-  const {
-    attributes,
-    listeners,
-    setNodeRef,
-    transform,
-    transition,
-    isDragging,
-  } = useSortable({ id: category.id });
-
-  const style = {
-    transform: CSS.Transform.toString(transform),
-    transition,
-    opacity: isDragging ? 0.5 : 1,
-  };
-
-  return (
-    <div
-      ref={setNodeRef}
-      style={style}
-      className={`category-card ${isDragging ? 'dragging' : ''}`}
-    >
-      <div className="category-content">
-        <div className="drag-handle" {...attributes} {...listeners}>
-          <GripVertical className="drag-icon" />
-        </div>
-        <div className="category-info">
-          <h3 className="category-name">{category.name}</h3>
-          <p className="category-count">商品數量: {category.productCount}</p>
-        </div>
-        <div className="category-actions">
-          <button
-            className="btn-icon-view"
-            onClick={() => onView(category)}
-            title="查看商品"
-          >
-            <Eye className="icon" />
-          </button>
-          <button
-            className="btn-icon-edit"
-            onClick={() => onEdit(category)}
-            title="編輯"
-          >
-            <Edit2 className="icon" />
-          </button>
-          <button
-            className="btn-icon-delete"
-            onClick={() => onDelete(category)}
-            title="刪除"
-          >
-            <Trash2 className="icon" />
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-const CategoryManagement: React.FC = () => {
-  const [categories, setCategories] = useState<Category[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
-  const [isSaving, setIsSaving] = useState(false);
-  const [activeId, setActiveId] = useState<number | null>(null);
-  const [showProductModal, setShowProductModal] = useState(false);
-  const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
-  const [categoryProducts, setCategoryProducts] = useState<Product[]>([]);
-  const [productsLoading, setProductsLoading] = useState(false);
-
-  // 設定拖拽感應器
-const sensors = useSensors(
-  useSensor(PointerSensor, {
-    activationConstraint: {
-      distance: 8, // 移動8px後開始拖拽
-    },
-  }),
-  useSensor(KeyboardSensor, {
-    coordinateGetter: sortableKeyboardCoordinates,
-  })
-);
-
-  // 載入分類列表
-  useEffect(() => {
-    fetchCategories();
-  }, []);
-
-  // 取得所有分類
-  const fetchCategories = async () => {
-    try {
-      setLoading(true);
-      setError(null);
-
-      const response = await apiFetch('/api/categories');
-      const data = await response.json();
-
-      if (data.success) {
-        setCategories(data.categories);
-      } else {
-        setError('取得分類失敗');
-      }
-    } catch (error) {
-      console.error('取得分類失敗:', error);
-      setError('無法載入分類列表');
-    } finally {
-      setLoading(false);
-    }
-  };
-
-    // 處理拖拽開始
-    const handleDragStart = (event: DragStartEvent) => {
-      setActiveId(event.active.id as number);
-    };
-
-    // 處理拖拽結束
-const handleDragEnd = async (event: DragEndEvent) => {
-  const { active, over } = event;
-
-  setActiveId(null);
-
-  if (!over || active.id === over.id) {
-    return;
-  }
-
-  const oldIndex = categories.findIndex((cat) => cat.id === active.id);
-  const newIndex = categories.findIndex((cat) => cat.id === over.id);
-
-  // 更新本地順序
-  const newCategories = arrayMove(categories, oldIndex, newIndex);
-
-  // 更新 sort_order
-  const updatedCategories = newCategories.map((cat, index) => ({
-    ...cat,
-    sort_order: index + 1,
-  }));
-
-  setCategories(updatedCategories);
-
-  // 保存到後端
-  await saveOrder(updatedCategories);
-};
-
-  // 保存排序到後端
-  const saveOrder = async (orderedCategories: Category[]) => {
-    try {
-      setIsSaving(true);
-      const token = localStorage.getItem('token');
-      if (!token) {
-        alert('請先登入');
-        return;
-      }
-
-      const response = await apiFetch('/api/categories/update-order', {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          categories: orderedCategories.map((cat) => ({
-            id: cat.id,
-            sort_order: cat.sort_order,
-          })),
-        }),
-      });
-
-      const data = await response.json();
-
-      if (!data.success) {
-        alert('保存排序失敗');
-        // 失敗時重新載入
-        fetchCategories();
-      }
-    } catch (error) {
-      console.error('保存排序失敗:', error);
-      alert('保存排序時發生錯誤');
-      fetchCategories();
-    } finally {
-      setIsSaving(false);
-    }
-  };
-
-  // 新增分類
-  const handleAddCategory = async () => {
-    const name = prompt('請輸入新分類名稱：');
-    if (!name || name.trim() === '') return;
-
-    try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        alert('請先登入');
-        return;
-      }
-
-      const response = await apiFetch('/api/categories', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          name: name.trim(),
-          parent_id: null,
-          level: 1,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        alert('分類新增成功！');
-        fetchCategories();
-      } else {
-        alert(data.message || '新增失敗');
-      }
-    } catch (error) {
-      console.error('新增分類失敗:', error);
-      alert('新增分類時發生錯誤');
-    }
-  };
-
-  // 編輯分類
-  const handleEditCategory = async (category: Category) => {
-    const newName = prompt('請輸入新的分類名稱：', category.name);
-    if (!newName || newName.trim() === '' || newName === category.name) return;
-
-    try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        alert('請先登入');
-        return;
-      }
-
-      const response = await apiFetch(`/api/categories/${category.id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({
-          name: newName.trim(),
-          parent_id: category.parent_id,
-          level: category.level,
-          is_active: category.is_active,
-        }),
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        alert('分類更新成功！');
-        fetchCategories();
-      } else {
-        alert(data.message || '更新失敗');
-      }
-    } catch (error) {
-      console.error('更新分類失敗:', error);
-      alert('更新分類時發生錯誤');
-    }
-  };
-
-  // 刪除分類
-  const handleDeleteCategory = async (category: Category) => {
-    if (!window.confirm(`確定要刪除「${category.name}」分類嗎？`)) return;
-
-    try {
-      const token = localStorage.getItem('token');
-      if (!token) {
-        alert('請先登入');
-        return;
-      }
-
-      const response = await apiFetch(`/api/categories/${category.id}`, {
-        method: 'DELETE',
-        headers: {
-          'Authorization': `Bearer ${token}`,
-        },
-      });
-
-      const data = await response.json();
-
-      if (data.success) {
-        alert('分類刪除成功！');
-        fetchCategories();
-      } else {
-        alert(data.message || '刪除失敗');
-      }
-    } catch (error) {
-      console.error('刪除分類失敗:', error);
-      alert('刪除分類時發生錯誤');
-    }
-  };
-
-  // 查看分類商品
-  const handleViewCategory = async (category: Category) => {
-    setSelectedCategory(category);
-    setShowProductModal(true);
-    setProductsLoading(true);
-
-    try {
-      const response = await apiFetch(`/api/products/category/${category.id}`);
-      const data = await response.json();
-
-      if (data.success) {
-        setCategoryProducts(data.products || []);
-      } else {
-        setCategoryProducts([]);
-      }
-    } catch (error) {
-      console.error('取得分類商品失敗:', error);
-      setCategoryProducts([]);
-    } finally {
-      setProductsLoading(false);
-    }
-  };
-
-  // 關閉商品 Modal
-  const closeProductModal = () => {
-    setShowProductModal(false);
-    setSelectedCategory(null);
-    setCategoryProducts([]);
-  };
-
-  // 載入中
-  if (loading) {
-    return (
-      <div className="category-management">
-        <div style={{ textAlign: 'center', padding: '40px' }}>
-          <p>載入中...</p>
-        </div>
-      </div>
-    );
-  }
-
-  // 錯誤處理
-  if (error) {
-    return (
-      <div className="category-management">
-        <div style={{ textAlign: 'center', padding: '40px', color: '#ef4444' }}>
-          <p>{error}</p>
-          <button
-            onClick={fetchCategories}
-            style={{
-              marginTop: '20px',
-              padding: '10px 20px',
-              backgroundColor: '#3b82f6',
-              color: 'white',
-              border: 'none',
-              borderRadius: '6px',
-              cursor: 'pointer',
-            }}
-          >
-            重新載入
-          </button>
-        </div>
-      </div>
-    );
-  }
-
-  return (
-    <div className="category-management">
-      <div className="page-header">
-        <div>
-          <h2 className="page-title">分類管理</h2>
-          {isSaving && <span className="saving-indicator">保存中...</span>}
-        </div>
-        <button className="btn-primary" onClick={handleAddCategory}>
-          <Plus className="btn-icon" />
-          新增分類
-        </button>
-      </div>
-
-      <div className="category-list">
-        {categories.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '40px' }}>
-            <p>目前沒有任何分類</p>
-          </div>
-        ) : (
-         <DndContext
-  sensors={sensors}
-  collisionDetection={closestCenter}
-  onDragStart={handleDragStart}
-  onDragEnd={handleDragEnd}
->
-  <SortableContext
-    items={categories.map((cat) => cat.id)}
-    strategy={verticalListSortingStrategy}
-  >
-    {categories.map((category) => (
-      <SortableCategory
-        key={category.id}
-        category={category}
-        onEdit={handleEditCategory}
-        onDelete={handleDeleteCategory}
-        onView={handleViewCategory} 
-      />
-    ))}
-  </SortableContext>
-  <DragOverlay>
-    {activeId ? (
-      <div className="category-card">
-        <div className="category-content">
-          <div className="drag-handle">
-            <GripVertical className="drag-icon" />
-          </div>
-          <div className="category-info">
-            <h3 className="category-name">
-              {categories.find(cat => cat.id === activeId)?.name}
-            </h3>
-            <p className="category-count">
-              商品數量: {categories.find(cat => cat.id === activeId)?.productCount}
-            </p>
-          </div>
-        </div>
-      </div>
-    ) : null}
-  </DragOverlay>
-</DndContext>
-        )}
-      </div>
-
-      {/* ⭐ 替換成新的組件 */}
-      <CategoryProductModal 
-        isOpen={showProductModal}
-        onClose={closeProductModal}
-        category={selectedCategory}
-        products={categoryProducts}
-        loading={productsLoading}
-      />
-    </div>
-  );
-};
-
-export default CategoryManagement;
-</file>
-
-<file path="src/pages/admin/styles/CategoryManagement.css">
-/* pages/admin/styles/CategoryManagement.css */
-/* 完整優化版本 - 只保留分類管理頁面本身的樣式 */
-
-/* ========== 基本容器 ========== */
-.category-management {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
-.page-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  flex-wrap: wrap;
-  gap: 1rem;
-}
-
-.page-header > div {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.page-title {
-  font-size: 1.5rem;
-  font-weight: 600;
-  color: #1f2937;
-  margin: 0;
-}
-
-.saving-indicator {
-  font-size: 0.875rem;
-  color: #3b82f6;
-  animation: pulse 1.5s infinite;
-}
-
-@keyframes pulse {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.5;
-  }
-}
-
-/* ========== 按鈕樣式 ========== */
-.btn-primary {
-  display: flex;
-  align-items: center;
-  gap: 0.5rem;
-  padding: 0.75rem 1.5rem;
-  background: #3b82f6;
-  color: white;
-  border: none;
-  border-radius: 0.5rem;
-  font-size: 0.875rem;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.btn-primary:hover {
-  background: #2563eb;
-  transform: translateY(-1px);
-}
-
-.btn-icon {
-  width: 1.25rem;
-  height: 1.25rem;
-}
-
-/* ========== 分類列表 ========== */
-.category-list {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  position: relative;
-}
-
-/* ========== 分類卡片 ========== */
-.category-card {
-  background: white;
-  border: 1px solid #e5e7eb;
-  border-radius: 0.5rem;
-  padding: 1rem;
-  transition: all 0.2s ease;
-  cursor: default;
-  position: relative;
-}
-
-.category-card:hover {
-  border-color: #3b82f6;
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
-  transform: translateY(-1px);
-}
-
-.category-card:hover::before {
-  content: '';
-  position: absolute;
-  left: 0;
-  top: 0;
-  bottom: 0;
-  width: 3px;
-  background: #3b82f6;
-  border-radius: 0 2px 2px 0;
-}
-
-.category-card.dragging {
-  opacity: 0.5;
-  border-color: #3b82f6;
-  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
-  position: relative;
-  z-index: 1000;
-  transform: scale(1.02);
-}
-
-/* ========== 分類內容布局 ========== */
-.category-content {
-  display: flex;
-  align-items: center;
-  width: 100%;
-}
-
-/* ========== 拖拽手柄 ========== */
-.drag-handle {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 2rem;
-  height: 2rem;
-  margin-right: 1rem;
-  cursor: grab;
-  color: #9ca3af;
-  background: transparent;
-  border-radius: 0.375rem;
-  transition: all 0.2s ease;
-  flex-shrink: 0;
-}
-
-.drag-handle:hover {
-  color: #3b82f6;
-  background: rgba(59, 130, 246, 0.1);
-}
-
-.category-card:hover .drag-handle {
-  color: #3b82f6;
-  background: rgba(59, 130, 246, 0.15);
-}
-
-.drag-handle:active {
-  cursor: grabbing;
-  background: rgba(59, 130, 246, 0.2);
-}
-
-.drag-icon {
-  width: 1.25rem;
-  height: 1.25rem;
-  transition: transform 0.2s ease;
-}
-
-.category-card:hover .drag-icon {
-  transform: scale(1.1);
-}
-
-/* ========== 分類資訊 ========== */
-.category-info {
-  flex: 1;
-  min-width: 0;
-  margin-right: 1rem;
-}
-
-.category-name {
-  font-size: 1rem;
-  font-weight: 600;
-  color: #1f2937;
-  margin: 0 0 0.25rem 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.category-count {
-  font-size: 0.875rem;
-  color: #6b7280;
-  margin: 0;
-}
-
-/* ========== 操作按鈕 ========== */
-.category-actions {
-  display: flex;
-  gap: 0.5rem;
-  flex-shrink: 0;
-}
-
-.btn-icon-edit,
-.btn-icon-delete {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 2rem;
-  height: 2rem;
-  background: transparent;
-  border: 1px solid #e5e7eb;
-  border-radius: 0.375rem;
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.btn-icon-edit {
-  color: #3b82f6;
-}
-
-.btn-icon-edit:hover {
-  background: #eff6ff;
-  border-color: #3b82f6;
-  transform: translateY(-1px);
-}
-
-.btn-icon-delete {
-  color: #ef4444;
-}
-
-.btn-icon-delete:hover {
-  background: #fef2f2;
-  border-color: #ef4444;
-  transform: translateY(-1px);
-}
-
-.btn-icon-edit .icon,
-.btn-icon-delete .icon {
-  width: 1rem;
-  height: 1rem;
-}
-
-/* ========== 空狀態 ========== */
-.category-list > div[style*="text-align: center"] {
-  padding: 3rem;
-  color: #6b7280;
-  font-size: 0.875rem;
-}
-
-/* ========== 拖拽覆蓋層樣式 ========== */
-[data-dnd-context] {
-  position: relative;
-}
-
-/* ========== 響應式設計 ========== */
-@media (max-width: 768px) {
-  .page-header {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .btn-primary {
-    width: 100%;
-    justify-content: center;
-  }
-
-  .category-card {
-    padding: 0.75rem;
-  }
-
-  .drag-handle {
-    width: 1.75rem;
-    height: 1.75rem;
-    margin-right: 0.75rem;
-  }
-
-  .drag-icon {
-    width: 1rem;
-    height: 1rem;
-  }
-
-  .category-info {
-    margin-right: 0.75rem;
-  }
-
-  .category-name {
-    font-size: 0.875rem;
-  }
-
-  .category-count {
-    font-size: 0.75rem;
-  }
-
-  .btn-icon-edit,
-  .btn-icon-delete,
-  .btn-icon-view {
-    width: 1.75rem;
-    height: 1.75rem;
-  }
-}
-
-@media (max-width: 480px) {
-  .category-management {
-    gap: 1rem;
-  }
-
-  .category-card {
-    padding: 0.5rem;
-  }
-
-  .drag-handle {
-    width: 1.5rem;
-    height: 1.5rem;
-    margin-right: 0.5rem;
-  }
-
-  .category-info {
-    margin-right: 0.5rem;
-  }
-
-  .category-actions {
-    flex-direction: column;
-    gap: 0.25rem;
-  }
-
-  .btn-icon-edit,
-  .btn-icon-delete {
-    width: 1.5rem;
-    height: 1.5rem;
-  }
-}
-
-/* ========== 可訪問性優化 ========== */
-@media (prefers-reduced-motion: reduce) {
-  * {
-    animation-duration: 0.01ms !important;
-    animation-iteration-count: 1 !important;
-    transition-duration: 0.01ms !important;
-  }
-}
-
-/* ========== 高對比度模式支援 ========== */
-@media (prefers-contrast: high) {
-  .category-card {
-    border-width: 2px;
-  }
-
-  .category-card:hover {
-    border-width: 3px;
-  }
-}
-
-/* ========================================
-   查看商品按鈕 (這個要保留，因為按鈕在列表上)
-======================================== */
-.btn-icon-view {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  width: 32px;
-  height: 32px;
-  border: none;
-  border-radius: 6px;
-  cursor: pointer;
-  transition: all 0.2s;
-  background-color: #e0f2fe;
-  color: #0284c7;
-}
-
-.btn-icon-view:hover {
-  background-color: #0284c7;
-  color: white;
-}
 </file>
 
 <file path="src/pages/checkout/CheckoutPage.tsx">
@@ -21405,236 +20270,272 @@ const LoginPage: React.FC = () => {
 export default LoginPage;
 </file>
 
-<file path="src/pages/SearchPage.css">
-/* 基礎防禦性設定 */
-* {
-  box-sizing: border-box; /* 確保 padding 不會增加元素的總寬度 */
+<file path="src/pages/SearchPage.tsx">
+import React, { useState, useEffect, useMemo } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Search, X, TrendingUp, Loader } from 'lucide-react';
+import BottomNav from '../components/BottomNav';
+import './SearchPage.css'; 
+import { apiFetch } from '../utils/api';
+
+// 定義後端回傳的資料格式
+interface BackendProduct {
+  id: number;
+  name: string;
+  price: number;
+  description?: string;
+  stock: number;
+  category_names: string | null;
+  main_image: string | null;
+  created_at?: string;
 }
 
-.search-page {
-  min-height: 100vh;
-  background-color: #f9fafb;
-  padding-bottom: 5rem;
-  width: 100%;
-  overflow-x: hidden; /* 禁止整頁橫向捲動 */
+// 定義前端顯示用的資料格式
+interface DisplayProduct {
+  id: number;
+  name: string;
+  price: number;
+  originalPrice?: number;
+  image: string;
+  category: string;
+  rating: number;
 }
 
-/* Header - 修正顏色與寬度 */
-.search-header {
-  background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
-  padding: 1rem;
-  padding-top: calc(1rem + env(safe-area-inset-top));
-  color: white;
-  position: sticky;
-  top: 0;
-  z-index: 50;
-  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-  width: 100%;
-}
+const SearchPage: React.FC = () => {
+  const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  
+  // 狀態管理
+  const [searchTerm, setSearchTerm] = useState('');
+  const [categoryFilter, setCategoryFilter] = useState('');
+  const [allProducts, setAllProducts] = useState<DisplayProduct[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  
+  // 從 localStorage 讀取歷史紀錄
+  const [recentSearches, setRecentSearches] = useState<string[]>(() => {
+    try {
+      const saved = localStorage.getItem('recentSearches');
+      return saved ? JSON.parse(saved) : ['白色T恤', '藍牙耳機', '咖啡豆'];
+    } catch (e) {
+      return ['白色T恤', '藍牙耳機', '咖啡豆'];
+    }
+  });
 
-.search-header-content {
-  max-width: 1280px;
-  margin: 0 auto;
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
+  const hotKeywords = ['特價商品', '新品上市', '熱銷排行', '限時優惠'];
 
-.back-button {
-  color: rgb(0, 0, 0); /* 修正為白色以符合深色背景 */
-  text-decoration: none;
-  font-size: 1rem;
-  white-space: nowrap;
-}
+  // 1. 初始化：從後端抓取商品
+  useEffect(() => {
+    const fetchProducts = async () => {
+      try {
+        setIsLoading(true);
+        const response = await apiFetch('/api/products/published');
+        
+        if (!response.ok) throw new Error('無法連線至伺服器');
 
-.search-title {
-  font-size: 1.125rem;
-  font-weight: 600;
-  margin: 0;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
+        const data = await response.json();
 
-/* Container 控制 */
-.search-main-container {
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 1rem;
-  width: 100%;
-}
+        if (data.success && Array.isArray(data.products)) {
+          const mappedProducts: DisplayProduct[] = data.products.map((p: BackendProduct) => ({
+            id: p.id,
+            name: p.name,
+            price: p.price,
+            originalPrice: undefined, 
+            image: p.main_image 
+              ? (p.main_image.startsWith('http') ? p.main_image : `/uploads/${p.main_image}`)
+              : 'https://placehold.co/300x300?text=No+Image', 
+            category: p.category_names || '未分類',
+            rating: 5.0, 
+          }));
+          setAllProducts(mappedProducts);
+        }
+      } catch (err) {
+        console.error('Fetch error:', err);
+        setError('目前無法載入商品目錄，請稍後再試。');
+      } finally {
+        setIsLoading(false);
+      }
+    };
 
-/* 搜尋框優化 */
-.search-input-wrapper {
-  position: relative;
-  margin-bottom: 1.5rem;
-  width: 100%;
-}
+    fetchProducts();
+  }, []);
 
-.search-input {
-  width: 100%;
-  padding: 0.75rem 2.75rem;
-  border: 2px solid #e5e7eb;
-  border-radius: 9999px;
-  font-size: 1rem;
-  background: white;
-  transition: all 0.2s;
-  /* 防止長輸入文字撐開 */
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
+  // 2. 處理 URL 分類參數
+  useEffect(() => {
+    const category = searchParams.get('category');
+    if (category) {
+      setCategoryFilter(category);
+      setSearchTerm(category);
+    }
+  }, [searchParams]);
 
-.search-input:focus {
-  outline: none;
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
-}
+  // 3. 監聽歷史紀錄變化
+  useEffect(() => {
+    localStorage.setItem('recentSearches', JSON.stringify(recentSearches));
+  }, [recentSearches]);
 
-.search-icon {
-  position: absolute;
-  left: 0.875rem;
-  top: 50%;
-  transform: translateY(-50%);
-  color: #9ca3af;
-}
+  // 4. 過濾搜尋結果
+  const searchResults = useMemo(() => {
+    const lowerTerm = searchTerm.toLowerCase().trim();
 
-.clear-button {
-  position: absolute;
-  right: 0.875rem;
-  top: 50%;
-  transform: translateY(-50%);
-  background: #f3f4f6;
-  border: none;
-  border-radius: 50%;
-  padding: 0.25rem;
-  display: flex;
-  cursor: pointer;
-}
+    if (categoryFilter) {
+      return allProducts.filter(product => {
+        if (!product.category) return false;
+        const categories = product.category.split(',').map(c => c.trim()); 
+        return categories.includes(categoryFilter);
+      });
+    }
+    
+    if (!lowerTerm) return [];
+    
+    return allProducts.filter(product => 
+      product.name.toLowerCase().includes(lowerTerm) || 
+      product.category.toLowerCase().includes(lowerTerm)
+    );
+  }, [searchTerm, categoryFilter, allProducts]);
 
-/* Grid 佈局 - 解決爆版的關鍵核心 */
-.results-grid {
-  display: grid;
-  /* minmax(0, 1fr) 是防止 Grid 子元素撐開容器的唯一解法 */
-  grid-template-columns: repeat(2, minmax(0, 1fr)); 
-  gap: 0.75rem;
-  width: 100%;
-}
+  const handleClearSearch = () => {
+    setSearchTerm('');
+    setCategoryFilter('');
+    navigate('/search');
+  };
 
-/* 商品卡片優化 */
-.product-card {
-  background: white;
-  border-radius: 0.75rem;
-  overflow: hidden;
-  border: 1px solid #f3f4f6;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-}
+  const handleSearch = (keyword: string) => {
+    const trimmed = keyword.trim();
+    if (!trimmed) return;
+    setSearchTerm(trimmed);
+    const newHistory = [trimmed, ...recentSearches.filter(k => k !== trimmed)].slice(0, 6);
+    setRecentSearches(newHistory);
+  };
 
-.product-image-container {
-  aspect-ratio: 1/1;
-  width: 100%;
-  background-color: #f9fafb;
-}
+  const removeRecentSearch = (keyword: string) => {
+    setRecentSearches(recentSearches.filter(item => item !== keyword));
+  };
 
-.product-image {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
+  return (
+    <div className="search-page">
+      <header className="search-header">
+        <div className="search-header-content">
+          <Link to="/" className="back-button">← 返回</Link>
+          <h1 className="search-title">搜尋商品</h1>
+        </div>
+      </header>
 
-.product-info {
-  padding: 0.75rem;
-  flex-grow: 1;
-  display: flex;
-  flex-direction: column;
-  min-width: 0; /* 讓 flex 子元素可以縮小 */
-}
+      <div className="search-main-container">
+        <div className="search-input-wrapper">
+          <Search className="search-icon" size={20} />
+          <input
+            type="text"
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            onKeyPress={(e) => e.key === 'Enter' && handleSearch(searchTerm)}
+            placeholder="搜尋商品名稱或分類..."
+            className="search-input"
+            autoFocus
+          />
+          {searchTerm && (
+            <button onClick={handleClearSearch} className="clear-button" aria-label="清除搜尋">
+              <X size={20} />
+            </button>
+          )}
+        </div>
 
-/* 文字截斷處理 */
-.product-name {
-  font-size: 0.875rem;
-  font-weight: 600;
-  color: #1f2937;
-  margin-bottom: 0.5rem;
-  line-height: 1.4;
-  /* 兩行省略 */
-  display: -webkit-box;
-  -webkit-line-clamp: 2;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
-  word-break: break-all;
-}
+        {isLoading && (
+          <div className="loading-container">
+            <Loader className="loader-spinner" size={24} />
+            <span>正在載入商品目錄...</span>
+          </div>
+        )}
 
-.product-category-tag {
-  font-size: 0.75rem;
-  color: #6b7280;
-  background: #f3f4f6;
-  padding: 0.125rem 0.375rem;
-  border-radius: 4px;
-  margin-bottom: 0.5rem;
-  display: inline-block;
-  max-width: 100%;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-}
+        {error && !isLoading && <div className="error-message">⚠️ {error}</div>}
 
-.product-price-row {
-  display: flex;
-  align-items: baseline;
-  gap: 0.375rem;
-  flex-wrap: wrap; /* 價格太長時自動換行，不撐寬 */
-  margin-top: auto;
-}
+        {!isLoading && recentSearches.length > 0 && !searchTerm && (
+          <div className="search-section">
+            <h2 className="section-title">最近搜尋</h2>
+            <div className="keyword-list">
+              {recentSearches.map((keyword, index) => (
+                <div key={index} className="keyword-item">
+                  <button onClick={() => handleSearch(keyword)} className="keyword-button">
+                    {keyword}
+                  </button>
+                  <button
+                    onClick={(e) => { e.stopPropagation(); removeRecentSearch(keyword); }}
+                    className="remove-button"
+                  >
+                    <X size={16} />
+                  </button>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
 
-.price {
-  color: #2563eb;
-  font-weight: 700;
-  font-size: 1rem;
-}
+        {!isLoading && !searchTerm && (
+          <div className="search-section">
+            <h2 className="section-title">
+              <TrendingUp size={20} />
+              熱門搜尋
+            </h2>
+            <div className="hot-keywords">
+              {hotKeywords.map((keyword, index) => (
+                <button key={index} onClick={() => handleSearch(keyword)} className="hot-keyword-button">
+                  {keyword}
+                </button>
+              ))}
+            </div>
+          </div>
+        )}
 
-.original-price {
-  font-size: 0.75rem;
-  color: #9ca3af;
-  text-decoration: line-through;
-}
+        {!isLoading && searchTerm && (
+          <div className="search-results">
+            {searchResults.length === 0 ? (
+              <div className="empty-results">
+                <p>找不到「{searchTerm}」的相關商品</p>
+                <p className="empty-hint">試試其他關鍵字或瀏覽熱門商品</p>
+              </div>
+            ) : (
+              <div className="results-grid">
+                {searchResults.map(product => (
+                  <Link to={`/product/${product.id}`} key={product.id} className="product-card-link">
+                    <div className="product-card">
+                      <div className="product-image-container">
+                         <img 
+                           src={product.image} 
+                           alt={product.name} 
+                           className="product-image"
+                           loading="lazy"
+                           onError={(e) => { (e.target as HTMLImageElement).src = 'https://placehold.co/300x300?text=No+Image'; }}
+                         />
+                      </div>
+                      <div className="product-info">
+                        <h3 className="product-name" title={product.name}>{product.name}</h3>
+                        <div className="product-meta">
+                           <span className="product-category-tag" title={product.category}>
+                             {product.category}
+                           </span>
+                        </div>
+                        <div className="product-price-row">
+                          <span className="price">NT$ {product.price.toLocaleString()}</span>
+                          {product.originalPrice && (
+                            <span className="original-price">NT$ {product.originalPrice.toLocaleString()}</span>
+                          )}
+                        </div>
+                        <div className="product-rating">⭐ {product.rating}</div>
+                      </div>
+                    </div>
+                  </Link>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+      <BottomNav activePage="search" />
+    </div>
+  );
+};
 
-.product-rating {
-  font-size: 0.75rem;
-  margin-top: 0.25rem;
-  color: #6b7280;
-}
-
-/* 狀態顯示 */
-.loading-container {
-  padding: 3rem 0;
-  text-align: center;
-  color: #6b7280;
-}
-
-.loader-spinner {
-  animation: spin 1s linear infinite;
-  margin-bottom: 0.5rem;
-}
-
-@keyframes spin {
-  to { transform: rotate(360deg); }
-}
-
-/* RWD 調整 */
-@media (min-width: 640px) {
-  .results-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 1rem;
-  }
-}
-
-@media (min-width: 1024px) {
-  .results-grid {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
-}
+export default SearchPage;
 </file>
 
 <file path="backend/models/Product.js">
@@ -22369,6 +21270,1026 @@ router.post('/cvs-stores', protect, async (req, res) => {
 });
 
 module.exports = router;
+</file>
+
+<file path="src/pages/admin/components/CategoryManagement.tsx">
+// src/pages/admin/components/CategoryManagement.tsx
+import React, { useState, useEffect } from 'react';
+import { Plus, Edit2, Trash2, GripVertical, Eye, X, Upload, ImageIcon } from 'lucide-react';
+import CategoryProductModal from './CategoryProductModal';
+import { apiFetch } from '../../../utils/api';
+import { getImageUrl } from '../../../config'; // 引入圖片工具
+
+import {
+  DndContext,
+  closestCenter,
+  KeyboardSensor,
+  PointerSensor,
+  useSensor,
+  useSensors,
+  DragEndEvent,
+  DragStartEvent,
+  DragOverlay,
+} from '@dnd-kit/core';
+import {
+  arrayMove,
+  SortableContext,
+  sortableKeyboardCoordinates,
+  useSortable,
+  verticalListSortingStrategy,
+} from '@dnd-kit/sortable';
+import { CSS } from '@dnd-kit/utilities';
+import '../styles/CategoryManagement.css';
+
+// 📌 更新介面定義，加入 image_url
+interface Category {
+  id: number;
+  name: string;
+  parent_id: number | null;
+  level: number;
+  sort_order: number;
+  is_active: number;
+  productCount: number;
+  image_url: string | null; 
+  created_at: string;
+}
+
+interface Product {
+  id: number;
+  name: string;
+  price: number;
+  stock: number;
+  status: string;
+}
+
+// 可拖拽的分類卡片組件
+const SortableCategory: React.FC<{
+  category: Category;
+  onEdit: (category: Category) => void;
+  onDelete: (category: Category) => void;
+  onView: (category: Category) => void;
+}> = ({ category, onEdit, onDelete, onView }) => {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: category.id });
+
+  const style = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : 1,
+  };
+
+  return (
+    <div
+      ref={setNodeRef}
+      style={style}
+      className={`category-card ${isDragging ? 'dragging' : ''}`}
+    >
+      <div className="category-content">
+        <div className="drag-handle" {...attributes} {...listeners}>
+          <GripVertical className="drag-icon" />
+        </div>
+        
+        {/* 📌 新增：在清單中顯示分類圖縮圖 */}
+        <div className="category-list-thumb">
+          {category.image_url ? (
+            <img src={getImageUrl(category.image_url)} alt="" />
+          ) : (
+            <div className="no-image-placeholder"><ImageIcon size={16} /></div>
+          )}
+        </div>
+
+        <div className="category-info">
+          <h3 className="category-name">{category.name}</h3>
+          <p className="category-count">商品數量: {category.productCount}</p>
+        </div>
+        <div className="category-actions">
+          <button className="btn-icon-view" onClick={() => onView(category)} title="查看商品"><Eye className="icon" /></button>
+          <button className="btn-icon-edit" onClick={() => onEdit(category)} title="編輯"><Edit2 className="icon" /></button>
+          <button className="btn-icon-delete" onClick={() => onDelete(category)} title="刪除"><Trash2 className="icon" /></button>
+        </div>
+      </div>
+    </div>
+  );
+};
+
+const CategoryManagement: React.FC = () => {
+  const [categories, setCategories] = useState<Category[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [activeId, setActiveId] = useState<number | null>(null);
+  
+  // 彈窗控制狀態
+  const [showProductModal, setShowProductModal] = useState(false);
+  const [showEditModal, setShowEditModal] = useState(false);
+  
+  // 編輯中的分類資料
+  const [selectedCategory, setSelectedCategory] = useState<Category | null>(null);
+  const [categoryForm, setCategoryForm] = useState({
+    name: '',
+    image_url: '' as string | null
+  });
+  const [uploading, setUploading] = useState(false);
+
+  const [categoryProducts, setCategoryProducts] = useState<Product[]>([]);
+  const [productsLoading, setProductsLoading] = useState(false);
+
+  const sensors = useSensors(
+    useSensor(PointerSensor, { activationConstraint: { distance: 8 } }),
+    useSensor(KeyboardSensor, { coordinateGetter: sortableKeyboardCoordinates })
+  );
+
+  useEffect(() => { fetchCategories(); }, []);
+
+  const fetchCategories = async () => {
+    try {
+      setLoading(true);
+      const response = await apiFetch('/api/categories');
+      const data = await response.json();
+      if (data.success) setCategories(data.categories);
+    } catch (error) {
+      setError('無法載入分類列表');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // 📌 處理圖片上傳至 R2
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    try {
+      const formData = new FormData();
+      formData.append('image', file);
+
+      const response = await apiFetch('/api/upload/image', {
+        method: 'POST',
+        body: formData, // apiFetch 會自動處理 Headers
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        setCategoryForm(prev => ({ ...prev, image_url: data.imageUrl }));
+      } else {
+        alert('上傳失敗：' + data.message);
+      }
+    } catch (error) {
+      alert('圖片上傳發生錯誤');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  // 開啟新增視窗
+  const handleAddCategory = () => {
+    setSelectedCategory(null);
+    setCategoryForm({ name: '', image_url: null });
+    setShowEditModal(true);
+  };
+
+  // 開啟編輯視窗
+  const handleEditCategory = (category: Category) => {
+    setSelectedCategory(category);
+    setCategoryForm({
+      name: category.name,
+      image_url: category.image_url
+    });
+    setShowEditModal(true);
+  };
+
+  // 儲存分類資料 (新增或更新)
+  const handleSaveCategory = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!categoryForm.name.trim()) return;
+
+    try {
+      const url = selectedCategory ? `/api/categories/${selectedCategory.id}` : '/api/categories';
+      const method = selectedCategory ? 'PUT' : 'POST';
+
+      const response = await apiFetch(url, {
+        method,
+        body: JSON.stringify({
+          name: categoryForm.name.trim(),
+          image_url: categoryForm.image_url,
+          is_active: 1
+        }),
+      });
+
+      const data = await response.json();
+      if (data.success) {
+        setShowEditModal(false);
+        fetchCategories();
+      } else {
+        alert(data.message);
+      }
+    } catch (error) {
+      alert('儲存失敗');
+    }
+  };
+
+  const handleDragStart = (event: DragStartEvent) => setActiveId(event.active.id as number);
+
+  const handleDragEnd = async (event: DragEndEvent) => {
+    const { active, over } = event;
+    setActiveId(null);
+    if (!over || active.id === over.id) return;
+
+    const oldIndex = categories.findIndex((cat) => cat.id === active.id);
+    const newIndex = categories.findIndex((cat) => cat.id === over.id);
+    const newCategories = arrayMove(categories, oldIndex, newIndex);
+    const updatedCategories = newCategories.map((cat, index) => ({ ...cat, sort_order: index + 1 }));
+    setCategories(updatedCategories);
+    
+    // 保存排序到伺服器
+    try {
+      setIsSaving(true);
+      await apiFetch('/api/categories/update-order', {
+        method: 'PUT',
+        body: JSON.stringify({
+          categories: updatedCategories.map((cat) => ({ id: cat.id, sort_order: cat.sort_order })),
+        }),
+      });
+    } catch (error) {
+      fetchCategories();
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  const handleDeleteCategory = async (category: Category) => {
+    if (!window.confirm(`確定要刪除「${category.name}」分類嗎？`)) return;
+    try {
+      const response = await apiFetch(`/api/categories/${category.id}`, { method: 'DELETE' });
+      const data = await response.json();
+      if (data.success) fetchCategories();
+      else alert(data.message);
+    } catch (error) {
+      alert('刪除失敗');
+    }
+  };
+
+  const handleViewCategory = async (category: Category) => {
+    setSelectedCategory(category);
+    setShowProductModal(true);
+    setProductsLoading(true);
+    try {
+      const response = await apiFetch(`/api/products/category/${category.id}`);
+      const data = await response.json();
+      setCategoryProducts(data.success ? data.products : []);
+    } catch (error) {
+      setCategoryProducts([]);
+    } finally {
+      setProductsLoading(false);
+    }
+  };
+
+  if (loading) return <div className="category-management"><div className="loading-state">載入中...</div></div>;
+
+  return (
+    <div className="category-management">
+      <div className="page-header">
+        <div>
+          <h2 className="page-title">分類管理</h2>
+          {isSaving && <span className="saving-indicator">保存排序中...</span>}
+        </div>
+        <button className="btn-primary" onClick={handleAddCategory}>
+          <Plus className="btn-icon" /> 新增分類
+        </button>
+      </div>
+
+      <div className="category-list">
+        <DndContext sensors={sensors} collisionDetection={closestCenter} onDragStart={handleDragStart} onDragEnd={handleDragEnd}>
+          <SortableContext items={categories.map((cat) => cat.id)} strategy={verticalListSortingStrategy}>
+            {categories.map((category) => (
+              <SortableCategory key={category.id} category={category} onEdit={handleEditCategory} onDelete={handleDeleteCategory} onView={handleViewCategory} />
+            ))}
+          </SortableContext>
+          <DragOverlay>
+            {activeId ? (
+              <div className="category-card dragging">
+                <div className="category-content">
+                  <div className="drag-handle"><GripVertical className="drag-icon" /></div>
+                  <div className="category-info">
+                    <h3 className="category-name">{categories.find(cat => cat.id === activeId)?.name}</h3>
+                  </div>
+                </div>
+              </div>
+            ) : null}
+          </DragOverlay>
+        </DndContext>
+      </div>
+
+      {/* 📌 新增：分類編輯/新增彈窗 (包含圖片上傳) */}
+      {showEditModal && (
+        <div className="modal-overlay" onClick={() => setShowEditModal(false)}>
+          <div className="modal-content category-modal" onClick={e => e.stopPropagation()}>
+            <div className="modal-header">
+              <h3>{selectedCategory ? '編輯分類' : '新增分類'}</h3>
+              <button className="close-btn" onClick={() => setShowEditModal(false)}><X size={20} /></button>
+            </div>
+            <form onSubmit={handleSaveCategory}>
+              <div className="modal-body">
+                <div className="form-group">
+                  <label>分類名稱 *</label>
+                  <input 
+                    type="text" 
+                    className="form-input" 
+                    value={categoryForm.name} 
+                    onChange={e => setCategoryForm({...categoryForm, name: e.target.value})}
+                    placeholder="請輸入分類名稱"
+                    required
+                  />
+                </div>
+
+                <div className="form-group">
+                  <label>分類美宣圖 (建議比例 3:1)</label>
+                  <div className="category-image-upload">
+                    {categoryForm.image_url ? (
+                      <div className="image-preview-container">
+                        <img src={getImageUrl(categoryForm.image_url)} alt="預覽" className="category-preview" />
+                        <button type="button" className="remove-img" onClick={() => setCategoryForm({...categoryForm, image_url: null})}><X size={14} /></button>
+                      </div>
+                    ) : (
+                      <label className="upload-placeholder">
+                        <input type="file" accept="image/*" onChange={handleImageUpload} style={{ display: 'none' }} disabled={uploading} />
+                        <Upload size={24} />
+                        <span>{uploading ? '上傳中...' : '點擊上傳圖片'}</span>
+                      </label>
+                    )}
+                  </div>
+                </div>
+              </div>
+              <div className="modal-footer">
+                <button type="button" className="btn-secondary" onClick={() => setShowEditModal(false)}>取消</button>
+                <button type="submit" className="btn-primary" disabled={uploading}>儲存</button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      <CategoryProductModal 
+        isOpen={showProductModal} 
+        onClose={() => setShowProductModal(false)} 
+        category={selectedCategory} 
+        products={categoryProducts} 
+        loading={productsLoading} 
+      />
+    </div>
+  );
+};
+
+export default CategoryManagement;
+</file>
+
+<file path="src/pages/admin/styles/CategoryManagement.css">
+/* pages/admin/styles/CategoryManagement.css */
+/* 完整優化版本 - 只保留分類管理頁面本身的樣式 */
+
+/* ========== 基本容器 ========== */
+.category-management {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.page-header > div {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.page-title {
+  font-size: 1.5rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0;
+}
+
+.saving-indicator {
+  font-size: 0.875rem;
+  color: #3b82f6;
+  animation: pulse 1.5s infinite;
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+/* ========== 按鈕樣式 ========== */
+.btn-primary {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.75rem 1.5rem;
+  background: #3b82f6;
+  color: white;
+  border: none;
+  border-radius: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-primary:hover {
+  background: #2563eb;
+  transform: translateY(-1px);
+}
+
+.btn-icon {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+/* ========== 分類列表 ========== */
+.category-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  position: relative;
+}
+
+/* ========== 分類卡片 ========== */
+.category-card {
+  background: white;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.5rem;
+  padding: 1rem;
+  transition: all 0.2s ease;
+  cursor: default;
+  position: relative;
+}
+
+.category-card:hover {
+  border-color: #3b82f6;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.15);
+  transform: translateY(-1px);
+}
+
+.category-card:hover::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 3px;
+  background: #3b82f6;
+  border-radius: 0 2px 2px 0;
+}
+
+.category-card.dragging {
+  opacity: 0.5;
+  border-color: #3b82f6;
+  box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+  position: relative;
+  z-index: 1000;
+  transform: scale(1.02);
+}
+
+/* ========== 分類內容布局 ========== */
+.category-content {
+  display: flex;
+  align-items: center;
+  width: 100%;
+}
+
+/* ========== 拖拽手柄 ========== */
+.drag-handle {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  margin-right: 1rem;
+  cursor: grab;
+  color: #9ca3af;
+  background: transparent;
+  border-radius: 0.375rem;
+  transition: all 0.2s ease;
+  flex-shrink: 0;
+}
+
+.drag-handle:hover {
+  color: #3b82f6;
+  background: rgba(59, 130, 246, 0.1);
+}
+
+.category-card:hover .drag-handle {
+  color: #3b82f6;
+  background: rgba(59, 130, 246, 0.15);
+}
+
+.drag-handle:active {
+  cursor: grabbing;
+  background: rgba(59, 130, 246, 0.2);
+}
+
+.drag-icon {
+  width: 1.25rem;
+  height: 1.25rem;
+  transition: transform 0.2s ease;
+}
+
+.category-card:hover .drag-icon {
+  transform: scale(1.1);
+}
+
+/* ========== 分類資訊 ========== */
+.category-info {
+  flex: 1;
+  min-width: 0;
+  margin-right: 1rem;
+}
+
+.category-name {
+  font-size: 1rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin: 0 0 0.25rem 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.category-count {
+  font-size: 0.875rem;
+  color: #6b7280;
+  margin: 0;
+}
+
+/* ========== 操作按鈕 ========== */
+.category-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+.btn-icon-edit,
+.btn-icon-delete {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 2rem;
+  height: 2rem;
+  background: transparent;
+  border: 1px solid #e5e7eb;
+  border-radius: 0.375rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.btn-icon-edit {
+  color: #3b82f6;
+}
+
+.btn-icon-edit:hover {
+  background: #eff6ff;
+  border-color: #3b82f6;
+  transform: translateY(-1px);
+}
+
+.btn-icon-delete {
+  color: #ef4444;
+}
+
+.btn-icon-delete:hover {
+  background: #fef2f2;
+  border-color: #ef4444;
+  transform: translateY(-1px);
+}
+
+.btn-icon-edit .icon,
+.btn-icon-delete .icon {
+  width: 1rem;
+  height: 1rem;
+}
+
+/* ========== 空狀態 ========== */
+.category-list > div[style*="text-align: center"] {
+  padding: 3rem;
+  color: #6b7280;
+  font-size: 0.875rem;
+}
+
+/* ========== 拖拽覆蓋層樣式 ========== */
+[data-dnd-context] {
+  position: relative;
+}
+
+/* ========== 響應式設計 ========== */
+@media (max-width: 768px) {
+  .page-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .btn-primary {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .category-card {
+    padding: 0.75rem;
+  }
+
+  .drag-handle {
+    width: 1.75rem;
+    height: 1.75rem;
+    margin-right: 0.75rem;
+  }
+
+  .drag-icon {
+    width: 1rem;
+    height: 1rem;
+  }
+
+  .category-info {
+    margin-right: 0.75rem;
+  }
+
+  .category-name {
+    font-size: 0.875rem;
+  }
+
+  .category-count {
+    font-size: 0.75rem;
+  }
+
+  .btn-icon-edit,
+  .btn-icon-delete,
+  .btn-icon-view {
+    width: 1.75rem;
+    height: 1.75rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .category-management {
+    gap: 1rem;
+  }
+
+  .category-card {
+    padding: 0.5rem;
+  }
+
+  .drag-handle {
+    width: 1.5rem;
+    height: 1.5rem;
+    margin-right: 0.5rem;
+  }
+
+  .category-info {
+    margin-right: 0.5rem;
+  }
+
+  .category-actions {
+    flex-direction: column;
+    gap: 0.25rem;
+  }
+
+  .btn-icon-edit,
+  .btn-icon-delete {
+    width: 1.5rem;
+    height: 1.5rem;
+  }
+}
+
+/* ========== 可訪問性優化 ========== */
+@media (prefers-reduced-motion: reduce) {
+  * {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ========== 高對比度模式支援 ========== */
+@media (prefers-contrast: high) {
+  .category-card {
+    border-width: 2px;
+  }
+
+  .category-card:hover {
+    border-width: 3px;
+  }
+}
+
+/* ========================================
+   查看商品按鈕 (這個要保留，因為按鈕在列表上)
+======================================== */
+.btn-icon-view {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  background-color: #e0f2fe;
+  color: #0284c7;
+}
+
+.btn-icon-view:hover {
+  background-color: #0284c7;
+  color: white;
+}
+
+/* 1. 限制清單中縮圖的容器大小 */
+.category-list-thumb {
+  width: 100px;           /* 固定縮圖寬度 */
+  height: 60px;           /* 固定縮圖高度 */
+  background: #f3f4f6;
+  border-radius: 6px;
+  margin-right: 15px;
+  overflow: hidden;       /* 核心：超出容器就隱藏 */
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;         /* 防止在彈性佈局中被壓縮 */
+  border: 1px solid #e5e7eb;
+}
+
+/* 2. 確保縮圖圖片乖乖待在容器內 */
+.category-list-thumb img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;    /* 核心：等比例縮放，確保能看到整張美宣圖內容 */
+  background: #fff;
+}
+
+/* 3. 修正彈窗 (Modal) 內的預覽圖大小，防止它撐破彈窗 */
+.category-preview {
+  width: 100%;            /* 寬度隨彈窗縮放 */
+  max-height: 200px;      /* 限制最高高度 */
+  object-fit: contain;    /* 保持比例 */
+  border-radius: 8px;
+  border: 1px solid #d1d5db;
+  background: #f9fafb;
+}
+
+/* 4. 確保分類卡片本身高度不要被撐開 */
+.category-card {
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  /* 其他既有樣式... */
+}
+</file>
+
+<file path="src/pages/SearchPage.css">
+/* 基礎防禦性設定 */
+* {
+  box-sizing: border-box; /* 確保 padding 不會增加元素的總寬度 */
+}
+
+.search-page {
+  min-height: 100vh;
+  background-color: #f9fafb;
+  padding-bottom: 5rem;
+  width: 100%;
+  overflow-x: hidden; /* 禁止整頁橫向捲動 */
+}
+
+/* Header - 修正顏色與寬度 */
+.search-header {
+  background: linear-gradient(135deg, #2563eb 0%, #3b82f6 100%);
+  padding: 1rem;
+  padding-top: calc(1rem + env(safe-area-inset-top));
+  color: white;
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+  width: 100%;
+}
+
+.search-header-content {
+  max-width: 1280px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.back-button {
+  color: rgb(0, 0, 0); /* 修正為白色以符合深色背景 */
+  text-decoration: none;
+  font-size: 1rem;
+  white-space: nowrap;
+}
+
+.search-title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Container 控制 */
+.search-main-container {
+  max-width: 800px;
+  margin: 0 auto;
+  padding: 1rem;
+  width: 100%;
+}
+
+/* 搜尋框優化 */
+.search-input-wrapper {
+  position: relative;
+  margin-bottom: 1.5rem;
+  width: 100%;
+}
+
+.search-input {
+  width: 100%;
+  padding: 0.75rem 2.75rem;
+  border: 2px solid #e5e7eb;
+  border-radius: 9999px;
+  font-size: 1rem;
+  background: white;
+  transition: all 0.2s;
+  /* 防止長輸入文字撐開 */
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.search-input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.search-icon {
+  position: absolute;
+  left: 0.875rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #9ca3af;
+}
+
+.clear-button {
+  position: absolute;
+  right: 0.875rem;
+  top: 50%;
+  transform: translateY(-50%);
+  background: #f3f4f6;
+  border: none;
+  border-radius: 50%;
+  padding: 0.25rem;
+  display: flex;
+  cursor: pointer;
+}
+
+/* Grid 佈局 - 解決爆版的關鍵核心 */
+.results-grid {
+  display: grid;
+  /* minmax(0, 1fr) 是防止 Grid 子元素撐開容器的唯一解法 */
+  grid-template-columns: repeat(2, minmax(0, 1fr)); 
+  gap: 0.75rem;
+  width: 100%;
+}
+
+/* 商品卡片優化 */
+.product-card {
+  background: white;
+  border-radius: 0.75rem;
+  overflow: hidden;
+  border: 1px solid #f3f4f6;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+}
+
+.product-image-container {
+  aspect-ratio: 1/1;
+  width: 100%;
+  background-color: #f9fafb;
+}
+
+.product-image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.product-info {
+  padding: 0.75rem;
+  flex-grow: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0; /* 讓 flex 子元素可以縮小 */
+}
+
+/* 文字截斷處理 */
+.product-name {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: #1f2937;
+  margin-bottom: 0.5rem;
+  line-height: 1.4;
+  /* 兩行省略 */
+  display: -webkit-box;
+  -webkit-lineclamp: 2;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
+  word-break: break-all;
+}
+
+.product-category-tag {
+  font-size: 0.75rem;
+  color: #6b7280;
+  background: #f3f4f6;
+  padding: 0.125rem 0.375rem;
+  border-radius: 4px;
+  margin-bottom: 0.5rem;
+  display: inline-block;
+  max-width: 100%;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.product-price-row {
+  display: flex;
+  align-items: baseline;
+  gap: 0.375rem;
+  flex-wrap: wrap; /* 價格太長時自動換行，不撐寬 */
+  margin-top: auto;
+}
+
+.price {
+  color: #2563eb;
+  font-weight: 700;
+  font-size: 1rem;
+}
+
+.original-price {
+  font-size: 0.75rem;
+  color: #9ca3af;
+  text-decoration: line-through;
+}
+
+.product-rating {
+  font-size: 0.75rem;
+  margin-top: 0.25rem;
+  color: #6b7280;
+}
+
+/* 狀態顯示 */
+.loading-container {
+  padding: 3rem 0;
+  text-align: center;
+  color: #6b7280;
+}
+
+.loader-spinner {
+  animation: spin 1s linear infinite;
+  margin-bottom: 0.5rem;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+/* RWD 調整 */
+@media (min-width: 640px) {
+  .results-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1rem;
+  }
+}
+
+@media (min-width: 1024px) {
+  .results-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
 </file>
 
 <file path="src/config.ts">
@@ -25425,6 +25346,7 @@ interface Category {
   level: number;
   is_active: number;
   productCount: number;
+  image_url: string | null; // 📌 新增這一行
 }
 
 interface HeroBanner {
@@ -25758,13 +25680,26 @@ const HomePage: React.FC = () => {
       <section className="products-section" id="products">
         {categoryProductsList.length === 0 ? (
           <div className="empty-products"><p>正在為您挑選商品，請稍後</p></div>
-        ) : (
+        ) : ( 
           categoryProductsList.map(({ category, products }) => (
             <div key={category.id} className="category-section">
               <div className="category-header">
-                <h2 className="category-title">{category.name}</h2>
+
+               {category.image_url ? (
+        <div className="category-banner-container">
+          <img 
+            src={getImageUrl(category.image_url)} 
+            alt={category.name} 
+            className="category-banner-image" 
+            onClick={() => navigate(`/search?category=${encodeURIComponent(category.name)}`)}
+          />
+        </div>
+      ) : (
+        <h2 className="category-title">{category.name}</h2>
+      )}
                 <button className="category-more-btn" onClick={() => navigate(`/search?category=${encodeURIComponent(category.name)}`)}>查看更多 →</button>
               </div>
+              
               <div className="products-grid">
                 {products.map(product => (
                   <div key={product.id} className="product-card">
@@ -26877,58 +26812,118 @@ export default HomePage;
 }
 
 /* ========================================
-   分類區塊樣式
+   分類區塊樣式 - 已優化支援美宣圖
    ======================================== */
 .category-section {
-  margin-bottom: 40px;
+  margin-bottom: 50px; /* 增加間距，讓大圖更有呼吸感 */
 }
 
 .category-header {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: 16px;
+  align-items: flex-end; /* 讓"查看更多"對齊底部，視覺更穩重 */
+  margin-bottom: 20px;
   padding: 0 10px;
+  flex-wrap: wrap; /* 確保在極小螢幕不會擠壓 */
 }
 
+/* 文字標題樣式 (保底用) */
 .category-title {
-  font-size: 20px;
-  font-weight: bold;
-  color: #333;
+  font-size: 24px;
+  font-weight: 800;
+  color: #111827;
   margin: 0;
+  position: relative;
+  padding-left: 12px;
+}
+
+/* 標題裝飾線 */
+.category-title::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 15%;
+  height: 70%;
+  width: 4px;
+  background-color: #2563eb;
+  border-radius: 2px;
+}
+
+/* 📌 美宣圖容器樣式 */
+.category-banner-container {
+  flex: 1; /* 佔滿剩餘空間 */
+  min-width: 280px; /* 確保不會縮得太小 */
+  max-width: 800px; /* 限制電腦版最大寬度，不破壞版面 */
+  margin-right: 20px;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  cursor: pointer;
+}
+
+.category-banner-container:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+.category-banner-image {
+  width: 100%;
+  height: auto;
+  display: block;
+  object-fit: cover;
 }
 
 .category-more-btn {
-  background: none;
+  background: #f3f4f6;
   border: none;
-  color: #3b82f6;
+  color: #2563eb;
   font-size: 14px;
+  font-weight: 600;
   cursor: pointer;
-  padding: 4px 8px;
-  transition: color 0.2s;
+  padding: 8px 16px;
+  border-radius: 20px;
+  transition: all 0.2s;
+  white-space: nowrap;
+  margin-bottom: 5px; /* 稍微抬高一點點 */
 }
 
 .category-more-btn:hover {
-  color: #1d4ed8;
-  text-decoration: underline;
+  background: #2563eb;
+  color: white;
+  transform: translateX(4px);
 }
 
-/* 手機版 */
+/* ========================================
+   手機版響應式微調 (max-width: 768px)
+   ======================================== */
 @media (max-width: 768px) {
   .category-section {
-    margin-bottom: 30px;
+    margin-bottom: 35px;
   }
 
   .category-header {
-    padding: 0 8px;
+    flex-direction: column; /* 手機版圖上按鈕下 */
+    align-items: flex-start;
+    padding: 0 15px;
+    gap: 12px;
+  }
+
+  .category-banner-container {
+    width: 100%;
+    margin-right: 0;
+    max-width: 100%;
+    border-radius: 8px;
   }
 
   .category-title {
-    font-size: 18px;
+    font-size: 20px;
   }
 
   .category-more-btn {
+    align-self: flex-end; /* 按鈕靠右顯示 */
     font-size: 13px;
+    padding: 6px 12px;
   }
 }
 </file>
