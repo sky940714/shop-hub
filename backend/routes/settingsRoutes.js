@@ -63,36 +63,43 @@ router.get('/return-methods', async (req, res) => {
 });
 
 // ==========================================
-// 4. 更新退貨方式設定（需管理員驗證）
+// 4. 更新退貨方式設定（防空值覆蓋安全升級版）
 // PUT /api/settings/return-methods
 // ==========================================
 router.put('/return-methods', protect, async (req, res) => {
   try {
-    const { 
-      return_711_name, return_711_phone, return_711_instruction,
-      return_fami_name, return_fami_phone, return_fami_instruction,
-      return_hilife_name, return_hilife_phone, return_hilife_instruction,
-      return_home_name, return_home_phone, return_home_instruction
-    } = req.body;
+    const body = req.body;
+    const updatePromises = [];
 
-    // 使用 Promise.all 同步更新 12 個系統 Key 值
-    const updatePromises = [
-      pool.query("UPDATE settings SET setting_value = ? WHERE setting_key = 'return_711_name'", [return_711_name || '']),
-      pool.query("UPDATE settings SET setting_value = ? WHERE setting_key = 'return_711_phone'", [return_711_phone || '']),
-      pool.query("UPDATE settings SET setting_value = ? WHERE setting_key = 'return_711_instruction'", [return_711_instruction || '']),
-      pool.query("UPDATE settings SET setting_value = ? WHERE setting_key = 'return_fami_name'", [return_fami_name || '']),
-      pool.query("UPDATE settings SET setting_value = ? WHERE setting_key = 'return_fami_phone'", [return_fami_phone || '']),
-      pool.query("UPDATE settings SET setting_value = ? WHERE setting_key = 'return_fami_instruction'", [return_fami_instruction || '']),
-      pool.query("UPDATE settings SET setting_value = ? WHERE setting_key = 'return_hilife_name'", [return_hilife_name || '']),
-      pool.query("UPDATE settings SET setting_value = ? WHERE setting_key = 'return_hilife_phone'", [return_hilife_phone || '']),
-      pool.query("UPDATE settings SET setting_value = ? WHERE setting_key = 'return_hilife_instruction'", [return_hilife_instruction || '']),
-      pool.query("UPDATE settings SET setting_value = ? WHERE setting_key = 'return_home_name'", [return_home_name || '']),
-      pool.query("UPDATE settings SET setting_value = ? WHERE setting_key = 'return_home_phone'", [return_home_phone || '']),
-      pool.query("UPDATE settings SET setting_value = ? WHERE setting_key = 'return_home_instruction'", [return_home_instruction || ''])
+    // 定義所有可能被個別修改的 12 個系統 Key 值
+    const allKeys = [
+      'return_711_name', 'return_711_phone', 'return_711_instruction',
+      'return_fami_name', 'return_fami_phone', 'return_fami_instruction',
+      'return_hilife_name', 'return_hilife_phone', 'return_hilife_instruction',
+      'return_home_name', 'return_home_phone', 'return_home_instruction'
     ];
 
+    // 巡迴檢查：只有當前端送過來的欄位不是 undefined 時，才去更新該欄位
+    allKeys.forEach(key => {
+      if (body[key] !== undefined) {
+        updatePromises.push(
+          pool.query(
+            "UPDATE settings SET setting_value = ? WHERE setting_key = ?", 
+            [body[key], key]
+          )
+        );
+      }
+    });
+
+    // 防呆：如果前端傳了個空物件，什麼都沒帶過來
+    if (updatePromises.length === 0) {
+      return res.json({ success: true, message: '沒有偵測到需要更新的欄位' });
+    }
+
+    // 同步執行需要更新的 SQL 語句
     await Promise.all(updatePromises);
-    res.json({ success: true, message: '退貨方式設定已成功更新' });
+    res.json({ success: true, message: '退貨方式設定已成功更新，其餘舊資料完好無損！' });
+
   } catch (error) {
     console.error('更新退貨設定失敗:', error);
     res.status(500).json({ success: false, message: '更新退貨設定失敗' });
