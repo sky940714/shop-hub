@@ -12,3 +12,7 @@ npm-debug.log*
 .idea
 .pm2
 .vercel
+
+# 🟢 終極防外洩：強制 Git 忽略 Firebase 私密金鑰
+serviceAccountKey.json
+backend/config/serviceAccountKey.json

@@ -596,4 +596,34 @@ router.post('/cvs-stores', protect, async (req, res) => {
   }
 });
 
+// ========================================
+// 🟢 新增：更新/綁定登入會員的手機 FCM Token (推播用)
+// POST /api/members/update-fcm-token
+// ========================================
+router.post('/update-fcm-token', protect, async (req, res) => {
+  try {
+    const { fcmToken } = req.body;
+    const userId = req.user.id; // 從 protect 中介軟體拿到的登入者 id
+
+    if (!fcmToken) {
+      return res.status(400).json({ success: false, message: '缺少手機 Token 參數' });
+    }
+
+    // 將拿到的憑證死死綁定在該會員的資料格中
+    await promisePool.query(
+      "UPDATE members SET fcm_token = ? WHERE id = ?", 
+      [fcmToken, userId]
+    );
+
+    res.json({ 
+      success: true, 
+      message: '手機推播憑證已成功同步至 MySQL 資料庫！' 
+    });
+    
+  } catch (error) {
+    console.error('後端更新 FCM Token 失敗:', error);
+    res.status(500).json({ success: false, message: '伺服器更新推播憑證失敗' });
+  }
+});
+
 module.exports = router;

@@ -4,6 +4,19 @@ const ecpayUtils = require('../utils/ecpay');
 const axios = require('axios');
 const qs = require('qs');
 
+// ========================================================================
+// 🟢 新增：引入 Firebase Admin SDK 並初始化 (用於發射 iOS 原生推播)
+// ========================================================================
+const admin = require('firebase-admin');
+// 💡 請確保你從 Firebase 後台下載的私密金鑰存放在 backend/config/serviceAccountKey.json
+const serviceAccount = require('../config/serviceAccountKey.json');
+
+if (!admin.apps.length) {
+  admin.initializeApp({
+    credential: admin.credential.cert(serviceAccount)
+  });
+}
+
 // 🔥 [新增] 輔助函數：防止 HTML 屬性被特殊符號破壞
 const escapeHtml = (unsafe) => {
   if (typeof unsafe !== 'string') return unsafe;
@@ -279,7 +292,7 @@ const printShippingLabel = async (req, res) => {
 };
 
 // ==========================================
-// 7. 接收物流狀態回調 (自動更新訂單狀態)
+// 7. 接收物流狀態回調 (自動更新訂單狀態 ＋ 🟢 觸發 iOS 原生推播)
 // ==========================================
 const handleLogisticsCallback = async (req, res) => {
   try {
@@ -290,26 +303,79 @@ const handleLogisticsCallback = async (req, res) => {
     let newStatus = null;
     const code = String(RtnCode);
     
+    // 綠界物流狀態判定
     if (['3001', '3002', '3003', '3024', '2001'].includes(code)) {
-      newStatus = 'shipped'; 
+      newStatus = 'shipped'; // 已出貨
     } else if (code === '2030') {
-      newStatus = 'arrived';
+      newStatus = 'arrived'; // 已到貨（送達門市）
     } else if (code === '2067') {
-      newStatus = 'completed'; 
+      newStatus = 'completed'; // 已完成（已取貨）
     } else if (['2063', '2068', '2073'].includes(code)) {
-      newStatus = 'returned'; 
+      newStatus = 'returned'; // 已退回
     }
 
     if (newStatus) {
-      const [result] = await promisePool.execute(
+      // 1. 同步更新 MySQL 資料庫中的訂單狀態
+      await promisePool.execute(
         `UPDATE orders SET status = ?, updated_at = NOW() WHERE ecpay_logistics_id = ?`,
         [newStatus, AllPayLogisticsID]
       );
+      console.log(`[MySQL] 訂單物流狀態變更成功: ${newStatus}`);
+
+      // 2. 🟢 iOS 推播發射台：只針對「出貨」與「到貨」通知客人
+      if (newStatus === 'shipped' || newStatus === 'arrived') {
+        
+        // 透過物流 ID 進行跨表查詢，撈出該訂單對應會員的 fcm_token
+        const [rows] = await promisePool.execute(`
+          SELECT o.order_no, m.fcm_token 
+          FROM orders o
+          JOIN members m ON o.user_id = m.id
+          WHERE o.ecpay_logistics_id = ? AND m.fcm_token IS NOT NULL AND m.is_deleted = 0
+        `, [AllPayLogisticsID]);
+
+        if (rows.length > 0 && rows[0].fcm_token) {
+          const { order_no, fcm_token } = rows[0];
+          
+          let pushTitle = '【安鑫購物】訂單狀態變更通知';
+          let pushBody = '';
+
+          if (newStatus === 'shipped') {
+            pushBody = `🎉 您的訂單 #${order_no} 商品已成功出貨囉！請密切留意物流動態。`;
+          } else if (newStatus === 'arrived') {
+            pushBody = `🏪 商品已送達指定門市！請於 7 日內攜帶身分證件前往取貨，感謝您的購買。`;
+          }
+
+          // 組裝符合 Apple APNs 規範的 FCM 封包格式
+          const message = {
+            notification: {
+              title: pushTitle,
+              body: pushBody
+            },
+            // iOS 關鍵：讓 iPhone 在關螢幕/前台收到時都能跳出預設聲音提示
+            apns: {
+              payload: {
+                aps: {
+                  sound: 'default',
+                  badge: 1
+                }
+              }
+            },
+            token: fcm_token
+          };
+
+          // 正式發射推播給 Apple APNs 轉發到使用者的 iPhone 頂部通知欄
+          await admin.messaging().send(message);
+          console.log(`🔔 成功送出 iOS 推播通知！訂單號: #${order_no}`);
+        } else {
+          console.log(`⚠️ 該訂單會員未綁定推播憑證 (fcm_token 為空)，跳過發送。`);
+        }
+      }
     }
-    res.send('1|OK');
+    
+    res.send('1|OK'); // 必須固定回傳 1|OK 給綠界，否則綠社會一直重複發送 Callback
   } catch (error) {
-    console.error('❌ 物流回調失敗:', error);
-    res.send('1|OK');
+    console.error('❌ 物流回調處理或推播發射失敗:', error);
+    res.send('1|OK'); // 發生錯誤也回傳 1|OK，避免綠界卡單
   }
 };
 
