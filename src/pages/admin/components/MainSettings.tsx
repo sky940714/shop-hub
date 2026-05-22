@@ -1,23 +1,14 @@
 // pages/admin/components/MainSettings.tsx
 import React, { useState, useEffect } from 'react';
-import { Search, MapPin, Store, Plus, Trash2, Edit2, Image, Truck } from 'lucide-react';
+import { Search, Store, Plus, Trash2, Edit2, Image, Truck } from 'lucide-react';
 import '../styles/MainSettings.css';
 import { apiFetch } from '../../../utils/api';
-
+import ReturnSettings from './ReturnSettings';
 
 interface MemberPoints {
   email: string;
   name: string;
   points: number;
-}
-
-interface ReturnAddress {
-  id: string;
-  name: string;
-  recipient: string;
-  phone: string;
-  address: string;
-  icon: string;
 }
 
 interface PickupStore {
@@ -44,41 +35,6 @@ const API_BASE = '/api';
 const MainSettings: React.FC = () => {
   const [searchEmail, setSearchEmail] = useState('');
   const [searchResult, setSearchResult] = useState<MemberPoints | null>(null);
-  const [returnAddresses, setReturnAddresses] = useState<ReturnAddress[]>([
-    {
-      id: '7-11',
-      name: '7-ELEVEN 超商取貨',
-      recipient: '安鑫購物',
-      phone: '0800-711-711',
-      address: '請至您指定的7-ELEVEN門市退貨',
-      icon: '🏪'
-    },
-    {
-      id: 'family',
-      name: '全家便利商店',
-      recipient: '安鑫購物',
-      phone: '0800-030-123',
-      address: '請至您指定的全家便利商店門市退貨',
-      icon: '🏪'
-    },
-    {
-      id: 'hilife',
-      name: '萊爾富便利商店',
-      recipient: '安鑫購物',
-      phone: '0800-000-299',
-      address: '請至您指定的萊爾富門市退貨',
-      icon: '🏪'
-    },
-    {
-      id: 'home',
-      name: '宅配到府',
-      recipient: '安鑫購物客服中心',
-      phone: '02-1234-5678',
-      address: '台北市信義區信義路五段7號',
-      icon: '🚚'
-    }
-  ]);
-  const [editingId, setEditingId] = useState<string | null>(null);
 
   // 自取門市相關 state
   const [pickupStores, setPickupStores] = useState<PickupStore[]>([]);
@@ -93,6 +49,7 @@ const MainSettings: React.FC = () => {
     is_active: true
   });
 
+  // 輪播圖相關 state
   const [banners, setBanners] = useState<HeroBanner[]>([]);
   const [bannerLoading, setBannerLoading] = useState(false);
   const [showBannerModal, setShowBannerModal] = useState(false);
@@ -107,8 +64,9 @@ const MainSettings: React.FC = () => {
   });
   const [uploading, setUploading] = useState(false);
 
+  // 運費相關 state
   const [shippingFee, setShippingFee] = useState<number>(100);
-    const [shippingFeeLoading, setShippingFeeLoading] = useState(false);
+  const [shippingFeeLoading, setShippingFeeLoading] = useState(false);
 
   // 載入自取門市列表
   const fetchPickupStores = async () => {
@@ -168,13 +126,7 @@ const MainSettings: React.FC = () => {
     }
   };
 
-  useEffect(() => {
-    fetchPickupStores();
-    fetchBanners();
-    fetchShippingFee();
-  }, []);
-
-  // 模擬會員點數資料（之後可替換成 API）
+  // 模擬會員點數資料
   const mockMemberData: MemberPoints[] = [
     { email: 'user@test.com', name: '測試用戶', points: 1500 },
     { email: 'demo@demo.com', name: '示範用戶', points: 2800 },
@@ -187,9 +139,7 @@ const MainSettings: React.FC = () => {
       window.alert('請輸入會員 Email');
       return;
     }
-
     const member = mockMemberData.find(m => m.email === searchEmail);
-    
     if (member) {
       setSearchResult(member);
     } else {
@@ -198,28 +148,9 @@ const MainSettings: React.FC = () => {
     }
   };
 
-  // 儲存退貨地址
-  const handleSaveAddress = (id: string) => {
-    window.alert('退貨地址已更新！');
-    setEditingId(null);
-  };
-
-  // 更新地址資料
-  const updateAddress = (id: string, field: string, value: string) => {
-    setReturnAddresses(returnAddresses.map(addr => 
-      addr.id === id ? { ...addr, [field]: value } : addr
-    ));
-  };
-
   // 開啟新增門市 Modal
   const openAddModal = () => {
-    setStoreForm({
-      name: '',
-      address: '',
-      phone: '',
-      business_hours: '',
-      is_active: true
-    });
+    setStoreForm({ name: '', address: '', phone: '', business_hours: '', is_active: true });
     setEditingStore(null);
     setShowAddModal(true);
   };
@@ -241,22 +172,15 @@ const MainSettings: React.FC = () => {
   const closeModal = () => {
     setShowAddModal(false);
     setEditingStore(null);
-    setStoreForm({
-      name: '',
-      address: '',
-      phone: '',
-      business_hours: '',
-      is_active: true
-    });
+    setStoreForm({ name: '', address: '', phone: '', business_hours: '', is_active: true });
   };
 
   // 新增或更新門市
   const handleSaveStore = async () => {
     if (!storeForm.name.trim() || !storeForm.address.trim()) {
-      window.alert('請填寫門市名稱和地址');
+      window.alert('請填寫門市名稱 and 地址');
       return;
     }
-
     try {
       const token = localStorage.getItem('token');
       const url = editingStore 
@@ -272,9 +196,7 @@ const MainSettings: React.FC = () => {
         },
         body: JSON.stringify(storeForm)
       });
-
       const data = await res.json();
-
       if (data.success) {
         window.alert(editingStore ? '門市更新成功！' : '門市新增成功！');
         closeModal();
@@ -291,16 +213,13 @@ const MainSettings: React.FC = () => {
   // 刪除門市
   const handleDeleteStore = async (id: number) => {
     if (!window.confirm('確定要刪除此門市嗎？')) return;
-
     try {
       const token = localStorage.getItem('token');
       const res = await apiFetch(`${API_BASE}/pickup-stores/admin/${id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
-
       const data = await res.json();
-
       if (data.success) {
         window.alert('門市已刪除');
         fetchPickupStores();
@@ -323,14 +242,9 @@ const MainSettings: React.FC = () => {
           'Content-Type': 'application/json',
           'Authorization': `Bearer ${token}`
         },
-        body: JSON.stringify({
-          ...store,
-          is_active: !store.is_active
-        })
+        body: JSON.stringify({ ...store, is_active: !store.is_active })
       });
-
       const data = await res.json();
-
       if (data.success) {
         fetchPickupStores();
       } else {
@@ -340,10 +254,6 @@ const MainSettings: React.FC = () => {
       console.error('更新門市狀態失敗:', error);
     }
   };
-
-  // ============================================
-  // 輪播圖相關函數
-  // ============================================
 
   // 載入輪播圖
   const fetchBanners = async () => {
@@ -368,7 +278,6 @@ const MainSettings: React.FC = () => {
   const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
     if (!file) return;
-
     setUploading(true);
     try {
       const token = localStorage.getItem('token');
@@ -380,7 +289,6 @@ const MainSettings: React.FC = () => {
         headers: { 'Authorization': `Bearer ${token}` },
         body: formData
       });
-
       const data = await res.json();
       if (data.success) {
         setBannerForm({ ...bannerForm, image_url: data.imageUrl });
@@ -397,14 +305,7 @@ const MainSettings: React.FC = () => {
 
   // 開啟新增輪播圖 Modal
   const openBannerModal = () => {
-    setBannerForm({
-      title: '',
-      subtitle: '',
-      image_url: '',
-      link_url: '',
-      sort_order: 0,
-      is_active: true
-    });
+    setBannerForm({ title: '', subtitle: '', image_url: '', link_url: '', sort_order: 0, is_active: true });
     setEditingBanner(null);
     setShowBannerModal(true);
   };
@@ -423,7 +324,6 @@ const MainSettings: React.FC = () => {
     setShowBannerModal(true);
   };
 
-  // 關閉輪播圖 Modal
   const closeBannerModal = () => {
     setShowBannerModal(false);
     setEditingBanner(null);
@@ -435,7 +335,6 @@ const MainSettings: React.FC = () => {
       window.alert('請上傳圖片');
       return;
     }
-
     try {
       const token = localStorage.getItem('token');
       const url = editingBanner
@@ -451,7 +350,6 @@ const MainSettings: React.FC = () => {
         },
         body: JSON.stringify(bannerForm)
       });
-
       const data = await res.json();
       if (data.success) {
         window.alert(editingBanner ? '更新成功！' : '新增成功！');
@@ -469,14 +367,12 @@ const MainSettings: React.FC = () => {
   // 刪除輪播圖
   const handleDeleteBanner = async (id: number) => {
     if (!window.confirm('確定要刪除此輪播圖嗎？')) return;
-
     try {
       const token = localStorage.getItem('token');
       const res = await apiFetch(`${API_BASE}/banners/admin/${id}`, {
         method: 'DELETE',
         headers: { 'Authorization': `Bearer ${token}` }
       });
-
       const data = await res.json();
       if (data.success) {
         window.alert('已刪除');
@@ -504,6 +400,12 @@ const MainSettings: React.FC = () => {
       console.error('更新失敗:', error);
     }
   };
+
+  useEffect(() => {
+    fetchPickupStores();
+    fetchBanners();
+    fetchShippingFee();
+  }, []);
 
   return (
     <div className="main-settings">
@@ -542,9 +444,7 @@ const MainSettings: React.FC = () => {
         </div>
       </div>
 
-      {/* Hero 輪播圖管理 */}
-
-      {/* Hero 輪播圖管理 */}
+      {/* 首頁輪播圖管理 */}
       <div className="settings-section">
         <div className="section-header">
           <h3 className="section-title">
@@ -627,22 +527,13 @@ const MainSettings: React.FC = () => {
                     {store.business_hours && <p className="store-detail">🕐 {store.business_hours}</p>}
                   </div>
                   <div className="store-actions">
-                    <button 
-                      className="btn-toggle"
-                      onClick={() => handleToggleActive(store)}
-                    >
+                    <button className="btn-toggle" onClick={() => handleToggleActive(store)}>
                       {store.is_active ? '停用' : '啟用'}
                     </button>
-                    <button 
-                      className="btn-edit-icon"
-                      onClick={() => openEditModal(store)}
-                    >
+                    <button className="btn-edit-icon" onClick={() => openEditModal(store)}>
                       <Edit2 size={16} />
                     </button>
-                    <button 
-                      className="btn-delete-icon"
-                      onClick={() => handleDeleteStore(store.id)}
-                    >
+                    <button className="btn-delete-icon" onClick={() => handleDeleteStore(store.id)}>
                       <Trash2 size={16} />
                     </button>
                   </div>
@@ -671,12 +562,7 @@ const MainSettings: React.FC = () => {
                 placeholder="請輸入會員 Email (例如: user@test.com)"
                 onKeyPress={(e) => e.key === 'Enter' && handleSearchPoints()}
               />
-              <button 
-                className="btn-search"
-                onClick={handleSearchPoints}
-              >
-                查詢
-              </button>
+              <button className="btn-search" onClick={handleSearchPoints}>查詢</button>
             </div>
           </div>
 
@@ -702,102 +588,14 @@ const MainSettings: React.FC = () => {
         </div>
       </div>
 
-      {/* 設定總退貨地址 */}
-      <div className="settings-section">
-        <h3 className="section-title">
-          <MapPin className="section-icon" />
-          退貨方式設定
-        </h3>
-        
-        {returnAddresses.map((address) => (
-          <div key={address.id} className="settings-card address-card">
-            <div className="address-header">
-              <div className="address-title">
-                <span className="address-icon">{address.icon}</span>
-                <h4>{address.name}</h4>
-              </div>
-              {editingId !== address.id && (
-                <button 
-                  className="btn-edit-small"
-                  onClick={() => setEditingId(address.id)}
-                >
-                  編輯
-                </button>
-              )}
-            </div>
-
-            <div className="address-info">
-              <div className="form-group">
-                <label className="form-label">收件人</label>
-                {editingId === address.id ? (
-                  <input
-                    type="text"
-                    value={address.recipient}
-                    onChange={(e) => updateAddress(address.id, 'recipient', e.target.value)}
-                    className="form-input"
-                  />
-                ) : (
-                  <div className="info-display">{address.recipient}</div>
-                )}
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">聯絡電話</label>
-                {editingId === address.id ? (
-                  <input
-                    type="tel"
-                    value={address.phone}
-                    onChange={(e) => updateAddress(address.id, 'phone', e.target.value)}
-                    className="form-input"
-                  />
-                ) : (
-                  <div className="info-display">{address.phone}</div>
-                )}
-              </div>
-
-              <div className="form-group">
-                <label className="form-label">退貨說明</label>
-                {editingId === address.id ? (
-                  <textarea
-                    value={address.address}
-                    onChange={(e) => updateAddress(address.id, 'address', e.target.value)}
-                    className="form-textarea"
-                    rows={3}
-                  />
-                ) : (
-                  <div className="info-display">{address.address}</div>
-                )}
-              </div>
-
-              {editingId === address.id && (
-                <div className="button-group">
-                  <button 
-                    className="btn-secondary"
-                    onClick={() => setEditingId(null)}
-                  >
-                    取消
-                  </button>
-                  <button 
-                    className="btn-primary"
-                    onClick={() => handleSaveAddress(address.id)}
-                  >
-                    儲存
-                  </button>
-                </div>
-              )}
-            </div>
-          </div>
-        ))}
-      </div>
+      {/* 🟢 抽離後的獨立退貨設定組件 */}
+      <ReturnSettings />
 
       {/* 新增/編輯門市 Modal */}
       {showAddModal && (
         <div className="modal-overlay" onClick={closeModal}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <h3 className="modal-title">
-              {editingStore ? '編輯門市' : '新增門市'}
-            </h3>
-            
+            <h3 className="modal-title">{editingStore ? '編輯門市' : '新增門市'}</h3>
             <div className="modal-body">
               <div className="form-group">
                 <label className="form-label">門市名稱 *</label>
@@ -809,7 +607,6 @@ const MainSettings: React.FC = () => {
                   onChange={(e) => setStoreForm({ ...storeForm, name: e.target.value })}
                 />
               </div>
-
               <div className="form-group">
                 <label className="form-label">門市地址 *</label>
                 <input
@@ -820,7 +617,6 @@ const MainSettings: React.FC = () => {
                   onChange={(e) => setStoreForm({ ...storeForm, address: e.target.value })}
                 />
               </div>
-
               <div className="form-group">
                 <label className="form-label">聯絡電話</label>
                 <input
@@ -831,7 +627,6 @@ const MainSettings: React.FC = () => {
                   onChange={(e) => setStoreForm({ ...storeForm, phone: e.target.value })}
                 />
               </div>
-
               <div className="form-group">
                 <label className="form-label">營業時間</label>
                 <input
@@ -842,7 +637,6 @@ const MainSettings: React.FC = () => {
                   onChange={(e) => setStoreForm({ ...storeForm, business_hours: e.target.value })}
                 />
               </div>
-
               <div className="form-group">
                 <label className="checkbox-label">
                   <input
@@ -854,14 +648,9 @@ const MainSettings: React.FC = () => {
                 </label>
               </div>
             </div>
-
             <div className="modal-footer">
-              <button className="btn-secondary" onClick={closeModal}>
-                取消
-              </button>
-              <button className="btn-primary" onClick={handleSaveStore}>
-                {editingStore ? '更新' : '新增'}
-              </button>
+              <button className="btn-secondary" onClick={closeModal}>取消</button>
+              <button className="btn-primary" onClick={handleSaveStore}>{editingStore ? '更新' : '新增'}</button>
             </div>
           </div>
         </div>
@@ -871,22 +660,14 @@ const MainSettings: React.FC = () => {
       {showBannerModal && (
         <div className="modal-overlay" onClick={closeBannerModal}>
           <div className="modal-content" onClick={(e) => e.stopPropagation()}>
-            <h3 className="modal-title">
-              {editingBanner ? '編輯輪播圖' : '新增輪播圖'}
-            </h3>
-
+            <h3 className="modal-title">{editingBanner ? '編輯輪播圖' : '新增輪播圖'}</h3>
             <div className="modal-body">
               <div className="form-group">
                 <label className="form-label">輪播圖片 *</label>
                 {bannerForm.image_url ? (
                   <div className="image-preview-container">
                     <img src={bannerForm.image_url} alt="預覽" className="image-preview" />
-                    <button 
-                      className="btn-remove-image"
-                      onClick={() => setBannerForm({ ...bannerForm, image_url: '' })}
-                    >
-                      移除圖片
-                    </button>
+                    <button className="btn-remove-image" onClick={() => setBannerForm({ ...bannerForm, image_url: '' })}>移除圖片</button>
                   </div>
                 ) : (
                   <div className="upload-area">
@@ -904,7 +685,6 @@ const MainSettings: React.FC = () => {
                   </div>
                 )}
               </div>
-
               <div className="form-group">
                 <label className="form-label">標題</label>
                 <input
@@ -915,7 +695,6 @@ const MainSettings: React.FC = () => {
                   onChange={(e) => setBannerForm({ ...bannerForm, title: e.target.value })}
                 />
               </div>
-
               <div className="form-group">
                 <label className="form-label">副標題</label>
                 <input
@@ -926,7 +705,6 @@ const MainSettings: React.FC = () => {
                   onChange={(e) => setBannerForm({ ...bannerForm, subtitle: e.target.value })}
                 />
               </div>
-
               <div className="form-group">
                 <label className="form-label">連結網址</label>
                 <input
@@ -937,7 +715,6 @@ const MainSettings: React.FC = () => {
                   onChange={(e) => setBannerForm({ ...bannerForm, link_url: e.target.value })}
                 />
               </div>
-
               <div className="form-group">
                 <label className="form-label">排序（數字越小越前面）</label>
                 <input
@@ -947,7 +724,6 @@ const MainSettings: React.FC = () => {
                   onChange={(e) => setBannerForm({ ...bannerForm, sort_order: parseInt(e.target.value) || 0 })}
                 />
               </div>
-
               <div className="form-group">
                 <label className="checkbox-label">
                   <input
@@ -959,12 +735,9 @@ const MainSettings: React.FC = () => {
                 </label>
               </div>
             </div>
-
             <div className="modal-footer">
               <button className="btn-secondary" onClick={closeBannerModal}>取消</button>
-              <button className="btn-primary" onClick={handleSaveBanner}>
-                {editingBanner ? '更新' : '新增'}
-              </button>
+              <button className="btn-primary" onClick={handleSaveBanner}>{editingBanner ? '更新' : '新增'}</button>
             </div>
           </div>
         </div>
