@@ -8,7 +8,8 @@ const {
   getPublishedProducts,
   updateProduct,
   deleteProduct,
-  getProductsByCategory
+  getProductsByCategory,
+  getHomepageData
 } = require('../controllers/productController');
 
 // 🔥 重要修改：同時引入 protect 和 admin
@@ -18,6 +19,7 @@ const { protect, admin } = require('../middleware/auth');
 // 公開路由（任何人都可以看）
 // ==========================================
 router.get('/', getAllProducts);
+router.get('/homepage', getHomepageData);
 router.get('/published', getPublishedProducts);
 router.get('/category/:id', getProductsByCategory);
 router.get('/:id', getProductById);

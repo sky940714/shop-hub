@@ -68,7 +68,7 @@
   }
 
   .bottom-nav .nav-item.active {
-    color: #e53e3e;
+    color: #2563eb;
     font-weight: 600;
     background: transparent;
   }
@@ -77,7 +77,7 @@
     position: absolute;
     top: 6px;
     right: 8px;
-    background: #e53e3e;
+    background: #2563eb;
     color: white;
     font-size: 10px;
     font-weight: 700;

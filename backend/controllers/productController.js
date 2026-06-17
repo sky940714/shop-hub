@@ -1,8 +1,9 @@
 // backend/controllers/productController.js
 const Product = require('../models/Product');
 const ProductImage = require('../models/ProductImage');
-const ProductVariant = require('../models/ProductVariant');  // ← 新增
+const ProductVariant = require('../models/ProductVariant');
 const ProductCategoryRelation = require('../models/ProductCategoryRelation');
+const { promisePool } = require('../config/database');
 
 /**
  * @desc    建立新商品（支援多圖）
@@ -320,6 +321,93 @@ exports.getProductsByCategory = async (req, res, next) => {
       success: true,
       count: products.length,
       products
+    });
+
+  } catch (error) {
+    next(error);
+  }
+};
+
+/**
+ * @desc    首頁一次性資料（所有分類 + 前 4 分類各 8 筆商品）
+ * @route   GET /api/products/homepage
+ * @access  Public
+ */
+exports.getHomepageData = async (req, res, next) => {
+  try {
+    // 兩個查詢並行，不互相等待
+    const [categoriesResult, productsResult] = await Promise.all([
+      // 1. 所有啟用分類（供導覽列用）
+      promisePool.execute(`
+        SELECT id, name, image_url, sort_order, parent_id, level, is_active
+        FROM categories
+        WHERE is_active = 1
+        ORDER BY sort_order ASC
+      `),
+      // 2. 前 4 分類，每類最多 8 筆上架商品（單一 SQL，ROW_NUMBER 分頁）
+      promisePool.execute(`
+        SELECT ranked.*
+        FROM (
+          SELECT
+            c.id           AS category_id,
+            c.name         AS category_name,
+            c.image_url    AS category_image,
+            c.sort_order   AS category_sort,
+            p.id, p.name, p.price, p.description,
+            pi.image_url   AS main_image,
+            ROW_NUMBER() OVER (PARTITION BY c.id ORDER BY p.id DESC) AS rn
+          FROM (
+            SELECT id, name, image_url, sort_order
+            FROM categories
+            WHERE is_active = 1
+            ORDER BY sort_order ASC
+            LIMIT 4
+          ) c
+          JOIN product_category_relation pcr ON pcr.category_id = c.id
+          JOIN products p ON p.id = pcr.product_id AND p.status = '上架'
+          LEFT JOIN product_images pi ON pi.product_id = p.id AND pi.is_main = 1
+        ) ranked
+        WHERE rn <= 8
+        ORDER BY category_sort ASC, rn ASC
+      `)
+    ]);
+
+    const categories = categoriesResult[0];
+    const rows = productsResult[0];
+
+    // 依分類 id 分組，保持順序
+    const sectionMap = new Map();
+    for (const row of rows) {
+      if (!sectionMap.has(row.category_id)) {
+        sectionMap.set(row.category_id, {
+          category: {
+            id: row.category_id,
+            name: row.category_name,
+            image_url: row.category_image,
+            sort_order: row.category_sort,
+            parent_id: null,
+            level: 1,
+            is_active: 1,
+            productCount: 0
+          },
+          products: []
+        });
+      }
+      const section = sectionMap.get(row.category_id);
+      section.products.push({
+        id: row.id,
+        name: row.name,
+        price: row.price,
+        description: row.description,
+        main_image: row.main_image
+      });
+      section.category.productCount = section.products.length;
+    }
+
+    res.json({
+      success: true,
+      categories,
+      sections: Array.from(sectionMap.values())
     });
 
   } catch (error) {

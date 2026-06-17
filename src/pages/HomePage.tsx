@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { ShoppingCart, Search, Menu, X, Home, Heart, User, MessageCircle, Grid } from 'lucide-react';
+import { ShoppingCart, Search, Menu, X, MessageCircle, Grid } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import './HomePage.css';
 import { API_BASE_URL, getImageUrl } from '../config'; // 引入環境變數與圖片工具
@@ -46,11 +46,9 @@ interface CategoryProducts {
 const HomePage: React.FC = () => {
   const navigate = useNavigate();
   const { cartCount, addToCart } = useCart();
-  const [wishlist, setWishlist] = useState<number[]>([]);
   const [currentCategory, setCurrentCategory] = useState<number | 'all'>('all');
   const [searchTerm, setSearchTerm] = useState<string>('');
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState<boolean>(false);
-  const [products, setProducts] = useState<Product[]>([]);
   const [categories, setCategories] = useState<Category[]>([]);
   const [banners, setBanners] = useState<HeroBanner[]>([]);
   const [currentBannerIndex, setCurrentBannerIndex] = useState(0);
@@ -59,98 +57,36 @@ const HomePage: React.FC = () => {
   const [categoryProductsList, setCategoryProductsList] = useState<CategoryProducts[]>([]);
 
   useEffect(() => {
-    fetchCategories();
-    fetchProducts();
-    fetchWishlist();
+    fetchHomepage();
     fetchBanners();
   }, []);
 
-  const fetchCategories = async () => {
+  const fetchHomepage = async () => {
     try {
-      // 使用 API_BASE_URL
-      const response = await apiFetch(`${API_BASE_URL}/api/categories`);
+      const response = await apiFetch(`${API_BASE_URL}/api/products/homepage`);
       const data = await response.json();
 
       if (data.success) {
         setCategories(data.categories);
-        
-        const top4Categories = data.categories.slice(0, 4);
-        const categoryProductsData: CategoryProducts[] = [];
-
-        for (const category of top4Categories) {
-          try {
-            const productRes = await apiFetch(`${API_BASE_URL}/api/products/category/${category.id}`);
-            const productData = await productRes.json();
-            
-            if (productData.success) {
-              categoryProductsData.push({
-                category: category,
-                products: productData.products.slice(0, 8).map((product: any) => ({
-                  id: product.id,
-                  name: product.name,
-                  price: parseFloat(product.price),
-                  originalPrice: null,
-                  image: product.main_image || 'https://via.placeholder.com/400',
-                  category_id: product.category_id,
-                  rating: 4.5,
-                  reviews: 0,
-                  description: product.description || '暫無描述'
-                }))
-              });
-            }
-          } catch (err) {
-            console.error(`讀取分類 ${category.name} 商品失敗:`, err);
-          }
-        }
-
-        setCategoryProductsList(categoryProductsData);
+        setCategoryProductsList(
+          data.sections.map((s: any) => ({
+            category: s.category,
+            products: s.products.map((p: any) => ({
+              id: p.id,
+              name: p.name,
+              price: parseFloat(p.price),
+              originalPrice: null,
+              image: p.main_image || 'https://via.placeholder.com/400',
+              category_id: s.category.id,
+              rating: 4.5,
+              reviews: 0,
+              description: p.description || '暫無描述'
+            }))
+          }))
+        );
       }
     } catch (error) {
-      console.error('讀取分類失敗：', error);
-    }
-  };
-
-  const fetchProducts = async () => {
-    try {
-      const response = await apiFetch(`${API_BASE_URL}/api/products/published`);
-      const data = await response.json();
-
-      if (data.success) {
-        const formattedProducts = data.products.map((product: any) => ({
-          id: product.id,
-          name: product.name,
-          price: parseFloat(product.price),
-          originalPrice: null,
-          image: product.main_image || 'https://via.placeholder.com/400',
-          category_id: product.category_id,
-          rating: 4.5,
-          reviews: 0,
-          description: product.description || '暫無描述'
-        }));
-
-        setProducts(formattedProducts);
-      }
-    } catch (error) {
-      console.error('讀取商品失敗：', error);
-    }
-  };
-
-  const fetchWishlist = async () => {
-    const token = localStorage.getItem('token');
-    if (!token) return;
-
-    try {
-      const response = await apiFetch(`${API_BASE_URL}/api/wishlist`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      const data = await response.json();
-
-      if (data.success) {
-        const wishlistIds = data.data.map((item: any) => item.product_id);
-        setWishlist(wishlistIds);
-      }
-    } catch (error) {
-      console.error('獲取收藏失敗：', error);
+      console.error('讀取首頁資料失敗：', error);
     }
   };
 
@@ -173,46 +109,6 @@ const HomePage: React.FC = () => {
     }, 5000);
     return () => clearInterval(interval);
   }, [banners.length]);
-
-  const toggleWishlist = async (productId: number) => {
-    const token = localStorage.getItem('token');
-    if (!token) {
-      alert('請先登入會員');
-      navigate('/login');
-      return;
-    }
-
-    const isWishlisted = wishlist.includes(productId);
-
-    try {
-      if (isWishlisted) {
-        const response = await apiFetch(`${API_BASE_URL}/api/wishlist/${productId}`, {
-          method: 'DELETE',
-          headers: { 'Authorization': `Bearer ${token}` }
-        });
-        const data = await response.json();
-        if (data.success) {
-          setWishlist(prev => prev.filter(id => id !== productId));
-        }
-      } else {
-        const response = await apiFetch(`${API_BASE_URL}/api/wishlist`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${token}`
-          },
-          body: JSON.stringify({ productId })
-        });
-        const data = await response.json();
-        if (data.success) {
-          setWishlist(prev => [...prev, productId]);
-        }
-      }
-    } catch (error) {
-      console.error('收藏操作失敗：', error);
-      alert('操作失敗，請稍後再試');
-    }
-  };
 
   const totalItems = cartCount;
 
@@ -387,7 +283,6 @@ const HomePage: React.FC = () => {
                     <div className="product-image-container" onClick={() => navigate(`/product/${product.id}`)} style={{ cursor: 'pointer' }}>
                       {/* 使用 getImageUrl 處理商品圖片 */}
                       <img src={getImageUrl(product.image)} alt={product.name} className="product-image" loading="lazy" decoding="async" />
-                      <button onClick={(e) => { e.stopPropagation(); toggleWishlist(product.id); }} className={`wishlist-button ${wishlist.includes(product.id) ? 'active' : ''}`}>❤</button>
                       {product.originalPrice && <div className="sale-badge">特價</div>}
                     </div>
                     <div className="product-info">
