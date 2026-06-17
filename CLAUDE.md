@@ -25,8 +25,8 @@
 - 圖片上傳：`multer`
 
 ### 行動端
-- `android/` — Capacitor Android 專案（Gradle）
-- `ios/` — Capacitor iOS 專案（Xcode）
+- `ios/` — Capacitor iOS 專案（Xcode），已上架 App Store
+- `android/` — Capacitor Android 專案（Gradle），**尚未上架**
 
 ---
 
@@ -56,20 +56,23 @@ npm start
 
 ---
 
-## 打包上架流程
+## 打包上架流程（iOS）
+
+> **注意：iOS 打包只能在 Mac 上操作（需要 Xcode）**
 
 ```bash
-# 步驟 1：打包前端
+# 步驟 1：確認 src/config.ts 的 IS_DEV_MODE = false
+# 步驟 2：打包前端
 npm run build
 
-# 步驟 2：同步到 iOS 原生專案
+# 步驟 3：同步到 iOS 原生專案
 npx cap sync ios
 
-# （Android 同步用）
-npx cap sync android
+# 步驟 4：用 Xcode 開啟（必須用 .xcworkspace，不是 .xcodeproj）
+open ios/App/App.xcworkspace
 ```
 
-> 打包前確認 `src/config.ts` 的 `IS_DEV_MODE = false`
+> 在 Xcode 中選擇正確的 Signing 憑證後，Archive → Distribute App → App Store Connect 上架
 
 ---
 
@@ -157,9 +160,9 @@ shop-hub/
 - `backend/public/uploads/` 為舊/備用本地路徑
 
 ### 推播通知
-- iOS/Android App 啟動時在 `App.tsx` 透過 `@capacitor/push-notifications` 取得 FCM Token
+- iOS App 啟動時在 `App.tsx` 透過 `@capacitor/push-notifications` 取得 FCM Token
 - Token 存入 MySQL 的 `members` 表
-- 綠界物流狀態更新時，後端透過 Firebase Admin SDK 發送推播
+- 綠界物流狀態更新時，後端透過 Firebase Admin SDK 發送 iOS 推播
 
 ### 金流（綠界 ECPay）
 - 付款流程：前端 → `/api/ecpay/checkout` → 綠界付款頁 → 回調 `/api/ecpay/callback`
@@ -268,7 +271,7 @@ cd ~/shop-hub/backend && npm start
 cd ~/shop-hub && npm start
 ```
 
-### iOS 打包（Mac 限定）
+### iOS 打包上架（Mac 限定）
 
 ```bash
 # 確認 src/config.ts 的 IS_DEV_MODE = false
@@ -277,6 +280,7 @@ npx cap sync ios
 
 # 用 Xcode 開啟（.xcworkspace 不是 .xcodeproj）
 open ios/App/App.xcworkspace
+# → Xcode 內：Product > Archive > Distribute App > App Store Connect
 ```
 
 ### Windows vs Mac 差異注意
@@ -285,5 +289,4 @@ open ios/App/App.xcworkspace
 |------|---------|-----|
 | 後端路徑 | `C:\Users\jerry\shop-hub\backend` | `~/shop-hub/backend` |
 | ngrok | `backend/ngrok.exe` | 需 `brew install ngrok` |
-| iOS 打包 | 不支援 | 需 Xcode（Mac 限定）|
-| Android 打包 | Android Studio | Android Studio（兩平台皆可）|
+| iOS 打包 / 上架 | **不支援** | 需 Xcode（Mac 限定）|
