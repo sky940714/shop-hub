@@ -622,7 +622,7 @@ const OrderManagement: React.FC = () => {
                     <div key={item.id} className="item-row">
                       <div className="item-image">
                         {item.product_image ? (
-                          <img src={item.product_image} alt={item.product_name} />
+                          <img src={item.product_image} alt={item.product_name} loading="lazy" decoding="async" />
                         ) : (
                           <div className="no-image">無圖片</div>
                         )}

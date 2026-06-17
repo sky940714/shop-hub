@@ -367,10 +367,12 @@ const HomePage: React.FC = () => {
 
                {category.image_url ? (
         <div className="category-banner-container">
-          <img 
-            src={getImageUrl(category.image_url)} 
-            alt={category.name} 
-            className="category-banner-image" 
+          <img
+            src={getImageUrl(category.image_url)}
+            alt={category.name}
+            className="category-banner-image"
+            loading="lazy"
+            decoding="async"
             onClick={() => navigate(`/search?category=${encodeURIComponent(category.name)}`)}
           />
         </div>
@@ -385,7 +387,7 @@ const HomePage: React.FC = () => {
                   <div key={product.id} className="product-card">
                     <div className="product-image-container" onClick={() => navigate(`/product/${product.id}`)} style={{ cursor: 'pointer' }}>
                       {/* 使用 getImageUrl 處理商品圖片 */}
-                      <img src={getImageUrl(product.image)} alt={product.name} className="product-image" />
+                      <img src={getImageUrl(product.image)} alt={product.name} className="product-image" loading="lazy" decoding="async" />
                       <button onClick={(e) => { e.stopPropagation(); toggleWishlist(product.id); }} className={`wishlist-button ${wishlist.includes(product.id) ? 'active' : ''}`}>❤</button>
                       {product.originalPrice && <div className="sale-badge">特價</div>}
                     </div>

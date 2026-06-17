@@ -1,8 +1,12 @@
 const express = require('express');
 const router = express.Router();
+const sharp = require('sharp');
 const { upload } = require('../config/upload');
 const { uploadToR2, deleteFromR2 } = require('../config/r2');
 const { protect, admin } = require('../middleware/auth');
+
+const toWebP = (buffer) =>
+  sharp(buffer).webp({ quality: 82 }).toBuffer();
 
 /**
  * @desc    上傳單張圖片
@@ -18,11 +22,9 @@ router.post('/image', protect, upload.single('image'), async (req, res) => {
       });
     }
 
-    const imageUrl = await uploadToR2(
-      req.file.buffer,
-      req.file.originalname,
-      req.file.mimetype
-    );
+    const webpBuffer = await toWebP(req.file.buffer);
+    const webpName = req.file.originalname.replace(/\.[^.]+$/, '.webp');
+    const imageUrl = await uploadToR2(webpBuffer, webpName, 'image/webp');
 
     res.json({
       success: true,
@@ -54,7 +56,11 @@ router.post('/images', protect, upload.array('images', 8), async (req, res) => {
     }
 
     const imageUrls = await Promise.all(
-      req.files.map(file => uploadToR2(file.buffer, file.originalname, file.mimetype))
+      req.files.map(async (file) => {
+        const webpBuffer = await toWebP(file.buffer);
+        const webpName = file.originalname.replace(/\.[^.]+$/, '.webp');
+        return uploadToR2(webpBuffer, webpName, 'image/webp');
+      })
     );
 
     res.json({

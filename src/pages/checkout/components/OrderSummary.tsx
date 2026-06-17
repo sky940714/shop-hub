@@ -33,7 +33,7 @@ const OrderSummary: React.FC<OrderSummaryProps> = ({
       <div className="summary-items">
         {cartItems.map((item) => (
           <div key={item.cart_item_id} className="summary-item">
-            <img src={item.image_url} alt={item.name} className="item-image" />
+            <img src={item.image_url} alt={item.name} className="item-image" loading="lazy" decoding="async" />
             <div className="item-info">
               <div className="item-name">{item.name}</div>
               <div className="item-quantity">x {item.quantity}</div>

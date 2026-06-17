@@ -200,21 +200,23 @@ const ProductDetailPage: React.FC = () => {
             {product.images && product.images.length > 0 ? (
               product.images.map((img, index) => (
                 <SwiperSlide key={img.id || index}>
-                  <img 
-                    // ✅ 修正點 2：使用 getImageUrl 確保 App 能顯示圖片
-                    src={getImageUrl(img.image_url)} 
+                  <img
+                    src={getImageUrl(img.image_url)}
                     alt={`${product.name} - 圖片 ${index + 1}`}
                     className="main-product-image"
+                    loading={index === 0 ? 'eager' : 'lazy'}
+                    decoding="async"
                   />
                 </SwiperSlide>
               ))
             ) : (
               <SwiperSlide>
-                <img 
-                  // 如果沒有圖片，也確保預設圖可以正常顯示
-                  src={getImageUrl(product.image_url)} 
+                <img
+                  src={getImageUrl(product.image_url)}
                   alt={product.name}
                   className="main-product-image"
+                  loading="eager"
+                  decoding="async"
                 />
               </SwiperSlide>
             )}
@@ -233,11 +235,12 @@ const ProductDetailPage: React.FC = () => {
             >
               {product.images.map((img, index) => (
                 <SwiperSlide key={img.id || index}>
-                  <img 
-                    // ✅ 修正點 3：縮圖也使用 getImageUrl
-                    src={getImageUrl(img.image_url)} 
+                  <img
+                    src={getImageUrl(img.image_url)}
                     alt={`縮圖 ${index + 1}`}
                     className="thumb-image"
+                    loading="lazy"
+                    decoding="async"
                   />
                 </SwiperSlide>
               ))}

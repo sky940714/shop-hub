@@ -37,7 +37,7 @@ const CartPage: React.FC = () => {
             <div className="cart-items">
               {cartItems.map(item => (
                 <div key={item.cart_item_id} className="cart-item">
-                  <img src={item.image_url} alt={item.name} className="item-image" />
+                  <img src={item.image_url} alt={item.name} className="item-image" loading="lazy" decoding="async" />
                   <div className="item-info">
                     <h3 className="item-name">{item.name}</h3>
                     <p className="item-price">NT$ {item.price.toLocaleString()}</p>
