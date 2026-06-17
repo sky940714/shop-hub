@@ -2,7 +2,7 @@
 const express = require('express');
 const router = express.Router();
 const { promisePool } = require('../config/database');
-const { protect } = require('../middleware/auth');
+const { protect, admin } = require('../middleware/auth');
 
 // ==========================================
 // 1. 申請退貨 (會員前台)
@@ -59,10 +59,8 @@ router.post('/apply', protect, async (req, res) => {
 // 2. 取得所有退貨申請 (管理員後台)
 // GET /api/returns/admin/list
 // ==========================================
-router.get('/admin/list', protect, async (req, res) => {
+router.get('/admin/list', protect, admin, async (req, res) => {
   try {
-    // TODO: 這裡應該要檢查是否為管理員 (req.user.isAdmin)
-    
     // 撈取退貨單，並關聯訂單金額和會員名稱
     const [returns] = await promisePool.query(`
       SELECT 
@@ -87,7 +85,7 @@ router.get('/admin/list', protect, async (req, res) => {
 // 3. 更新退貨狀態 (管理員後台)
 // PUT /api/returns/admin/:id/status
 // ==========================================
-router.put('/admin/:id/status', protect, async (req, res) => {
+router.put('/admin/:id/status', protect, admin, async (req, res) => {
   const connection = await promisePool.getConnection();
   try {
     await connection.beginTransaction();

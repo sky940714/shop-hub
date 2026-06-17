@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const pool = require('../config/database');
-const { protect, adminOnly } = require('../middleware/auth');
+const { protect, admin } = require('../middleware/auth');
 
 // 取得所有啟用的輪播圖（前台用）
 router.get('/', async (req, res) => {
@@ -17,7 +17,7 @@ router.get('/', async (req, res) => {
 });
 
 // 取得所有輪播圖（後台用）
-router.get('/admin/all', protect, async (req, res) => {
+router.get('/admin/all', protect, admin, async (req, res) => {
   try {
     const [banners] = await pool.query(
       'SELECT * FROM hero_banners ORDER BY sort_order ASC'
@@ -30,7 +30,7 @@ router.get('/admin/all', protect, async (req, res) => {
 });
 
 // 新增輪播圖
-router.post('/admin', protect, async (req, res) => {
+router.post('/admin', protect, admin, async (req, res) => {
   try {
     const { title, subtitle, image_url, link_url, sort_order, is_active } = req.body;
     
@@ -51,7 +51,7 @@ router.post('/admin', protect, async (req, res) => {
 });
 
 // 更新輪播圖
-router.put('/admin/:id', protect, async (req, res) => {
+router.put('/admin/:id', protect, admin, async (req, res) => {
   try {
     const { id } = req.params;
     const { title, subtitle, image_url, link_url, sort_order, is_active } = req.body;
@@ -69,7 +69,7 @@ router.put('/admin/:id', protect, async (req, res) => {
 });
 
 // 刪除輪播圖
-router.delete('/admin/:id', protect, async (req, res) => {
+router.delete('/admin/:id', protect, admin, async (req, res) => {
   try {
     const { id } = req.params;
     await pool.query('DELETE FROM hero_banners WHERE id = ?', [id]);

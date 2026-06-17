@@ -34,7 +34,9 @@
     "start": "react-scripts start",
     "build": "react-scripts build",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "dev": "concurrently --names \"SSH,API,WEB\" --prefix-colors \"cyan,yellow,green\" \"ssh -N -L 3307:127.0.0.1:3306 root@45.32.24.240\" \"wait-on tcp:3307 && cd backend && npm start\" \"react-scripts start\"",
+    "deploy": "npm run build && npx cap sync ios"
   },
   "eslintConfig": {
     "extends": [
@@ -55,6 +57,8 @@
     ]
   },
   "devDependencies": {
-    "@capacitor/cli": "^8.2.0"
+    "@capacitor/cli": "^8.2.0",
+    "concurrently": "^10.0.3",
+    "wait-on": "^9.0.10"
   }
 }

@@ -2,7 +2,7 @@
 const express = require('express');
 const router = express.Router();
 const { promisePool, query } = require('../config/database');
-const { protect } = require('../middleware/auth');
+const { protect, admin } = require('../middleware/auth');
 const ecpayUtils = require('../utils/ecpay');
 
 // ========================================
@@ -273,7 +273,7 @@ router.get('/user/list', protect, async (req, res) => {
 // 4. 取得所有訂單 (後台 - 帶分頁、搜尋、篩選)
 // GET /api/orders/admin/all
 // ========================================
-router.get('/admin/all', protect, async (req, res) => {
+router.get('/admin/all', protect, admin, async (req, res) => {
   try {
     // 分頁參數
     const page = parseInt(req.query.page) || 1;
@@ -337,7 +337,7 @@ router.get('/admin/all', protect, async (req, res) => {
 // 5. 取得訂單詳情 (後台)
 // GET /api/orders/admin/:orderNo
 // ========================================
-router.get('/admin/:orderNo', protect, async (req, res) => {
+router.get('/admin/:orderNo', protect, admin, async (req, res) => {
   try {
     const { orderNo } = req.params;
 
@@ -382,7 +382,7 @@ router.get('/admin/:orderNo', protect, async (req, res) => {
 // 6. 更新訂單狀態 (後台)
 // PUT /api/orders/admin/:orderNo/status
 // ========================================
-router.put('/admin/:orderNo/status', protect, async (req, res) => {
+router.put('/admin/:orderNo/status', protect, admin, async (req, res) => {
   const connection = await promisePool.getConnection();
   
   try {
@@ -483,7 +483,7 @@ router.put('/admin/:orderNo/status', protect, async (req, res) => {
 });
 
 // 7. 刪除訂單
-router.delete('/admin/:orderNo', protect, async (req, res) => {
+router.delete('/admin/:orderNo', protect, admin, async (req, res) => {
   const connection = await promisePool.getConnection();
   try {
     await connection.beginTransaction();
@@ -512,7 +512,7 @@ router.delete('/admin/:orderNo', protect, async (req, res) => {
 // 7. 數據總覽統計 (後台)
 // GET /api/orders/admin/dashboard/stats
 // ========================================
-router.get('/admin/dashboard/stats', protect, async (req, res) => {
+router.get('/admin/dashboard/stats', protect, admin, async (req, res) => {
   try {
     const [productCount] = await promisePool.query(`SELECT COUNT(*) as total FROM products`);
     const [orderCount] = await promisePool.query(`SELECT COUNT(*) as total FROM orders`);

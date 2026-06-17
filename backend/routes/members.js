@@ -2,13 +2,13 @@
 const express = require('express');
 const router = express.Router();
 const { promisePool } = require('../config/database');
-const { protect } = require('../middleware/auth');
+const { protect, admin } = require('../middleware/auth');
 
 // ========================================
 // 1. 取得所有會員列表（後台）
 // GET /api/members/admin/all
 // ========================================
-router.get('/admin/all', protect, async (req, res) => {
+router.get('/admin/all', protect, admin, async (req, res) => {
   try {
     const search = req.query.search || '';
     
@@ -57,10 +57,10 @@ router.get('/admin/all', protect, async (req, res) => {
 // 2. 取得會員詳情（後台）
 // GET /api/members/admin/:id
 // ========================================
-router.get('/admin/:id', protect, async (req, res) => {
+router.get('/admin/:id', protect, admin, async (req, res) => {
   try {
     const { id } = req.params;
-    
+
     // 查詢會員基本資料和統計
     const [members] = await promisePool.query(`
       SELECT 
@@ -103,7 +103,7 @@ router.get('/admin/:id', protect, async (req, res) => {
 // 3. 取得會員訂單列表（後台）
 // GET /api/members/admin/:id/orders
 // ========================================
-router.get('/admin/:id/orders', protect, async (req, res) => {
+router.get('/admin/:id/orders', protect, admin, async (req, res) => {
   try {
     const { id } = req.params;
     
@@ -137,7 +137,7 @@ router.get('/admin/:id/orders', protect, async (req, res) => {
 // 4. 取得會員點數歷史（後台）
 // GET /api/members/admin/:id/points-history
 // ========================================
-router.get('/admin/:id/points-history', protect, async (req, res) => {
+router.get('/admin/:id/points-history', protect, admin, async (req, res) => {
   try {
     const { id } = req.params;
     
@@ -173,7 +173,7 @@ router.get('/admin/:id/points-history', protect, async (req, res) => {
 // 5. 調整會員點數（後台）
 // POST /api/members/admin/:id/points
 // ========================================
-router.post('/admin/:id/points', protect, async (req, res) => {
+router.post('/admin/:id/points', protect, admin, async (req, res) => {
   const connection = await promisePool.getConnection();
   
   try {
@@ -248,7 +248,7 @@ router.post('/admin/:id/points', protect, async (req, res) => {
 // 6. 刪除會員（軟刪除）（後台）
 // DELETE /api/members/admin/:id
 // ========================================
-router.delete('/admin/:id', protect, async (req, res) => {
+router.delete('/admin/:id', protect, admin, async (req, res) => {
   try {
     const { id } = req.params;
     

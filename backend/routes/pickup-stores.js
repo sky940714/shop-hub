@@ -2,7 +2,7 @@
 const express = require('express');
 const router = express.Router();
 const { promisePool } = require('../config/database');
-const { protect } = require('../middleware/auth');
+const { protect, admin } = require('../middleware/auth');
 
 // ========================================
 // 1. 取得所有門市 (前台用 - 只取啟用的)
@@ -34,7 +34,7 @@ router.get('/', async (req, res) => {
 // 2. 取得所有門市 (後台用 - 包含停用的)
 // GET /api/pickup-stores/admin/all
 // ========================================
-router.get('/admin/all', protect, async (req, res) => {
+router.get('/admin/all', protect, admin, async (req, res) => {
   try {
     const [stores] = await promisePool.query(`
       SELECT * FROM pickup_stores ORDER BY id ASC
@@ -57,7 +57,7 @@ router.get('/admin/all', protect, async (req, res) => {
 // 3. 新增門市
 // POST /api/pickup-stores/admin
 // ========================================
-router.post('/admin', protect, async (req, res) => {
+router.post('/admin', protect, admin, async (req, res) => {
   try {
     const { name, address, phone, business_hours, is_active } = req.body;
 
@@ -91,7 +91,7 @@ router.post('/admin', protect, async (req, res) => {
 // 4. 更新門市
 // PUT /api/pickup-stores/admin/:id
 // ========================================
-router.put('/admin/:id', protect, async (req, res) => {
+router.put('/admin/:id', protect, admin, async (req, res) => {
   try {
     const { id } = req.params;
     const { name, address, phone, business_hours, is_active } = req.body;
@@ -126,7 +126,7 @@ router.put('/admin/:id', protect, async (req, res) => {
 // 5. 刪除門市
 // DELETE /api/pickup-stores/admin/:id
 // ========================================
-router.delete('/admin/:id', protect, async (req, res) => {
+router.delete('/admin/:id', protect, admin, async (req, res) => {
   try {
     const { id } = req.params;
 

@@ -2,7 +2,7 @@
 const express = require('express');
 const router = express.Router();
 const { promisePool: pool } = require('../config/database');
-const { protect } = require('../middleware/auth');
+const { protect, admin } = require('../middleware/auth');
 
 // ==========================================
 // 1. 取得運費設定（公開）
@@ -22,7 +22,7 @@ router.get('/shipping-fee', async (req, res) => {
 // ==========================================
 // 2. 更新運費設定（需管理員）
 // ==========================================
-router.put('/shipping-fee', protect, async (req, res) => {
+router.put('/shipping-fee', protect, admin, async (req, res) => {
   try {
     const { fee } = req.body;
     await pool.query(
@@ -66,7 +66,7 @@ router.get('/return-methods', async (req, res) => {
 // 4. 更新退貨方式設定（防空值覆蓋安全升級版）
 // PUT /api/settings/return-methods
 // ==========================================
-router.put('/return-methods', protect, async (req, res) => {
+router.put('/return-methods', protect, admin, async (req, res) => {
   try {
     const body = req.body;
     const updatePromises = [];
