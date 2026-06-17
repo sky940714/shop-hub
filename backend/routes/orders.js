@@ -186,8 +186,7 @@ router.post('/create', protect, async (req, res) => {
     console.error('建立訂單失敗:', error);
     res.status(500).json({
       success: false,
-      message: '建立訂單失敗',
-      error: error.message
+      message: error.message.includes('庫存不足') ? error.message : '建立訂單失敗'
     });
   } finally {
     connection.release();
@@ -195,7 +194,38 @@ router.post('/create', protect, async (req, res) => {
 });
 
 // ========================================
-// 2. 查詢單筆訂單 (前台)
+// 2. 查詢會員的所有訂單 (前台)
+// GET /api/orders/user/list
+// ========================================
+router.get('/user/list', protect, async (req, res) => {
+  try {
+    const userId = req.user.id;
+
+    const [orders] = await promisePool.query(`
+      SELECT
+        id, order_no, total, status, payment_status,
+        shipping_method, payment_method, created_at
+      FROM orders
+      WHERE user_id = ?
+      ORDER BY created_at DESC
+    `, [userId]);
+
+    res.json({
+      success: true,
+      orders: orders
+    });
+
+  } catch (error) {
+    console.error('查詢訂單列表失敗:', error);
+    res.status(500).json({
+      success: false,
+      message: '查詢訂單列表失敗'
+    });
+  }
+});
+
+// ========================================
+// 3. 查詢單筆訂單 (前台)
 // GET /api/orders/:orderNo
 // ========================================
 router.get('/:orderNo', protect, async (req, res) => {
@@ -204,7 +234,7 @@ router.get('/:orderNo', protect, async (req, res) => {
     const userId = req.user.id;
 
     const [orders] = await promisePool.query(`
-      SELECT * FROM orders 
+      SELECT * FROM orders
       WHERE order_no = ? AND user_id = ?
     `, [orderNo, userId]);
 
@@ -234,37 +264,6 @@ router.get('/:orderNo', protect, async (req, res) => {
     res.status(500).json({
       success: false,
       message: '查詢訂單失敗'
-    });
-  }
-});
-
-// ========================================
-// 3. 查詢會員的所有訂單 (前台)
-// GET /api/orders/user/list
-// ========================================
-router.get('/user/list', protect, async (req, res) => {
-  try {
-    const userId = req.user.id;
-
-    const [orders] = await promisePool.query(`
-      SELECT 
-        id, order_no, total, status, payment_status,
-        shipping_method, payment_method, created_at
-      FROM orders 
-      WHERE user_id = ?
-      ORDER BY created_at DESC
-    `, [userId]);
-
-    res.json({
-      success: true,
-      orders: orders
-    });
-
-  } catch (error) {
-    console.error('查詢訂單列表失敗:', error);
-    res.status(500).json({
-      success: false,
-      message: '查詢訂單列表失敗'
     });
   }
 });

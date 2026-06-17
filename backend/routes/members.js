@@ -330,30 +330,41 @@ router.put('/profile', protect, async (req, res) => {
 // GET /api/members/orders
 router.get('/orders', protect, async (req, res) => {
   try {
-    const [orders] = await promisePool.query(`
-      SELECT 
-        id,
-        order_no,
-        total,
-        status,
-        payment_status,
-        payment_method,  
-        created_at
-      FROM orders
-      WHERE user_id = ?
-      ORDER BY created_at DESC
+    const [rows] = await promisePool.query(`
+      SELECT
+        o.id, o.order_no, o.total, o.status,
+        o.payment_status, o.payment_method, o.created_at,
+        oi.product_name, oi.quantity, oi.price
+      FROM orders o
+      LEFT JOIN order_items oi ON o.id = oi.order_id
+      WHERE o.user_id = ?
+      ORDER BY o.created_at DESC
     `, [req.user.id]);
 
-    // 取得每筆訂單的商品
-    for (let order of orders) {
-      const [items] = await promisePool.query(`
-        SELECT product_name, quantity, price
-        FROM order_items WHERE order_id = ?
-      `, [order.id]);
-      order.items = items;
+    const ordersMap = new Map();
+    for (const row of rows) {
+      if (!ordersMap.has(row.order_no)) {
+        ordersMap.set(row.order_no, {
+          id: row.id,
+          order_no: row.order_no,
+          total: row.total,
+          status: row.status,
+          payment_status: row.payment_status,
+          payment_method: row.payment_method,
+          created_at: row.created_at,
+          items: []
+        });
+      }
+      if (row.product_name) {
+        ordersMap.get(row.order_no).items.push({
+          product_name: row.product_name,
+          quantity: row.quantity,
+          price: row.price
+        });
+      }
     }
 
-    res.json({ success: true, orders });
+    res.json({ success: true, orders: Array.from(ordersMap.values()) });
   } catch (error) {
     console.error('取得訂單失敗:', error);
     res.status(500).json({ success: false, message: '取得訂單失敗' });

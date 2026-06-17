@@ -1,5 +1,5 @@
 // App.tsx
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { CartProvider } from './context/CartContext';
 import HomePage from './pages/HomePage';
@@ -23,7 +23,18 @@ import PaymentResultPage from './pages/checkout/PaymentResultPage';
 import { PushNotifications } from '@capacitor/push-notifications';
 import { apiFetch } from './utils/api';
 
+interface Toast {
+  title: string;
+  body: string;
+}
+
 function App() {
+  const [toast, setToast] = useState<Toast | null>(null);
+
+  const showToast = (title: string, body: string) => {
+    setToast({ title, body });
+    setTimeout(() => setToast(null), 4000);
+  };
 
   // 🟢 新增：iOS 專屬原生推播權限獲取與監聽
   useEffect(() => {
@@ -75,8 +86,7 @@ function App() {
       PushNotifications.addListener('pushNotificationReceived', (notification) => {
         console.log('🔔 前台收到推播:', notification);
         if (notification.body) {
-          // 在 App 內彈出系統提示，優化使用者體驗
-          alert(`${notification.title}\n${notification.body}`);
+          showToast(notification.title || '通知', notification.body);
         }
       });
 
@@ -90,6 +100,17 @@ function App() {
   return (
     <Router>
       <CartProvider>
+        {toast && (
+          <div style={{
+            position: 'fixed', top: '16px', left: '50%', transform: 'translateX(-50%)',
+            background: '#1f2937', color: '#fff', borderRadius: '12px',
+            padding: '12px 20px', zIndex: 9999, maxWidth: '320px', width: '90%',
+            boxShadow: '0 4px 12px rgba(0,0,0,0.3)', animation: 'fadeIn 0.3s ease'
+          }}>
+            <div style={{ fontWeight: 'bold', marginBottom: '4px', fontSize: '14px' }}>{toast.title}</div>
+            <div style={{ fontSize: '13px', opacity: 0.9 }}>{toast.body}</div>
+          </div>
+        )}
         <Routes>
           
           <Route path="/" element={<HomePage />} />
