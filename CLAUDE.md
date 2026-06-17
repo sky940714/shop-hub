@@ -192,4 +192,98 @@ Firebase 私密金鑰放在 `backend/config/serviceAccountKey.json`（不進 Git
 
 - 前端正式網址：`https://anxinshophub.com`（或 `www.anxinshophub.com`）
 - 後端也部署在同一網域（`vercel.json` 在根目錄）
-- 本地開發輔助工具：`backend/ngrok.exe`（讓手機測試能打到本機後端）
+- 本地開發輔助工具：`backend/ngrok.exe`（Windows）/ `ngrok`（Mac，需另行安裝）
+
+---
+
+## 切換到 Mac 開發環境（首次設定）
+
+> 當你說「我現在到 MAC 了」時，依照以下步驟操作。
+
+### 前置工具（只需裝一次）
+
+```bash
+# 1. 安裝 Homebrew（若未安裝）
+/bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+# 2. 安裝 Node.js 20+（伺服器是 v18，本地建議用 20）
+brew install node
+
+# 3. 安裝 CocoaPods（iOS 打包必須）
+sudo gem install cocoapods
+
+# 4. 確認 Xcode 已安裝且開啟過（App Store 下載），並執行
+sudo xcode-select --switch /Applications/Xcode.app/Contents/Developer
+```
+
+### 拉取專案
+
+```bash
+git clone https://github.com/sky940714/shop-hub.git
+cd shop-hub
+```
+
+> 若已 clone 過：`git pull origin main`
+
+### 安裝依賴
+
+```bash
+# 前端
+npm install
+
+# 後端
+cd backend && npm install && cd ..
+```
+
+### 補上不進 Git 的機密檔案
+
+這兩個檔案需要從 Windows 手動複製過來（或從安全儲存位置取得）：
+
+| 檔案 | 說明 |
+|------|------|
+| `backend/.env` | 資料庫、JWT、R2、Firebase 環境變數 |
+| `backend/config/serviceAccountKey.json` | Firebase Admin 私密金鑰 |
+
+### 設定 SSH 金鑰連線 VPS
+
+```bash
+# 確認 Mac 的 SSH 公鑰是否已加入 VPS
+ssh root@45.32.24.240 'echo OK'
+
+# 若連不上，將 Mac 公鑰加入 VPS（只需做一次）
+ssh-keygen -t ed25519   # 若尚無金鑰
+cat ~/.ssh/id_ed25519.pub | ssh root@45.32.24.240 'cat >> ~/.ssh/authorized_keys'
+```
+
+### 每次開發啟動流程（Mac 版）
+
+```bash
+# 終端機視窗 1：SSH Tunnel（保持開啟）
+ssh -N -o ServerAliveInterval=60 -L 3307:127.0.0.1:3306 root@45.32.24.240
+
+# 終端機視窗 2：後端
+cd ~/shop-hub/backend && npm start
+
+# 終端機視窗 3：前端
+cd ~/shop-hub && npm start
+```
+
+### iOS 打包（Mac 限定）
+
+```bash
+# 確認 src/config.ts 的 IS_DEV_MODE = false
+npm run build
+npx cap sync ios
+
+# 用 Xcode 開啟（.xcworkspace 不是 .xcodeproj）
+open ios/App/App.xcworkspace
+```
+
+### Windows vs Mac 差異注意
+
+| 項目 | Windows | Mac |
+|------|---------|-----|
+| 後端路徑 | `C:\Users\jerry\shop-hub\backend` | `~/shop-hub/backend` |
+| ngrok | `backend/ngrok.exe` | 需 `brew install ngrok` |
+| iOS 打包 | 不支援 | 需 Xcode（Mac 限定）|
+| Android 打包 | Android Studio | Android Studio（兩平台皆可）|
