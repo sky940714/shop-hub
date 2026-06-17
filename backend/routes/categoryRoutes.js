@@ -2,7 +2,7 @@
 const express = require('express');
 const router = express.Router();
 const categoryController = require('../controllers/categoryController');
-const { protect } = require('../middleware/auth');
+const { protect, admin } = require('../middleware/auth');
 
 // ========================================
 // 公開路由（前台可用）
@@ -19,14 +19,14 @@ router.get('/', categoryController.getAllCategories);
 router.get('/parent/list', categoryController.getParentCategories);
 
 // 批次更新分類排序
-router.put('/update-order', protect, categoryController.updateCategoriesOrder);
+router.put('/update-order', protect, admin, categoryController.updateCategoriesOrder);
 
 // ========================================
 // 管理員路由（需要認證）
 // ========================================
 
 // 新增分類
-router.post('/', protect, categoryController.createCategory);
+router.post('/', protect, admin, categoryController.createCategory);
 
 // ========================================
 // 動態路由（必須放在最後）
@@ -36,9 +36,9 @@ router.post('/', protect, categoryController.createCategory);
 router.get('/:id', categoryController.getCategoryById);
 
 // 更新分類
-router.put('/:id', protect, categoryController.updateCategory);
+router.put('/:id', protect, admin, categoryController.updateCategory);
 
 // 刪除分類
-router.delete('/:id', protect, categoryController.deleteCategory);
+router.delete('/:id', protect, admin, categoryController.deleteCategory);
 
 module.exports = router;

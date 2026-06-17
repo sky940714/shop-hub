@@ -2,7 +2,7 @@ const express = require('express');
 const router = express.Router();
 const { upload } = require('../config/upload');
 const { uploadToR2, deleteFromR2 } = require('../config/r2');
-const { protect } = require('../middleware/auth');
+const { protect, admin } = require('../middleware/auth');
 
 /**
  * @desc    上傳單張圖片
@@ -77,7 +77,7 @@ router.post('/images', protect, upload.array('images', 8), async (req, res) => {
  * @route   DELETE /api/upload/image
  * @access  Private
  */
-router.delete('/image', protect, async (req, res) => {
+router.delete('/image', protect, admin, async (req, res) => {
   try {
     const { imageUrl } = req.body;
     
