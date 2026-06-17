@@ -9,6 +9,7 @@ import SearchPage from './pages/SearchPage';
 import LoginPage from './pages/LoginPage';
 import AdminLayout from './pages/admin/AdminLayout';
 import ProtectedRoute from './components/ProtectedRoute';
+import BottomNav from './components/BottomNav';
 import ProductDetailPage from './pages/ProductDetailPage';
 import CartPage from './pages/CartPage';
 
@@ -111,6 +112,7 @@ function App() {
             <div style={{ fontSize: '13px', opacity: 0.9 }}>{toast.body}</div>
           </div>
         )}
+        <BottomNav />
         <Routes>
           
           <Route path="/" element={<HomePage />} />

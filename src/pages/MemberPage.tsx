@@ -2,7 +2,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { User, Package, FileText, MessageSquare, LogOut, ChevronRight, RefreshCcw, ChevronLeft, CreditCard, Smartphone, MapPin } from 'lucide-react';
-import BottomNav from '../components/BottomNav';
 import './MemberPage.css';
 import ECPayForm from './checkout/components/ECPayForm';
 import { apiFetch } from '../utils/api';
@@ -598,8 +597,6 @@ const MemberPage: React.FC = () => {
           </div>
         </section>
       </div>
-
-      <BottomNav activePage="member" />
 
       {/* 訂單 Modal */}
       {showOrderModal && (

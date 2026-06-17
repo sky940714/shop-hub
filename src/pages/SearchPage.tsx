@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import { Search, X, TrendingUp, Loader } from 'lucide-react';
-import BottomNav from '../components/BottomNav';
 import './SearchPage.css'; 
 import { apiFetch } from '../utils/api';
 
@@ -257,7 +256,6 @@ const SearchPage: React.FC = () => {
           </div>
         )}
       </div>
-      <BottomNav activePage="search" />
     </div>
   );
 };

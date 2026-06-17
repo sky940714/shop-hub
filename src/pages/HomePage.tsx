@@ -3,7 +3,6 @@ import { Link, useNavigate } from 'react-router-dom';
 import { ShoppingCart, Search, Menu, X, Home, Heart, User, MessageCircle, Grid } from 'lucide-react';
 import { useCart } from '../context/CartContext';
 import './HomePage.css';
-import BottomNav from '../components/BottomNav';
 import { API_BASE_URL, getImageUrl } from '../config'; // 引入環境變數與圖片工具
 import { apiFetch } from '../utils/api';
 
@@ -447,7 +446,6 @@ const HomePage: React.FC = () => {
           <div className="footer-bottom"><p>&copy; 2025 ShopHub. All rights reserved.</p></div>
         </div>
       </footer>
-      <BottomNav activePage="home" />
     </div>
   );
 }

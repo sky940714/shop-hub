@@ -2,7 +2,6 @@ import React from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { ShoppingCart, X, ArrowLeft } from 'lucide-react';
 import { useCart } from '../context/CartContext';
-import BottomNav from '../components/BottomNav';
 import './CartPage.css';
 import { apiFetch } from '../utils/api';
 
@@ -83,7 +82,6 @@ const CartPage: React.FC = () => {
         )}
       </div>
 
-      <BottomNav activePage="cart" />
     </div>
   );
 };

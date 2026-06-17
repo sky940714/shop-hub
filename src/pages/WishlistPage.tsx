@@ -1,7 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { Heart, Trash2, Loader } from 'lucide-react';
-import BottomNav from '../components/BottomNav';
 import './WishlistPage.css';
 // 引入你提供的 CartContext
 import { useCart } from '../context/CartContext';
@@ -182,7 +181,6 @@ const WishlistPage: React.FC = () => {
           </>
         )}
       </div>
-      <BottomNav activePage="wishlist" />
     </div>
   );
 };
